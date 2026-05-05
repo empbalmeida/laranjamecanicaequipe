@@ -2688,12 +2688,20 @@ function renderMetas(){
   // Populate month selector
   const sel=document.getElementById('metas-mes-sel');
   const evolSel=document.getElementById('evol-vend-sel');
-  const allMonths=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
+  // Include past months with sales + next 12 months
+  const salesMonths=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))];
+  const futureMonths=[];
+  const now=new Date();
+  for(let i=0;i<=12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    futureMonths.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+  }
+  const allMonths=[...new Set([...futureMonths,...salesMonths])].sort().reverse();
   const curKey=getMonthKey();
   if(sel){
     const cur=sel.value||curKey;
     sel.innerHTML=allMonths.map(m=>`<option value="${m}"${m===cur?' selected':''}>${fmtMonth(m)}</option>`).join('');
-    if(!sel.value&&allMonths.includes(curKey)) sel.value=curKey;
+    if(!sel.value) sel.value=curKey;
   }
   if(evolSel){
     const vends=vendedores();
@@ -3236,7 +3244,8 @@ function renderDashMeta(){
   const volMes=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)).reduce((s,r)=>s+r.valor_liq,0)+
                DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)).reduce((s,r)=>s+r.valor_liq,0);
   if(!metaTotal){
-    el.innerHTML='<div style="font-size:12px;color:var(--text3);line-height:1.6">Nenhuma meta definida para este mes.<br><button class="btn btn-g" style="font-size:11px;margin-top:8px" onclick="nav(\'metas\')">→ Definir metas</button></div>';
+    el.innerHTML='<div style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:10px">Nenhuma meta definida para este mês.</div>'+
+      '<button class="btn btn-o" style="font-size:12px;padding:5px 14px" onclick="openModal(\'meta\')">+ Definir Meta</button>';
     return;
   }
   const pct=Math.min(Math.round(volMes/metaTotal*100),100);
