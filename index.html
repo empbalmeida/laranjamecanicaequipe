@@ -1172,14 +1172,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div id="metas-progress" style="padding:18px 22px"></div>
       </div>
 
-      <!-- Extrato mensal de comissões -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-hd">
-          <div class="card-title">💰 Extrato Mensal de Comissões</div>
-          <span id="extrato-label" style="font-size:12px;color:var(--text3)"></span>
-        </div>
-        <div id="extrato-comissoes" style="padding:0 0 8px"></div>
-      </div>
+
 
       <!-- Comparativo mês a mês -->
       <div class="card" style="margin-bottom:16px">
@@ -2675,7 +2668,6 @@ function renderMetas(){
   }
   const mes=sel?.value||curKey;
   renderMetasProgress(mes);
-  renderExtratoMensal(mes);
   renderEvolVendedor();
   renderIndicacoes();
 }
@@ -2683,7 +2675,6 @@ function renderMetas(){
 function renderMetasProgress(mes){
   const label=document.getElementById('metas-mes-label');
   if(label) label.textContent=fmtMonth(mes);
-  document.getElementById('extrato-label').textContent=fmtMonth(mes);
   const ok=r=>r.status!=='Cancelado';
   const vends=vendedores();
   const el=document.getElementById('metas-progress');
@@ -5297,6 +5288,8 @@ function saveModal(){
       if(existing>=0) DB.metas[existing]=rec;
       else DB.metas.push(rec);
     });
+    // Re-render metas after save
+    setTimeout(()=>{if(activePage==='metas')renderMetas();if(activePage==='dashboard')renderDash();},50);
   } else if(modalType==='indicacao'){
     if(!g('f-ind-cli').trim()){alert('Informe o nome do cliente.');return;}
     if(!DB.indicacoes) DB.indicacoes=[];
