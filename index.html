@@ -2423,39 +2423,46 @@ function buildPresenca() {
   restMonths.forEach(({nome,ano,mes})=>{
     if(!P[nome]) P[nome]={titulo:nome,semanas:[]};
     const lastDay = new Date(ano,mes,0).getDate();
-    // Build weeks: seg to sab, skip sundays
-    // Find first weekday (Mon=1..Sat=6), skip Sun
-    let d = 1;
-    if(new Date(ano,mes-1,1).getDay()===0) d=2; // skip sunday
-    while(d <= lastDay){
-      const weekDays=[];
-      // Find Monday of this week
-      let mon = d;
-      const monDow = new Date(ano,mes-1,mon).getDay();
-      if(monDow!==1 && weekDays.length===0){
-        // Start from current day if not monday (first partial week)
+    // Walk day by day, grouping into weeks (Mon-Sat blocks)
+    // A new week starts on Monday OR on day 1 of month
+    let weekDays = [];
+    for(let day=1; day<=lastDay; day++){
+      const dow = new Date(ano,mes-1,day).getDay(); // 0=sun,1=mon..6=sat
+      if(dow===0) {
+        // Sunday: close current week if any, skip
+        if(weekDays.length>0){
+          const firstPart=weekDays[0].split(' ')[1];
+          const lastPart=weekDays[weekDays.length-1].split(' ')[1];
+          const tit=firstPart+(weekDays.length>1?' a '+lastPart:'');
+          const membs={};
+          defaultMembers.forEach(m=>{ membs[m]=weekDays.map(()=>''); });
+          P[nome].semanas.push({titulo:tit,dias:weekDays,membros:membs});
+          weekDays=[];
+        }
+        continue;
       }
-      for(let i=0;i<6;i++){
-        const day = mon+i;
-        if(day>lastDay) break;
-        const dow = new Date(ano,mes-1,day).getDay();
-        if(dow===0) break; // stop at sunday
-        const dn=dayNames[dow];
-        const dt=String(day).padStart(2,'0')+'/'+String(mes).padStart(2,'0');
-        weekDays.push(dn+' '+dt);
-      }
-      if(weekDays.length>0){
+      if(dow===1 && weekDays.length>0){
+        // Monday: close previous partial week, start new
         const firstPart=weekDays[0].split(' ')[1];
         const lastPart=weekDays[weekDays.length-1].split(' ')[1];
         const tit=firstPart+(weekDays.length>1?' a '+lastPart:'');
         const membs={};
         defaultMembers.forEach(m=>{ membs[m]=weekDays.map(()=>''); });
         P[nome].semanas.push({titulo:tit,dias:weekDays,membros:membs});
+        weekDays=[];
       }
-      // Advance past this week's days + skip sunday
-      d = mon + weekDays.length;
-      if(d<=lastDay && new Date(ano,mes-1,d).getDay()===0) d++;
-      if(d>lastDay) break;
+      const dn=dayNames[dow];
+      const dt=String(day).padStart(2,'0')+'/'+String(mes).padStart(2,'0');
+      weekDays.push(dn+' '+dt);
+    }
+    // Push last partial week
+    if(weekDays.length>0){
+      const firstPart=weekDays[0].split(' ')[1];
+      const lastPart=weekDays[weekDays.length-1].split(' ')[1];
+      const tit=firstPart+(weekDays.length>1?' a '+lastPart:'');
+      const membs={};
+      defaultMembers.forEach(m=>{ membs[m]=weekDays.map(()=>''); });
+      P[nome].semanas.push({titulo:tit,dias:weekDays,membros:membs});
     }
   });
 
