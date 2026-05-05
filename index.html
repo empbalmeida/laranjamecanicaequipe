@@ -4545,7 +4545,27 @@ function exportCSVPortal(){
 let presMonth=null; // set lazily in renderPresenca after loadData
 let resumoVisible=true;
 
+function limparDomingosPresenca(){
+  Object.values(DB.presenca||{}).forEach(mes=>{
+    (mes.semanas||[]).forEach(sem=>{
+      const domIdxs=[];
+      (sem.dias||[]).forEach((d,i)=>{ if(d.toLowerCase().startsWith('dom')) domIdxs.push(i); });
+      if(domIdxs.length===0) return;
+      Object.keys(sem.membros||{}).forEach(m=>{
+        sem.membros[m]=(sem.membros[m]||[]).filter((_,i)=>!domIdxs.includes(i));
+      });
+      sem.dias=(sem.dias||[]).filter(d=>!d.toLowerCase().startsWith('dom'));
+      if(sem.dias.length>0){
+        const f=sem.dias[0].split(' ')[1];
+        const l=sem.dias[sem.dias.length-1].split(' ')[1];
+        sem.titulo=f+(sem.dias.length>1?' a '+l:'');
+      }
+    });
+  });
+}
+
 function renderPresenca(){
+  limparDomingosPresenca();
   const months=Object.keys(DB.presenca);
   if(!presMonth||!DB.presenca[presMonth]){
     // Try to find current month
