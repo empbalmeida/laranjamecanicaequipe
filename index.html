@@ -78,13 +78,13 @@ body{
 /* ── Dropdown nav ─────────────────────────────────────────────── */
 .nav-links{
   display:flex; align-items:center; gap:2px;
-  flex:1; overflow:hidden;
+  flex:1; overflow:visible;
 }
 .nav-group{position:relative;}
 .nav-group-btn{
-  display:flex; align-items:center; gap:5px;
-  padding:6px 11px; border-radius:8px; cursor:pointer;
-  font-size:13px; font-weight:500; color:var(--text2);
+  display:flex; align-items:center; gap:4px;
+  padding:6px 9px; border-radius:8px; cursor:pointer;
+  font-size:12px; font-weight:500; color:var(--text2);
   transition:all .15s; border:none; background:none;
   white-space:nowrap; font-family:inherit;
 }
@@ -101,7 +101,7 @@ body{
   animation:ddFadeIn .15s ease;
 }
 @keyframes ddFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.nav-group:hover .nav-dropdown{display:block;}
+.nav-group.open .nav-dropdown{display:block;}
 .nav-dd-item{
   display:flex; align-items:center; gap:10px;
   padding:8px 12px; border-radius:8px; cursor:pointer;
@@ -113,9 +113,9 @@ body{
 .nav-dd-item .dd-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
 .nav-dd-sep{height:1px;background:var(--border);margin:4px 6px;}
 .nav-link{
-  display:flex; align-items:center; gap:6px;
-  padding:6px 11px; border-radius:8px; cursor:pointer;
-  font-size:13px; font-weight:500; color:var(--text2);
+  display:flex; align-items:center; gap:4px;
+  padding:6px 9px; border-radius:8px; cursor:pointer;
+  font-size:12px; font-weight:500; color:var(--text2);
   transition:all .15s; border:none; background:none;
   white-space:nowrap; font-family:inherit;
 }
@@ -483,9 +483,31 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
 /* ── RESPONSIVE ── */
+/* ── Sidebar desktop ──────────────────────────────────────────── */
+.sidebar{
+  position:fixed; top:54px; left:0; bottom:0; width:220px;
+  background:var(--bg); border-right:1px solid var(--border);
+  overflow-y:auto; z-index:150; padding:12px 10px;
+  display:flex; flex-direction:column; gap:2px;
+}
+.sidebar-link{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:10px; cursor:pointer;
+  font-size:13px; font-weight:500; color:var(--text2);
+  transition:all .15s; border:none; background:none;
+  width:100%; text-align:left; font-family:inherit;
+}
+.sidebar-link:hover{color:var(--text);background:var(--bg3);}
+.sidebar-link.active{color:var(--accent);background:rgba(249,115,22,.08);font-weight:600;}
+.sidebar-link svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0;}
+.sidebar-sep{height:1px;background:var(--border);margin:6px 4px;}
+.sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);padding:8px 12px 4px;font-family:'DM Mono',monospace;}
+.main-with-sidebar{margin-left:220px;}
+.nav-links{display:none;}
 @media(max-width:900px){
-  .nav-links{display:none;}
+  .sidebar{display:none;}
   .nav-hamburger{display:flex;}
+  .main-with-sidebar{margin-left:0;}
   .grid2,.grid3{grid-template-columns:1fr!important;}
   .kpi-grid-3,.kpi-grid-4{grid-template-columns:1fr 1fr!important;}
   .section,.section-sm{padding:20px 16px;}
@@ -500,6 +522,9 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 
 /* ── Modo compacto ──────────────────────────────────────────────── */
 body.compact .hero{display:none!important;}
+body.compact .sidebar{width:52px!important;}
+body.compact .sidebar-link span,.body.compact .sidebar-section,.body.compact .sidebar-link{font-size:0!important;}
+body.compact .main-with-sidebar{margin-left:52px!important;}
 body.compact .section-sm{padding:10px 10px!important;}
 body.compact .section{padding:10px 10px!important;}
 body.compact .card{margin-bottom:8px!important;border-radius:8px!important;}
@@ -546,18 +571,18 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
       <!-- Dashboard -->
       <button class="nav-link" id="nl-dashboard" onclick="nav('dashboard')">
-        <span class="nav-icon">🏠</span>Dashboard
+        Dashboard
       </button>
 
       <!-- Supervisora -->
       <button class="nav-link" id="nl-sup-dash" onclick="nav('sup-dash')">
-        <span class="nav-icon">👑</span>Supervisora
+        Supervisora
       </button>
 
       <!-- Vendas dropdown -->
       <div class="nav-group">
-        <button class="nav-group-btn" id="ng-vendas">
-          <span class="nav-icon">💼</span>Vendas
+        <button class="nav-group-btn" id="ng-vendas" onclick="toggleNavGroup(this)">
+          Vendas
           <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="nav-dropdown">
@@ -571,8 +596,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
       <!-- Relatórios dropdown -->
       <div class="nav-group">
-        <button class="nav-group-btn" id="ng-relatorios">
-          <span class="nav-icon">📊</span>Relatórios
+        <button class="nav-group-btn" id="ng-relatorios" onclick="toggleNavGroup(this)">
+          Relatórios
           <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="nav-dropdown">
@@ -585,8 +610,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
       <!-- Clientes dropdown -->
       <div class="nav-group">
-        <button class="nav-group-btn" id="ng-clientes">
-          <span class="nav-icon">👥</span>Clientes
+        <button class="nav-group-btn" id="ng-clientes" onclick="toggleNavGroup(this)">
+          Clientes
           <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="nav-dropdown">
@@ -598,8 +623,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
       <!-- Ferramentas dropdown -->
       <div class="nav-group">
-        <button class="nav-group-btn" id="ng-ferramentas">
-          <span class="nav-icon">🛠</span>Ferramentas
+        <button class="nav-group-btn" id="ng-ferramentas" onclick="toggleNavGroup(this)">
+          Ferramentas
           <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="nav-dropdown">
@@ -691,7 +716,75 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   </button>
 </div>
 
-<main class="main">
+<main class="main main-with-sidebar">
+
+  <!-- SIDEBAR DESKTOP -->
+  <nav class="sidebar" id="desktop-sidebar">
+    <div style="padding:8px 12px;margin-bottom:4px;position:relative">
+      <input type="search" placeholder="🔍 Buscar…" id="sidebar-busca"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--text);outline:none"
+        oninput="renderBusca()" onfocus="document.getElementById('busca-res').style.display='block'"
+        onblur="setTimeout(()=>{document.getElementById('busca-res').style.display='none'},200)">
+    </div>
+
+    <button class="sidebar-link active" id="sl-dashboard" onclick="nav('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
+    </button>
+    <button class="sidebar-link" id="sl-sup-dash" onclick="nav('sup-dash')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M3 21v-1a9 9 0 0 1 18 0v1"/></svg>👑 Supervisora
+    </button>
+
+    <div class="sidebar-sep"></div>
+    <div class="sidebar-section">Vendas</div>
+    <button class="sidebar-link" id="sl-adesionada" onclick="nav('adesionada')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Adesionada
+    </button>
+    <button class="sidebar-link" id="sl-linear" onclick="nav('linear')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Linear
+    </button>
+    <button class="sidebar-link" id="sl-canceladas" onclick="nav('canceladas')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Canceladas
+    </button>
+    <button class="sidebar-link" id="sl-contempl" onclick="nav('contempl')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>🏆 Contemplações
+    </button>
+
+    <div class="sidebar-sep"></div>
+    <div class="sidebar-section">Relatórios</div>
+    <button class="sidebar-link" id="sl-mensal" onclick="nav('mensal')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Resumo Mensal
+    </button>
+    <button class="sidebar-link" id="sl-vendas-mensais" onclick="nav('vendas-mensais')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Vendas Mensais
+    </button>
+    <button class="sidebar-link" id="sl-comissoes" onclick="nav('comissoes')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Comissões
+    </button>
+    <button class="sidebar-link" id="sl-metas" onclick="nav('metas')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>🎯 Metas
+    </button>
+
+    <div class="sidebar-sep"></div>
+    <div class="sidebar-section">Clientes</div>
+    <button class="sidebar-link" id="sl-portal" onclick="nav('portal')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Portal de Clientes
+    </button>
+    <button class="sidebar-link" id="sl-presenca" onclick="nav('presenca')">
+      <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Presença
+    </button>
+    <button class="sidebar-link" id="sl-comunicacao" onclick="nav('comunicacao')">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>💬 Comunicação
+    </button>
+
+    <div class="sidebar-sep"></div>
+    <div class="sidebar-section">Ferramentas</div>
+    <button class="sidebar-link" id="sl-simulador" onclick="nav('simulador')">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>🧮 Simulador
+    </button>
+    <button class="sidebar-link" id="sl-cadastro" onclick="nav('cadastro')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>⚙️ Cadastros
+    </button>
+  </nav>
 
   <!-- DASHBOARD -->
   <!-- DASHBOARD SUPERVISORA -->
@@ -2440,17 +2533,20 @@ function nav(p){
 
 function _navExecutar(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-link,.nav-dd-item,.nav-group-btn,.mob-nav-link').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-link,.nav-dd-item,.nav-group-btn,.mob-nav-link,.sidebar-link').forEach(x=>x.classList.remove('active'));
   const pg=document.getElementById('page-'+p);
   if(pg) pg.classList.add('active');
-  // Activate direct link by id
+  // Activate sidebar link
+  const slBtn=document.getElementById('sl-'+p);
+  if(slBtn) slBtn.classList.add('active');
+  // Activate nl link (top nav)
   const nlBtn=document.getElementById('nl-'+p);
   if(nlBtn){
     nlBtn.classList.add('active');
     const parentGroup=nlBtn.closest('.nav-group')?.querySelector('.nav-group-btn');
     if(parentGroup) parentGroup.classList.add('active');
   }
-  // Also activate mob-nav-link by onclick content
+  // Mobile nav
   document.querySelectorAll('.mob-nav-link').forEach(x=>{
     try{if(x.getAttribute('onclick')?.includes("'"+p+"'"))x.classList.add('active');}catch(e){}
   });
@@ -7216,6 +7312,28 @@ tr:nth-child(even) td{background:#fafafa}
   w.document.close();
   setTimeout(()=>w.print(),600);
 }
+
+function toggleNavGroup(btn){
+  const group=btn.closest('.nav-group');
+  const isOpen=group.classList.contains('open');
+  // Close all open groups
+  document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open'));
+  if(!isOpen) group.classList.add('open');
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.nav-group')){
+    document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open'));
+  }
+});
+
+// Close dropdown when nav-dd-item is clicked
+document.addEventListener('click', e=>{
+  if(e.target.closest('.nav-dd-item')){
+    document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open'));
+  }
+});
 
 function toggleTheme(){
   const html=document.documentElement;
