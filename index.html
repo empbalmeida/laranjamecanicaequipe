@@ -1772,11 +1772,45 @@ body.compact .tbl-wrap{max-height:55vh!important;}
               <select class="finput" id="prop-vend"></select>
             </div>
           </div>
-          <div class="fg">
-            <label class="flabel">Parcela Mensal (R$) — opcional</label>
-            <input class="finput" id="prop-parcela" type="number" step="0.01" placeholder="Deixe em branco para calcular auto">
-            <div style="font-size:10px;color:var(--text3);margin-top:4px">Se informada, usa este valor na proposta em vez de calcular</div>
+          <div class="fgrid" style="gap:12px;margin-bottom:4px">
+            <div class="fg">
+              <label class="flabel">Parcela Mensal (R$) — opcional</label>
+              <input class="finput" id="prop-parcela" type="number" step="0.01" placeholder="Deixe em branco para calcular auto">
+              <div style="font-size:10px;color:var(--text3);margin-top:4px">Se vazio, calcula automaticamente pela carta × taxa ÷ prazo</div>
+            </div>
+            <div class="fg">
+              <label class="flabel">Entrada / Lance (R$) — opcional</label>
+              <input class="finput" id="prop-entrada" type="number" step="100" placeholder="ex: 30000">
+              <div style="font-size:10px;color:var(--text3);margin-top:4px">Será exibida na proposta como redução no saldo inicial</div>
+            </div>
           </div>
+
+          <!-- Comparativo toggle + campos manuais -->
+          <div style="background:var(--bg3);border-radius:10px;padding:12px 16px;margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+              <div>
+                <div style="font-size:13px;font-weight:500">Incluir comparativo Consórcio vs Financiamento</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px">Opcional — preencha os valores ou deixe automático</div>
+              </div>
+              <label style="position:relative;display:inline-block;width:42px;height:24px;cursor:pointer">
+                <input type="checkbox" id="prop-comparativo" checked style="opacity:0;width:0;height:0;position:absolute" onchange="togglePropComp(this)">
+                <span id="prop-comp-track" style="position:absolute;inset:0;border-radius:999px;background:var(--accent);border:1px solid var(--border);transition:.3s">
+                  <span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.3s;transform:translateX(18px)" id="prop-comp-thumb"></span>
+                </span>
+              </label>
+            </div>
+            <div id="prop-comp-fields" class="fgrid" style="gap:10px">
+              <div class="fg">
+                <label class="flabel">Parcela financiamento (R$) — opcional</label>
+                <input class="finput" id="prop-comp-parcela" type="number" step="0.01" placeholder="Calculado auto (~1,65%/mês)">
+              </div>
+              <div class="fg">
+                <label class="flabel">Taxa financiamento (ex: 18% a.a.)</label>
+                <input class="finput" id="prop-comp-taxa" placeholder="ex: 18% a.a." value="18% a.a.">
+              </div>
+            </div>
+          </div>
+
           <div class="fg full" style="margin-bottom:14px">
             <label class="flabel">Observações / Diferenciais</label>
             <textarea class="finput" id="prop-obs" rows="3" placeholder="Ex: Sem juros, contemplação por lance, menor parcela do mercado…" style="resize:vertical;font-family:inherit"></textarea>
@@ -6607,6 +6641,22 @@ function copiarMensagem(){
   });
 }
 
+function togglePropComp(cb){
+  const track=document.getElementById('prop-comp-track');
+  const thumb=document.getElementById('prop-comp-thumb');
+  if(track) track.style.background=cb.checked?'var(--accent)':'var(--bg4)';
+  if(thumb) thumb.style.transform=cb.checked?'translateX(18px)':'translateX(0)';
+}
+
+function togglePropComp(cb){
+  const track=document.getElementById('prop-comp-track');
+  const thumb=document.getElementById('prop-comp-thumb');
+  const fields=document.getElementById('prop-comp-fields');
+  if(track) track.style.background=cb.checked?'var(--accent)':'var(--bg3)';
+  if(thumb) thumb.style.transform=cb.checked?'translateX(18px)':'translateX(0)';
+  if(fields) fields.style.opacity=cb.checked?'1':'0.4';
+}
+
 function gerarPropostaPDF(){
   const cli=document.getElementById('prop-cli')?.value.trim()||'Cliente';
   const adm=document.getElementById('prop-adm')?.value.trim()||'';
@@ -6614,96 +6664,85 @@ function gerarPropostaPDF(){
   const prazo=parseInt(document.getElementById('prop-prazo')?.value)||0;
   const taxa=parseFloat(document.getElementById('prop-taxa')?.value)||0;
   const parcelaManual=parseFloat(document.getElementById('prop-parcela')?.value)||0;
+  const entrada=parseFloat(document.getElementById('prop-entrada')?.value)||0;
   const vend=document.getElementById('prop-vend')?.value||'';
   const obs=document.getElementById('prop-obs')?.value.trim()||'';
+  const incluiComp=document.getElementById('prop-comparativo')?.checked!==false;
+  const compParcelaManual=parseFloat(document.getElementById('prop-comp-parcela')?.value)||0;
+  const compTaxaLabel=document.getElementById('prop-comp-taxa')?.value||'18% a.a.';
 
-  if(!carta||!prazo){toast('⚠️ Preencha a carta de crédito e o prazo.');return;}
+  if(!carta||!prazo){toast('Preencha a carta de credito e o prazo.');return;}
 
-  const parcela=parcelaManual||(carta*(1+taxa/100)/prazo);
+  const taxaFrac=(taxa||0)/100;
+  const parcela=parcelaManual||(carta*(1+taxaFrac)/prazo);
   const totalPago=parcela*prazo;
-  const economia=totalPago-carta*(1+taxa/100);
+  const compParcela=compParcelaManual||(carta*0.0165);
+  const compTotal=compParcela*prazo;
+  const economia=compTotal-totalPago;
   const dataHoje=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const fmtBR=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<title>Simulação — ${cli}</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:40px}
-  .header{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;padding:32px 40px;border-radius:12px;margin-bottom:32px}
-  .header h1{font-size:28px;margin-bottom:6px}
-  .header p{font-size:14px;opacity:.85}
-  .logo{font-size:36px;margin-bottom:12px}
-  .section{margin-bottom:28px}
-  .section h2{font-size:16px;font-weight:700;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:6px;margin-bottom:16px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:20px}
-  .card-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-  .card-val{font-size:22px;font-weight:700;color:#111}
-  .card-val.highlight{color:#f97316}
-  .card-val.green{color:#16a34a}
-  table{width:100%;border-collapse:collapse}
-  th{background:#f97316;color:#fff;padding:10px 14px;text-align:left;font-size:13px}
-  td{padding:10px 14px;border-bottom:1px solid #f3f4f6;font-size:13px}
-  tr:nth-child(even) td{background:#fafafa}
-  .footer{margin-top:32px;padding-top:20px;border-top:2px solid #f3f4f6;font-size:12px;color:#9ca3af;text-align:center}
-  .badge{display:inline-block;background:#fff7ed;color:#f97316;border:1px solid #fed7aa;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;margin-right:8px}
-  .obs-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;font-size:13px;color:#7c2d12;line-height:1.6}
-  @media print{body{padding:20px}.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style></head><body>
-<div class="header">
-  <div class="logo">🍊</div>
-  <h1>Simulação de Consórcio</h1>
-  <p>Preparada exclusialmente para <strong>${cli}</strong> · ${dataHoje}</p>
-  ${adm?'<p style="margin-top:6px;opacity:.75">Administradora: '+adm+'</p>':''}
-</div>
+  const compHtml=incluiComp?
+    '<div class="section"><h2>Comparativo: Consorcio vs Financiamento</h2>'+
+    '<table><thead><tr><th>Item</th><th>Consorcio</th><th>Financiamento</th></tr></thead><tbody>'+
+    '<tr><td>Juros</td><td><strong style="color:#16a34a">Sem juros</strong></td><td style="color:#dc2626">'+compTaxaLabel+'</td></tr>'+
+    '<tr><td>Carta / Valor</td><td>R$ '+fmtBR(carta)+'</td><td>R$ '+fmtBR(carta)+'</td></tr>'+
+    '<tr><td>Parcela</td><td><strong>R$ '+fmtBR(parcela)+'</strong></td><td style="color:#dc2626">R$ '+fmtBR(compParcela)+'</td></tr>'+
+    '<tr><td>Prazo</td><td>'+prazo+' meses</td><td>'+prazo+' meses</td></tr>'+
+    '<tr><td><strong>Total pago</strong></td><td><strong>R$ '+fmtBR(totalPago)+'</strong></td><td style="color:#dc2626"><strong>R$ '+fmtBR(compTotal)+'</strong></td></tr>'+
+    '<tr><td><strong>Economia</strong></td><td colspan="2"><strong style="color:#16a34a">R$ '+fmtBR(economia)+' a menos no consorcio</strong></td></tr>'+
+    '</tbody></table></div>':'';
 
-<div class="section">
-  <h2>📊 Resumo Financeiro</h2>
-  <div class="grid">
-    <div class="card"><div class="card-label">Carta de Crédito</div><div class="card-val highlight">R$ ${carta.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-    <div class="card"><div class="card-label">Parcela Estimada</div><div class="card-val">R$ ${parcela.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-    <div class="card"><div class="card-label">Prazo</div><div class="card-val">${prazo} meses</div></div>
-    <div class="card"><div class="card-label">Taxa de Administração</div><div class="card-val">${taxa}%</div></div>
-  </div>
-</div>
+  const entradaHtml=entrada>0?
+    '<div class="card"><div class="card-label">Entrada / Lance</div><div class="card-val green">R$ '+fmtBR(entrada)+'</div></div>':'';
 
-<div class="section">
-  <h2>📋 Comparativo: Consórcio vs Financiamento</h2>
-  <table>
-    <thead><tr><th>Item</th><th>Consórcio</th><th>Financiamento Típico</th></tr></thead>
-    <tbody>
-      <tr><td>Juros</td><td><strong style="color:#16a34a">✓ Sem juros</strong></td><td style="color:#dc2626">~18% a.a.</td></tr>
-      <tr><td>Carta de Crédito</td><td>R$ ${carta.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>Valor financiado</td></tr>
-      <tr><td>Parcela estimada</td><td>R$ ${parcela.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td>R$ ${(carta*0.0165).toLocaleString('pt-BR',{minimumFractionDigits:2})} (estimado)</td></tr>
-      <tr><td>Prazo</td><td>${prazo} meses</td><td>${prazo} meses</td></tr>
-      <tr><td><strong>Total pago</strong></td><td><strong>R$ ${totalPago.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></td><td><strong style="color:#dc2626">R$ ${(carta*0.0165*prazo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></td></tr>
-    </tbody>
-  </table>
-</div>
+  const taxaHtml=taxa>0?
+    '<div class="card"><div class="card-label">Taxa de Administracao</div><div class="card-val">'+taxa+'%</div></div>':'';
 
-<div class="section">
-  <h2>✅ Vantagens do Consórcio</h2>
-  <p style="margin-bottom:10px">
-    <span class="badge">Sem juros</span>
-    <span class="badge">Possibilidade de lance</span>
-    <span class="badge">Carta a prazo de mercado</span>
-    <span class="badge">Sem entrada obrigatória</span>
-  </p>
-</div>
-
-${obs?'<div class="section"><h2>📝 Observações</h2><div class="obs-box">'+obs+'</div></div>':''}
-
-<div class="footer">
-  ${vend?'Vendedora: <strong>'+vend+'</strong> · ':''}Equipe Laranja Mecânica 🍊 · Proposta gerada em ${dataHoje}<br>
-  <em>Esta proposta é uma simulação. Valores sujeitos a confirmação pela administradora.</em>
-</div>
-</body></html>`;
+  const html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'+
+    '<title>Simulação - '+cli+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:40px}'+
+    '.header{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;padding:32px 40px;border-radius:12px;margin-bottom:32px}'+
+    '.header h1{font-size:28px;margin-bottom:6px}.header p{font-size:14px;opacity:.85}'+
+    '.logo{font-size:36px;margin-bottom:12px}'+
+    '.section{margin-bottom:28px}.section h2{font-size:16px;font-weight:700;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:6px;margin-bottom:16px}'+
+    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}'+
+    '.card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:20px}'+
+    '.card-label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}'+
+    '.card-val{font-size:22px;font-weight:700;color:#111}.card-val.highlight{color:#f97316}.card-val.green{color:#16a34a}'+
+    'table{width:100%;border-collapse:collapse}th{background:#f97316;color:#fff;padding:10px 14px;text-align:left;font-size:13px}'+
+    'td{padding:10px 14px;border-bottom:1px solid #f3f4f6;font-size:13px}tr:nth-child(even) td{background:#fafafa}'+
+    '.badge{display:inline-block;background:#fff7ed;color:#f97316;border:1px solid #fed7aa;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;margin-right:8px;margin-bottom:6px}'+
+    '.obs-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;font-size:13px;color:#7c2d12;line-height:1.6}'+
+    '.footer{margin-top:32px;padding-top:20px;border-top:2px solid #f3f4f6;font-size:12px;color:#9ca3af;text-align:center}'+
+    '@media print{body{padding:20px}.header{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'+
+    '</style></head><body>'+
+    '<div class="header"><div class="logo">🍊</div>'+
+    '<h1>Simulação</h1>'+
+    '<p>Preparada para <strong>'+cli+'</strong> · '+dataHoje+(adm?' · Administradora: '+adm:'')+'</p></div>'+
+    '<div class="section"><h2>Resumo Financeiro</h2><div class="grid">'+
+    '<div class="card"><div class="card-label">Carta de Credito</div><div class="card-val highlight">R$ '+fmtBR(carta)+'</div></div>'+
+    '<div class="card"><div class="card-label">Parcela Mensal</div><div class="card-val">R$ '+fmtBR(parcela)+(parcelaManual?' <small style="font-size:12px;color:#6b7280">(informada)</small>':'')+'</div></div>'+
+    '<div class="card"><div class="card-label">Prazo</div><div class="card-val">'+prazo+' meses</div></div>'+
+    taxaHtml+entradaHtml+
+    '<div class="card"><div class="card-label">Total a Pagar</div><div class="card-val">R$ '+fmtBR(totalPago)+'</div></div>'+
+    '</div></div>'+
+    compHtml+
+    '<div class="section"><h2>Vantagens do Consorcio</h2>'+
+    '<p><span class="badge">Sem juros</span><span class="badge">Lance possivel</span><span class="badge">Sem entrada obrigatoria</span></p></div>'+
+    (obs?'<div class="section"><h2>Observacoes</h2><div class="obs-box">'+obs+'</div></div>':'')+
+    '<div class="footer">'+(vend?'Vendedora: <strong>'+vend+'</strong> · ':'')+
+    'Equipe Laranja Mecanica 🍊 · '+dataHoje+'<br>'+
+    '<em>Simulacao estimativa. Valores sujeitos a confirmacao pela administradora.</em></div>'+
+    '</body></html>';
 
   const w=window.open('','_blank');
+  if(!w){toast('Permita popups para gerar o PDF.');return;}
   w.document.write(html);
   w.document.close();
   setTimeout(()=>w.print(),500);
 }
+
 
 function renderContempl(){
   if(!DB.contempl) DB.contempl=[];
