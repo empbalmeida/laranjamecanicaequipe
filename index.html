@@ -156,11 +156,11 @@ body{
 
 /* MOBILE DRAWER */
 .mob-drawer{
-  position:fixed; top:54px; left:0; width:280px; bottom:0;
-  background:var(--bg); z-index:190; transform:translateX(-100%);
+  position:fixed; top:54px; right:0; width:280px; bottom:0;
+  background:var(--bg); z-index:190; transform:translateX(100%);
   transition:transform .3s cubic-bezier(.4,0,.2,1);
   padding:16px 20px; overflow-y:auto;
-  border-right:1px solid var(--border);
+  border-left:1px solid var(--border);
   box-shadow:var(--shadow-lg);
 }
 .mob-drawer.open{transform:translateX(0);}
