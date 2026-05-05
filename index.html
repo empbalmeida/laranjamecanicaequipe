@@ -1188,7 +1188,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div style="display:flex;gap:8px;align-items:center">
             <select class="fi" id="evol-vend-sel" onchange="renderEvolVendedor()" style="min-width:130px;padding:5px 10px;font-size:12px"></select>
             <select class="fi" id="evol-tipo-sel" onchange="renderEvolVendedor()" style="min-width:110px;padding:5px 10px;font-size:12px">
-              <option value="vol">Volume</option>
+              <option value="vol">Total</option>
+              <option value="ades">Adesionada</option>
+              <option value="lin">Linear</option>
               <option value="qtd">Qtd. Vendas</option>
             </select>
           </div>
@@ -1776,6 +1778,11 @@ body.compact .tbl-wrap{max-height:55vh!important;}
               <label class="flabel">Vendedora</label>
               <select class="finput" id="prop-vend"></select>
             </div>
+          </div>
+          <div class="fg">
+            <label class="flabel">Parcela Mensal (R$) — opcional</label>
+            <input class="finput" id="prop-parcela" type="number" step="0.01" placeholder="Deixe em branco para calcular auto">
+            <div style="font-size:10px;color:var(--text3);margin-top:4px">Se informada, usa este valor na proposta em vez de calcular</div>
           </div>
           <div class="fg full" style="margin-bottom:14px">
             <label class="flabel">Observações / Diferenciais</label>
@@ -2416,19 +2423,23 @@ function buildPresenca() {
   restMonths.forEach(({nome,ano,mes})=>{
     if(!P[nome]) P[nome]={titulo:nome,semanas:[]};
     const lastDay = new Date(ano,mes,0).getDate();
-    // Find first Monday of the month (or day 1 if it falls Mon-Sat)
-    let startDay = 1;
-    const firstDow = new Date(ano,mes-1,1).getDay(); // 0=dom,1=seg...6=sab
-    if(firstDow===0) startDay=2; // domingo → começa na segunda dia 2
-    else if(firstDow!==1) startDay=1; // seg a sab → começa no dia 1
-    let d = startDay;
+    // Build weeks: seg to sab, skip sundays
+    // Find first weekday (Mon=1..Sat=6), skip Sun
+    let d = 1;
+    if(new Date(ano,mes-1,1).getDay()===0) d=2; // skip sunday
     while(d <= lastDay){
       const weekDays=[];
+      // Find Monday of this week
+      let mon = d;
+      const monDow = new Date(ano,mes-1,mon).getDay();
+      if(monDow!==1 && weekDays.length===0){
+        // Start from current day if not monday (first partial week)
+      }
       for(let i=0;i<6;i++){
-        const day = d+i;
+        const day = mon+i;
         if(day>lastDay) break;
         const dow = new Date(ano,mes-1,day).getDay();
-        if(dow===0) break; // para no domingo
+        if(dow===0) break; // stop at sunday
         const dn=dayNames[dow];
         const dt=String(day).padStart(2,'0')+'/'+String(mes).padStart(2,'0');
         weekDays.push(dn+' '+dt);
@@ -2441,9 +2452,8 @@ function buildPresenca() {
         defaultMembers.forEach(m=>{ membs[m]=weekDays.map(()=>''); });
         P[nome].semanas.push({titulo:tit,dias:weekDays,membros:membs});
       }
-      // Advance to next Monday
-      d += weekDays.length;
-      // Skip Sunday if it falls there
+      // Advance past this week's days + skip sunday
+      d = mon + weekDays.length;
       if(d<=lastDay && new Date(ano,mes-1,d).getDay()===0) d++;
       if(d>lastDay) break;
     }
@@ -2802,6 +2812,19 @@ function delIndicacao(i){
   saveData(); renderIndicacoes(); toast('✓ Excluído');
 }
 
+function preencherMetaExistente(){
+  const vend=document.getElementById('f-meta-vend')?.value;
+  const mes=document.getElementById('f-meta-mes')?.value;
+  if(!vend||!mes) return;
+  const existing=DB.metas?.find(m=>m.vendedor===vend&&m.mes===mes);
+  if(existing){
+    const vol=document.getElementById('f-meta-vol');
+    const qtd=document.getElementById('f-meta-qtd');
+    if(vol) vol.value=existing.meta_vol||'';
+    if(qtd) qtd.value=existing.meta_qtd||'';
+  }
+}
+
 function openMetaMes(vendedor, mes){
   openModal('meta');
   setTimeout(()=>{
@@ -2931,28 +2954,34 @@ function renderSupDash(){
   const ok=r=>r.status!=='Cancelado';
   const filtroMes=r=>r.data_contrato?.startsWith(mes);
 
-  // Get supervised vendors
-  const supVendedores={}; // sup -> [vendedor]
+  // Build supervisor -> vendors map from all sources
+  const supVendedores={};
+  // From DB.supervisores (define known supervisors)
   DB.supervisores.forEach(s=>{
     if(!supVendedores[s.nome]) supVendedores[s.nome]=[];
   });
-  // Map each vendor to their supervisor
-  const vendToSup={};
+  // From DB.vendedores (vendor has supervisor field)
   DB.vendedores.forEach(v=>{
-    if(v.supervisor) vendToSup[v.nome]=v.supervisor;
+    if(v.supervisor){
+      if(!supVendedores[v.supervisor]) supVendedores[v.supervisor]=[];
+      if(!supVendedores[v.supervisor].includes(v.nome)) supVendedores[v.supervisor].push(v.nome);
+    }
   });
-  // Also from sales records
+  // From sales records (supervisor field in each sale)
   [...DB.adesionada,...DB.linear].forEach(r=>{
-    if(r.supervisor&&r.vendedor) vendToSup[r.vendedor]=vendToSup[r.vendedor]||r.supervisor;
+    if(r.supervisor&&r.vendedor){
+      if(!supVendedores[r.supervisor]) supVendedores[r.supervisor]=[];
+      if(!supVendedores[r.supervisor].includes(r.vendedor)) supVendedores[r.supervisor].push(r.vendedor);
+    }
   });
+  // If no supervisor mapped, show all vendors under a default group
+  const allVendsInSup=Object.values(supVendedores).flat();
+  const unmapped=vendedores().filter(v=>!allVendsInSup.includes(v));
+  if(unmapped.length&&Object.keys(supVendedores).length===0){
+    supVendedores['Equipe']=unmapped;
+  }
 
-  // Build supervisor -> vendors map
-  Object.entries(vendToSup).forEach(([vend,sup])=>{
-    if(!supVendedores[sup]) supVendedores[sup]=[];
-    if(!supVendedores[sup].includes(vend)) supVendedores[sup].push(vend);
-  });
-
-  const activeSups=supFil?[supFil]:Object.keys(supVendedores).filter(s=>supVendedores[s].length);
+  const activeSups=supFil?[supFil]:Object.keys(supVendedores).filter(s=>supVendedores[s].length>0);
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   let totalComSup=0, totalVolGrupo=0, totalVendasGrupo=0;
@@ -4949,15 +4978,31 @@ function openModal(type='ades'){
     </select></div>
     <div class="fg full"><label class="flabel">Observações</label><input class="finput" id="f-ct-obs" placeholder="Obs. adicionais"></div>`;
   } else if(type==='meta'){
-    title='🎯 Definir Meta Mensal';sub='Meta de volume e quantidade por vendedor';
+    title='🎯 Definir Meta';sub='Configure meta de volume por vendedor e período';
     const vOpts2=vendedores().map(v=>`<option>${v}</option>`).join('');
     const curKey=getMonthKey();
-    const allMonths=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
+    // Generate next 12 months as options
+    const futureMonths=[];
+    const now=new Date();
+    for(let i=-3;i<=12;i++){
+      const d=new Date(now.getFullYear(),now.getMonth()+i,1);
+      const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      futureMonths.push(key);
+    }
+    const allMonths=[...new Set([...futureMonths,...DB.adesionada.map(r=>r.data_contrato?.slice(0,7)),...DB.linear.map(r=>r.data_contrato?.slice(0,7))].filter(Boolean))].sort().reverse();
     const mOpts=allMonths.map(m=>`<option value="${m}"${m===curKey?' selected':''}>${fmtMonth(m)}</option>`).join('');
-    form=`<div class="fg"><label class="flabel">Vendedor</label><select class="finput" id="f-meta-vend"><option value="">Selecione…</option>${vOpts2}</select></div>
-    <div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-meta-mes">${mOpts}</select></div>
+    // Check existing meta for selected vendedor
+    form=`<div class="fg"><label class="flabel">Vendedor</label><select class="finput" id="f-meta-vend" onchange="preencherMetaExistente()"><option value="">Selecione…</option>${vOpts2}</select></div>
+    <div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-meta-mes" onchange="preencherMetaExistente()">${mOpts}</select></div>
     <div class="fg"><label class="flabel">Meta Volume (R$)</label><input class="finput" id="f-meta-vol" type="number" step="1000" placeholder="ex: 500000"></div>
-    <div class="fg"><label class="flabel">Meta Qtd. Vendas</label><input class="finput" id="f-meta-qtd" type="number" step="1" placeholder="ex: 5"></div>`;
+    <div class="fg"><label class="flabel">Meta Qtd. Vendas</label><input class="finput" id="f-meta-qtd" type="number" step="1" placeholder="ex: 5"></div>
+    <div class="fg full" style="background:var(--bg3);border-radius:8px;padding:10px 14px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px">💡 Replicar para múltiplos meses</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="f-meta-meses-extra">
+        ${futureMonths.slice(3,9).map(m=>'<label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer"><input type="checkbox" value="'+m+'" style="accent-color:var(--accent)"> '+fmtMonth(m)+'</label>').join('')}
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px">Marque para aplicar a mesma meta nesses meses também</div>
+    </div>`;
   } else if(type==='indicacao'){
     title='🤝 Registrar Indicação';sub='Quem indicou qual cliente';
     const vOpts2=vendedores().map(v=>`<option>${v}</option>`).join('');
@@ -5196,10 +5241,20 @@ function saveModal(){
     if(!vend){alert('Selecione o vendedor.');return;}
     if(!mes){alert('Selecione o mês.');return;}
     if(!DB.metas) DB.metas=[];
-    const existing=DB.metas.findIndex(m=>m.vendedor===vend&&m.mes===mes);
-    const rec={vendedor:vend,mes,meta_vol:gn('f-meta-vol'),meta_qtd:gn('f-meta-qtd')};
-    if(existing>=0) DB.metas[existing]=rec;
-    else DB.metas.push(rec);
+    const metaVol=gn('f-meta-vol');
+    const metaQtd=gn('f-meta-qtd');
+    // Save for selected month
+    const meses=[mes];
+    // Also save for extra checked months
+    document.querySelectorAll('#f-meta-meses-extra input[type=checkbox]:checked').forEach(cb=>{
+      if(cb.value&&!meses.includes(cb.value)) meses.push(cb.value);
+    });
+    meses.forEach(m=>{
+      const rec={vendedor:vend,mes:m,meta_vol:metaVol,meta_qtd:metaQtd};
+      const existing=DB.metas.findIndex(x=>x.vendedor===vend&&x.mes===m);
+      if(existing>=0) DB.metas[existing]=rec;
+      else DB.metas.push(rec);
+    });
   } else if(modalType==='indicacao'){
     if(!g('f-ind-cli').trim()){alert('Informe o nome do cliente.');return;}
     if(!DB.indicacoes) DB.indicacoes=[];
@@ -6295,7 +6350,9 @@ function simParaProposta(){
   setTimeout(()=>{
     const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
     set('prop-carta',_simState.carta); set('prop-prazo',_simState.prazo); set('prop-taxa',_simState.taxa);
-    toast('Dados copiados para a Proposta!');
+    if(_simState.isManual){ set('prop-parcela',_simState.parcela.toFixed(2)); }
+    toast('Dados copiados! Clique em Proposta para visualizar.');
+    renderComunicacao();
   },300);
 }
 
@@ -6521,18 +6578,19 @@ function gerarPropostaPDF(){
   const carta=parseFloat(document.getElementById('prop-carta')?.value)||0;
   const prazo=parseInt(document.getElementById('prop-prazo')?.value)||0;
   const taxa=parseFloat(document.getElementById('prop-taxa')?.value)||0;
+  const parcelaManual=parseFloat(document.getElementById('prop-parcela')?.value)||0;
   const vend=document.getElementById('prop-vend')?.value||'';
   const obs=document.getElementById('prop-obs')?.value.trim()||'';
 
   if(!carta||!prazo){toast('⚠️ Preencha a carta de crédito e o prazo.');return;}
 
-  const parcela=carta*(1+taxa/100)/prazo;
+  const parcela=parcelaManual||(carta*(1+taxa/100)/prazo);
   const totalPago=parcela*prazo;
   const economia=totalPago-carta*(1+taxa/100);
   const dataHoje=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
   const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<title>Proposta Consórcio — ${cli}</title>
+<title>Simulação — ${cli}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;padding:40px}
@@ -6559,7 +6617,7 @@ function gerarPropostaPDF(){
 </style></head><body>
 <div class="header">
   <div class="logo">🍊</div>
-  <h1>Proposta de Consórcio</h1>
+  <h1>Simulação de Consórcio</h1>
   <p>Preparada exclusialmente para <strong>${cli}</strong> · ${dataHoje}</p>
   ${adm?'<p style="margin-top:6px;opacity:.75">Administradora: '+adm+'</p>':''}
 </div>
