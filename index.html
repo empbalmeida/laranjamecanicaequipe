@@ -4681,15 +4681,11 @@ function renderPresMonth(){
   if(!month){document.getElementById('presenca-content').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3)">Sem dados para este mês.</div>';return;}
   document.getElementById('presenca-content').innerHTML=month.semanas.map((sem,si)=>{
     const members=Object.keys(sem.membros);
-    // Build a canonical 6-slot header (seg–sáb), matching existing dias by prefix
-    const slots=DIAS_SEMANA.map(dn=>{
-      const idx=sem.dias.findIndex(d=>d.toLowerCase().startsWith(dn));
-      return{label: idx>=0 ? sem.dias[idx] : dn, di: idx};
-    });
-    const dayHd=slots.map(s=>`<th class="day-hd" style="text-align:center;min-width:88px${s.di<0?';color:var(--text3);opacity:.4':''}">${s.label}</th>`).join('');
+    // Use exactly the dias that exist — no phantom columns
+    const slots=sem.dias.map((label,di)=>({label,di}));
+    const dayHd=slots.map(s=>`<th class="day-hd" style="text-align:center;min-width:88px">${s.label}</th>`).join('');
     const rows=members.map(m=>{
       const cells=slots.map(s=>{
-        if(s.di<0) return`<td style="background:var(--surface3);border-right:1px solid var(--border)"></td>`;
         const val=(sem.membros[m]||[])[s.di]||'';
         return`<td style="text-align:center;padding:6px 4px;border-right:1px solid var(--border);cursor:pointer" onclick="togglePresenca('${presMonth}',${si},'${m.replace(/'/g,"\\'")}',${s.di})" title="Clique para alternar">${badge(val)}</td>`;
       }).join('');
