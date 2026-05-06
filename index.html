@@ -6632,10 +6632,12 @@ function calcLanceSim(){
   const assemPassadas=parseInt(document.getElementById('sim-assem-passadas')?.value)||0;
   const parcelaOriginal=carta*(1+taxaTotal)/prazo;
   const totalCotas=assemPassadas>0?parcelaOriginal*assemPassadas:0;
-  // Redutor de parcela
+  // Redutor de parcela — aplicado sobre a parcela ORIGINAL (sem lance)
   const redutor=(_redutorPct||0)/100;
-  const parcelaComLanceSemReducao=saldoAposLance>0?saldoAposLance*(1+taxaTotal)/prazo:0;
-  const parcelaReducaoAplicada=parcelaComLanceSemReducao*(1-redutor);
+  const parcelaOriginalCalc=carta*(1+taxaTotal)/prazo; // parcela sem nenhum lance
+  const parcelaComLanceSemReducao=saldoAposLance>0?saldoAposLance*(1+taxaTotal)/prazo:parcelaOriginalCalc;
+  // O redutor abate da parcela original, não da parcela com lance
+  const parcelaReducaoAplicada=parcelaOriginalCalc*(1-redutor);
   if(modoParc==='auto'){
     // Calculada com redutor se aplicável
     parcelaReduzida=parcelaReducaoAplicada;
