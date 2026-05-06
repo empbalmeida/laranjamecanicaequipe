@@ -1521,6 +1521,20 @@ body.compact .tbl-wrap{max-height:55vh!important;}
                   <label class="flabel">Mês estimado da contemplação</label>
                   <input class="finput" id="sim-mes-contempl" type="number" step="1" placeholder="ex: 24" oninput="calcLanceSim()">
                 </div>
+                <div class="fg">
+                  <label class="flabel">Redutor de parcela (lance embutido)</label>
+                  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+                    <button id="btn-red-0" onclick="setRedutor(0)" class="btn btn-o" style="font-size:11px;padding:3px 10px">Sem redutor</button>
+                    <button id="btn-red-25" onclick="setRedutor(25)" class="btn btn-g" style="font-size:11px;padding:3px 10px">25%</button>
+                    <button id="btn-red-30" onclick="setRedutor(30)" class="btn btn-g" style="font-size:11px;padding:3px 10px">30%</button>
+                    <button id="btn-red-50" onclick="setRedutor(50)" class="btn btn-g" style="font-size:11px;padding:3px 10px">50%</button>
+                    <input class="finput" id="sim-redutor-custom" type="number" step="1" min="0" max="99" placeholder="%" style="width:60px;padding:3px 8px;font-size:11px" oninput="setRedutorCustom(this.value)">
+                  </div>
+                </div>
+                <div class="fg">
+                  <label class="flabel">Assembleias já realizadas (grupo em andamento)</label>
+                  <input class="finput" id="sim-assem-passadas" type="number" step="1" min="0" placeholder="0 = novo grupo" oninput="calcLanceSim()">
+                </div>
                 <div class="fg" id="sim-parc-auto-wrap">
                   <label class="flabel">Parcela calculada automaticamente</label>
                   <input class="finput" id="sim-parc-ate-contempl" readonly style="background:var(--bg3);color:var(--green);font-weight:600;font-family:DM Mono,monospace">
@@ -1697,13 +1711,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div id="sim-parcela-detalhe" style="padding:0 0 8px"></div>
         </div>
 
-        <!-- Comparativo cenários -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-hd">
-            <div class="card-title">📊 Comparativo: Consórcio vs Financiamento</div>
-          </div>
-          <div id="sim-comparativo" style="overflow-x:auto"></div>
-        </div>
+        
 
         <!-- Gráfico visual -->
         <div class="card" style="margin-bottom:16px">
@@ -6549,6 +6557,30 @@ function setTipoLance(tipo){
 
 let _modoParcelaContempl = 'auto'; // 'auto' | 'rs' | 'pct'
 
+let _redutorPct=0;
+
+function setRedutor(pct){
+  _redutorPct=pct;
+  ['0','25','30','50'].forEach(v=>{
+    const btn=document.getElementById('btn-red-'+v);
+    if(btn){ btn.className='btn '+(parseInt(v)===pct?'btn-o':'btn-g'); btn.style.cssText='font-size:11px;padding:3px 10px'; }
+  });
+  const customEl=document.getElementById('sim-redutor-custom');
+  if(customEl&&!['25','30','50','0'].includes(String(pct))) customEl.value=pct;
+  else if(customEl) customEl.value='';
+  calcLanceSim();
+}
+
+function setRedutorCustom(val){
+  const pct=parseFloat(val)||0;
+  _redutorPct=pct;
+  ['0','25','30','50'].forEach(v=>{
+    const btn=document.getElementById('btn-red-'+v);
+    if(btn){ btn.className='btn btn-g'; btn.style.cssText='font-size:11px;padding:3px 10px'; }
+  });
+  calcLanceSim();
+}
+
 function setModoParcelaContempl(modo){
   _modoParcelaContempl = modo;
   // Update buttons
@@ -6600,9 +6632,17 @@ function calcLanceSim(){
   let parcelaReduzida=0;
   const modoParc=_modoParcelaContempl||'auto';
 
+  // Assembleias já passadas (grupo em andamento)
+  const assemPassadas=parseInt(document.getElementById('sim-assem-passadas')?.value)||0;
+  const parcelaOriginal=carta*(1+taxaTotal)/prazo;
+  const totalCotas=assemPassadas>0?parcelaOriginal*assemPassadas:0;
+  // Redutor de parcela
+  const redutor=(_redutorPct||0)/100;
+  const parcelaComLanceSemReducao=saldoAposLance>0?saldoAposLance*(1+taxaTotal)/prazo:0;
+  const parcelaReducaoAplicada=parcelaComLanceSemReducao*(1-redutor);
   if(modoParc==='auto'){
-    // Calculada: saldo após lance dividido pelo prazo total com a mesma taxa
-    parcelaReduzida=saldoAposLance>0 ? saldoAposLance*(1+taxaTotal)/prazo : 0;
+    // Calculada com redutor se aplicável
+    parcelaReduzida=parcelaReducaoAplicada;
     const parcAteEl=document.getElementById('sim-parc-ate-contempl');
     if(parcAteEl) parcAteEl.value=parcelaReduzida>0?parcelaReduzida.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'';
   } else if(modoParc==='rs'){
@@ -6626,8 +6666,13 @@ function calcLanceSim(){
   }
 
   // ── Pós-contemplação ─────────────────────────────────────────────────────
+  // Após contemplação: o lance embutido foi usado, saldo devedor = creditoReal - parcelas amortizadas
+  // O redutor some: parcela volta ao valor cheio do saldo restante
   const prazoPos=prazo-(mesContpl||0);
-  const saldoPos=Math.max(saldoAposLance - parcelaCarta*(mesContpl||0), 0);
+  // Saldo devedor no mês da contemplação:
+  // Amortização mensal = carta/prazo por mês. Após mesContpl meses + assemPassadas:
+  const mesesDecorridos=(mesContpl||0)+assemPassadas;
+  const saldoPos=Math.max(saldoAposLance - parcelaCarta*Math.min(mesesDecorridos, prazo), 0);
   const parcelaPos=prazoPos>0 ? saldoPos*(1+taxaTotal)/prazoPos : 0;
 
   // Meses antecipados vs sem lance
@@ -6637,7 +6682,7 @@ function calcLanceSim(){
   // ── Total pago ───────────────────────────────────────────────────────────
   const totalAteContempl=parcelaReduzida*(mesContpl||prazoComLance);
   const totalPosContempl=mesContpl>0?parcelaPos*prazoPos:0;
-  const totalComLance=proprioRs+totalAteContempl+totalPosContempl;
+  const totalComLance=proprioRs+totalCotas+totalAteContempl+totalPosContempl;
 
   let linhas=[];
   linhas.push('Lance total: '+actualPct.toFixed(2)+'% = '+fmt(lanceTotal));
@@ -6648,6 +6693,12 @@ function calcLanceSim(){
   linhas.push('');
   linhas.push('Credito real: '+fmt(creditoReal));
   if(proprioRs>0) linhas.push('Saldo apos lance proprio: '+fmt(saldoAposLance));
+  if(assemPassadas>0) linhas.push('Cotas em atraso ('+assemPassadas+' assembleias): '+fmt(totalCotas));
+  if(redutor>0){
+    linhas.push('Redutor de parcela: '+(_redutorPct)+'%');
+    linhas.push('  Parcela sem redutor: '+fmt(parcelaComLanceSemReducao));
+    linhas.push('  Parcela COM redutor: '+fmt(parcelaReducaoAplicada));
+  }
   linhas.push('Parcela ate contemplacao: '+fmt(parcelaReduzida)+(modoParc!=='auto'?' (manual)':''));
   linhas.push('');
   if(mesContpl>0){
