@@ -6504,14 +6504,6 @@ function calcSimulador(){
     comps.map(([n,c,v])=>'<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 22px;font-size:13px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+c+';margin-right:8px"></span>'+n+'</td><td style="padding:10px 22px;text-align:right;font-family:DM Mono,monospace;font-size:13px;color:'+c+'">'+fmt(v)+'</td><td style="padding:10px 22px;text-align:right;font-family:DM Mono,monospace;font-size:13px;color:var(--text3)">'+(v/parcela*100).toFixed(1)+'%</td></tr>').join('')+
     '<tr style="background:var(--bg3)"><td style="padding:10px 22px;font-weight:700;font-size:13px">Total parcela</td><td style="padding:10px 22px;text-align:right;font-weight:700;font-size:14px;font-family:DM Mono,monospace">'+fmt(parcela)+'</td><td style="padding:10px 22px;text-align:right;color:var(--text3);font-size:13px">100%</td></tr>'+
     '</tbody></table>';
-  // Comparativo
-  const fp=carta*0.0165; const ft=fp*prazo;
-  const eco=ft-totalDevido;
-  document.getElementById('sim-comparativo').innerHTML=
-    '<table style="width:100%;border-collapse:collapse">'+
-    '<thead><tr><th style="background:var(--bg3);padding:10px 18px;text-align:left;font-size:12px;color:var(--text2)">Item</th><th style="background:rgba(249,115,22,.12);padding:10px 18px;text-align:center;font-size:12px;color:var(--accent)">Consorcio</th><th style="background:rgba(239,68,68,.08);padding:10px 18px;text-align:center;font-size:12px;color:var(--red)">Financiamento</th></tr></thead><tbody>'+
-    [['Juros','var(--green)','var(--red)','Sem juros','~1,65% a.m.'],['Parcela mensal','var(--green)','var(--red)',fmt(parcela),fmt(fp)],['Total pago','var(--text)','var(--red)',fmt(totalDevido),fmt(ft)],['Economia','var(--green)','—',fmt(eco),'—']].map(([l,c1,c2,v1,v2])=>'<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 18px;font-size:13px;color:var(--text2)">'+l+'</td><td style="padding:10px 18px;text-align:center;font-size:13px;font-family:DM Mono,monospace;color:'+c1+';font-weight:600">'+v1+'</td><td style="padding:10px 18px;text-align:center;font-size:13px;font-family:DM Mono,monospace;color:'+c2+'">'+v2+'</td></tr>').join('')+
-    '</tbody></table>';
   // Grafico
   _renderSimGrafico(carta,prazo,parcelaCarta);
   document.getElementById('sim-resultado').style.display='block';
