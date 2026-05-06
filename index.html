@@ -2651,6 +2651,7 @@ function nav(p){
 }
 
 function _navExecutar(p){
+  try{ localStorage.setItem('lm_last_page', p); }catch(e){}
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nav-link,.nav-dd-item,.nav-group-btn,.mob-nav-link,.sidebar-link').forEach(x=>x.classList.remove('active'));
   const pg=document.getElementById('page-'+p);
@@ -6134,13 +6135,18 @@ function buildSnap(){
     metas: DB.metas||[],
     contempl: DB.contempl||[],
     indicacoes: DB.indicacoes||[],
-    presenca: DB.presenca
+    presenca: DB.presenca,
+    funil: DB.funil||[],
+    metaFunil: DB.metaFunil||{},
+    metaFunilVend: DB.metaFunilVend||{},
+    metasGrupo: DB.metasGrupo||[]
   };
 }
 
 function applySnap(snap){
   const keys=['adesionada','linear','vendedores','tabelas','supervisores',
-              'statusList','minhasVendas','parcelas','recebimentos','comissoesManual','canceladas','acessosPortal','metas','indicacoes','contempl'];
+              'statusList','minhasVendas','parcelas','recebimentos','comissoesManual','canceladas','acessosPortal','metas','indicacoes','contempl',
+              'funil','metaFunil','metaFunilVend','metasGrupo'];
   keys.forEach(k=>{ if(snap[k]!=null) DB[k]=snap[k]; });
   if(snap.presenca && typeof snap.presenca==='object' && Object.keys(snap.presenca).length>0){
     DB.presenca = snap.presenca;
@@ -8204,8 +8210,12 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
   // Limpar domingos de dados já salvos
   limparDomingosPresenca();
 
-  // Render inicial
-  renderDash();
+  // Restaurar última página visitada
+  try{
+    const lastPage=localStorage.getItem('lm_last_page');
+    if(lastPage&&lastPage!=='dashboard') nav(lastPage);
+    else renderDash();
+  }catch(e){ renderDash(); }
   setTimeout(initScrollMirror,200);
 
   // Atualizar grid de volume ao redimensionar
