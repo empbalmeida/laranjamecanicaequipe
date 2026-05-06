@@ -6465,13 +6465,17 @@ function toggleParcelaMode(){
 function calcSimulador(){
   const carta=parseFloat(document.getElementById('sim-carta')?.value)||0;
   const prazo=parseInt(document.getElementById('sim-prazo')?.value)||0;
+  if(!carta||!prazo){
+    const el=document.getElementById('sim-resultado');
+    if(el) el.style.display='none';
+    return;
+  }
   const taxa=parseFloat(document.getElementById('sim-taxa')?.value)||0;
   const reserva=parseFloat(document.getElementById('sim-reserva')?.value)||0;
   const seguro=parseFloat(document.getElementById('sim-seguro')?.value)||0;
   const isAuto=document.getElementById('sim-parcela-auto')?.checked!==false;
   const parcelaManual=parseFloat(document.getElementById('sim-parcela-manual')?.value)||0;
 
-  if(!carta||!prazo){ document.getElementById('sim-resultado').style.display='none'; return; }
   if(!isAuto&&!parcelaManual){ document.getElementById('sim-resultado').style.display='none'; return; }
 
   const taxaTotal=(taxa+reserva+seguro)/100;
@@ -6508,8 +6512,8 @@ function calcSimulador(){
   _renderSimGrafico(carta,prazo,parcelaCarta);
   document.getElementById('sim-resultado').style.display='block';
   calcLanceSim();
-}
 
+}
 function _renderSimGrafico(carta,prazo,parcelaCarta){
   const steps=Math.min(prazo,20);
   const step=Math.ceil(prazo/steps);
