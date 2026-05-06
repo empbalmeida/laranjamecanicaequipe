@@ -668,6 +668,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   <button class="mob-nav-link" onclick="nav('vendas-mensais');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Vendas Mensais
   </button>
+  <button class="mob-nav-link" onclick="nav('funil');closeMobDrawer()">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Funil de Vendas
+  </button>
   <button class="mob-nav-link" onclick="nav('adesionada');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Adesionada
   </button>
@@ -724,6 +727,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
     <div class="sidebar-sep"></div>
     <div class="sidebar-section">Vendas</div>
+    <button class="sidebar-link" id="sl-funil" onclick="nav('funil')">
+      <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Funil de Vendas
+    </button>
     <button class="sidebar-link" id="sl-adesionada" onclick="nav('adesionada')">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Adesionada
     </button>
@@ -809,7 +815,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <div class="card" style="margin-bottom:16px">
         <div class="card-hd">
           <div class="card-title">🎯 Meta do Grupo</div>
-          <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="openModal('meta-sup')">+ Definir meta</button>
+          <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="openModal('meta-grupo')">+ Definir meta</button>
         </div>
         <div id="sup-meta-grupo" style="padding:18px 22px"></div>
       </div>
@@ -916,7 +922,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:16px" id="dash-meta-row">
         <div class="card" id="dash-meta-card">
           <div class="card-hd"><div class="card-title">🎯 Meta do Mês</div>
-            <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="openModal('meta-grupo')">Definir</button>
+            <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="openModal('meta')">Definir</button>
           </div>
           <div id="dash-meta-body" style="padding:16px 22px"></div>
         </div>
@@ -1008,6 +1014,75 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   </div>
 
   <!-- ADESIONADA -->
+  <!-- FUNIL DE VENDAS -->
+  <div class="page" id="page-funil">
+    <div class="section-sm">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div class="sh" style="margin-bottom:0">
+          <div class="sh-title">📊 Funil de Vendas</div>
+          <div class="sh-sub">Acompanhe anúncios, ligações, retornos, agendamentos e fechamentos</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-g" onclick="openModal('meta-funil')">🎯 Definir Metas</button>
+          <button class="btn btn-o" onclick="openModal('funil')">+ Registrar Semana</button>
+        </div>
+      </div>
+
+      <!-- Filtro semana/vendedor -->
+      <div class="filters" style="margin-bottom:16px">
+        <select class="fi" id="funil-vend-fil" onchange="renderFunil()" style="min-width:150px">
+          <option value="">Toda a equipe</option>
+        </select>
+        <select class="fi" id="funil-periodo" onchange="renderFunil()" style="min-width:160px">
+          <option value="semana">Esta semana</option>
+          <option value="mes">Este mês</option>
+          <option value="todos">Todos os registros</option>
+        </select>
+      </div>
+
+      <!-- KPIs do funil -->
+      <div class="kpi-grid kpi-grid-4" id="funil-kpis" style="margin-bottom:18px"></div>
+
+      <!-- Barras de conversão -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">📈 Taxa de Conversão</div>
+          <span id="funil-periodo-label" style="font-size:12px;color:var(--text3)"></span>
+        </div>
+        <div id="funil-conversao" style="padding:18px 22px"></div>
+      </div>
+
+      <!-- Comparativo metas -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">🎯 Metas vs Realizado</div>
+        </div>
+        <div id="funil-metas" style="padding:16px 22px"></div>
+      </div>
+
+      <!-- Histórico semanal -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">📋 Histórico Semanal</div>
+        </div>
+        <div class="tbl-outer">
+          <div class="tbl-wrap">
+            <table id="tbl-funil">
+              <thead><tr>
+                <th>Semana</th><th>Vendedor</th>
+                <th>Anúncios</th><th>Números</th><th>Retornos</th><th>Discadas</th>
+                <th>Atendidas</th><th>Agendamentos</th><th>Visitas</th><th>Fechamentos</th>
+                <th></th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <div class="page" id="page-adesionada">
     <div class="section-sm">
       <div class="filters">
@@ -2191,6 +2266,8 @@ let DB = {
     {nome:'VIP 7 C/3',pct:0.009},{nome:'VIP 7 C/2',pct:0.008},{nome:'VIP 7 C/1',pct:0.007},{nome:'VIP 7 C/0',pct:0.006},
     {nome:'RODO 50%',pct:0},{nome:'RODO 30%',pct:0},{nome:'TABELINHA ESTENDIDO',pct:0.001},{nome:'SELEC ESTENDIDO MAIS POR MENOS 50%',pct:0.003},
   ],
+  funil:[],
+  metaFunil:{},
   adesionada:[
     {vendedor:'Rafael',cliente:'Fátima',telefone:'',contrato:'',data_contrato:'2026-01-17',data_pagamento:'2026-01-17',tabela:'VIP 7 C/0',valor_bruto:225363.7,valor_liq:225363.7,pct_com:0.006,com_rs:1352.18,status:'Pago',obs:'PROMOVE'},
     {vendedor:'Rafael',cliente:'JOSÉ',telefone:'',contrato:'',data_contrato:'2026-01-16',data_pagamento:'2026-01-16',tabela:'VIP 7 C/0',valor_bruto:213502.45,valor_liq:213502.45,pct_com:0.006,com_rs:1281.01,status:'Pago',obs:'PROMOVE'},
@@ -2540,7 +2617,7 @@ function stats(){
 }
 
 // ═══════════════════════════════ NAVIGATE ════════════════════════════════════
-const TITLES={dashboard:'Dashboard','sup-dash':'Dashboard Supervisora',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
+const TITLES={dashboard:'Dashboard',funil:'Funil de Vendas','sup-dash':'Dashboard Supervisora',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
@@ -2668,6 +2745,7 @@ function render(p){
   else if(p==='simulador')renderSimulador();
   else if(p==='comunicacao')renderComunicacao();
   else if(p==='presenca')renderPresenca();
+  else if(p==='funil')renderFunil();
   else if(p==='portal')renderPortal();
   else if(p==='cadastro')renderCad();
   setTimeout(()=>{
@@ -2854,6 +2932,16 @@ function delIndicacao(i){
   saveData(); renderIndicacoes(); toast('✓ Excluído');
 }
 
+function preencherMetaGrupo(){
+  const sup=document.getElementById('f-mg-sup')?.value||'';
+  const mes=document.getElementById('f-mg-mes')?.value||'';
+  const existing=(DB.metasGrupo||[]).find(m=>m.supervisor===sup&&m.mes===mes);
+  const vol=document.getElementById('f-mg-vol');
+  const qtd=document.getElementById('f-mg-qtd');
+  if(vol) vol.value=existing?.meta_vol||'';
+  if(qtd) qtd.value=existing?.meta_qtd||'';
+}
+
 function preencherMetaExistente(){
   const vend=document.getElementById('f-meta-vend')?.value;
   const mes=document.getElementById('f-meta-mes')?.value;
@@ -2978,11 +3066,18 @@ function renderSupDash(){
   // Populate selectors
   const mesSel=document.getElementById('sup-mes-sel');
   const supSel=document.getElementById('sup-supervisora-sel');
-  const allMonths=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
-  const curMes=mesSel?.value||allMonths[0]||'';
+  const salesMonthsS=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))];
+  const futureMonthsS=[];
+  const nowS=new Date();
+  for(let i=0;i<=12;i++){
+    const d=new Date(nowS.getFullYear(),nowS.getMonth()+i,1);
+    futureMonthsS.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));
+  }
+  const allMonths=[...new Set([...futureMonthsS,...salesMonthsS])].sort().reverse();
+  const curMes=mesSel?.value||getMonthKey();
   if(mesSel){
     mesSel.innerHTML=allMonths.map(m=>`<option value="${m}"${m===curMes?' selected':''}>${fmtMonth(m)}</option>`).join('');
-    if(!mesSel.value&&allMonths[0]) mesSel.value=allMonths[0];
+    if(!mesSel.value) mesSel.value=getMonthKey();
   }
 
   const sups=[...new Set(DB.supervisores.map(s=>s.nome))];
@@ -3024,6 +3119,24 @@ function renderSupDash(){
   }
 
   const activeSups=supFil?[supFil]:Object.keys(supVendedores).filter(s=>supVendedores[s].length>0);
+
+  // Show helpful message if no supervisors configured
+  const kpiEl2=document.getElementById('sup-kpis');
+  if(!activeSups.length&&kpiEl2){
+    kpiEl2.innerHTML='<div style="grid-column:1/-1;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:12px;padding:20px 24px">'+
+      '<div style="font-size:15px;font-weight:600;margin-bottom:8px">⚙️ Configure o vínculo das vendedoras</div>'+
+      '<div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px">'+
+        'Para o painel funcionar, cada vendedora precisa ter uma supervisora vinculada.<br>'+
+        'Vá em <strong>Cadastros → Vendedores</strong>, edite cada vendedora e selecione a supervisora no campo <strong>Supervisora</strong>.'+
+      '</div>'+
+      '<button class="btn btn-o" onclick="nav(\'cadastro\')" style="font-size:12px">→ Ir para Cadastros</button>'+
+    '</div>';
+    document.getElementById('sup-com-equipe').innerHTML='';
+    document.getElementById('sup-meta-grupo').innerHTML='';
+    document.getElementById('sup-ranking-equipe').innerHTML='';
+    document.getElementById('sup-evol-chart').innerHTML='';
+    return;
+  }
 
   // ── KPIs ──────────────────────────────────────────────────────────────────
   let totalComSup=0, totalVolGrupo=0, totalVendasGrupo=0;
@@ -3080,7 +3193,9 @@ function renderSupDash(){
   const metaEl=document.getElementById('sup-meta-grupo');
   if(metaEl){
     const allVends=[...new Set(activeSups.flatMap(s=>supVendedores[s]||[]))];
-    const metaVol=allVends.reduce((s,v)=>{ const m=DB.metas.find(m=>m.vendedor===v&&m.mes===mes); return s+(m?.meta_vol||0); },0);
+    // Use metasGrupo if defined, fallback to sum of individual metas
+    const metaGrupoRec=(DB.metasGrupo||[]).find(m=>activeSups.includes(m.supervisor)&&m.mes===mes);
+    const metaVol=metaGrupoRec?.meta_vol||allVends.reduce((s,v)=>{ const m=DB.metas.find(m=>m.vendedor===v&&m.mes===mes); return s+(m?.meta_vol||0); },0);
     const pct=metaVol>0?Math.min(Math.round(totalVolGrupo/metaVol*100),100):0;
     const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
     const barW=metaVol>0?Math.min(totalVolGrupo/metaVol*100,100):0;
@@ -3233,32 +3348,300 @@ function renderDash(){
   renderDashAlertas();
 }
 
+// ═══════════════════════════ FUNIL DE VENDAS ════════════════════════════════
+
+function loadFunilSemana(){
+  const sem=document.getElementById('f-fn-sem')?.value||'';
+  const vend=document.getElementById('f-fn-vend')?.value||'Equipe';
+  const aviso=document.getElementById('f-fn-atualiza-aviso');
+  const existing=DB.funil.find(r=>r.sem===sem&&r.vend===vend);
+  if(existing){
+    ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+      const el=document.getElementById('f-fn-'+c);
+      if(el) el.value=existing[c]||'';
+    });
+    if(aviso) aviso.style.display='';
+  } else {
+    ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+      const el=document.getElementById('f-fn-'+c);
+      if(el) el.value='';
+    });
+    if(aviso) aviso.style.display='none';
+  }
+}
+
+function syncFunilDate(val){
+  const d=new Date(val+'T12:00:00');
+  const dow=d.getDay();
+  const seg=new Date(d); seg.setDate(d.getDate()-(dow===0?6:dow-1));
+  const key=seg.toISOString().slice(0,10);
+  const sel=document.getElementById('f-fn-sem');
+  if(sel){
+    let found=false;
+    for(const opt of sel.options){ if(opt.value===key){sel.value=key;found=true;break;} }
+    if(!found){
+      const fim=new Date(seg); fim.setDate(seg.getDate()+5);
+      const label=seg.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const opt=document.createElement('option');
+      opt.value=key; opt.text=label; opt.selected=true;
+      sel.appendChild(opt); sel.value=key;
+    }
+  }
+  loadFunilSemana();
+}
+
+function loadMetaFunilVend(){
+  const vend=document.getElementById('f-mf-vend')?.value||'Geral (equipe)';
+  const isGeral=vend==='Geral (equipe)';
+  const rec=isGeral?(DB.metaFunil||{}):(DB.metaFunilVend?.[vend]||{});
+  ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+    const el=document.getElementById('f-mf-'+c);
+    if(el) el.value=rec[c]||'';
+  });
+}
+
+function renderFunil(){
+  const CAMPOS=['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const LABELS=['Anúncios','Números','Retornos','Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+  const ICONS=['📣','📞','🔄','📱','✅','📅','🤝','🏆'];
+  const CORES=['var(--blue)','var(--accent)','var(--purple)','var(--yellow)','var(--green)','var(--accent)','var(--blue)','var(--green)'];
+
+  // Populate vendedor filter
+  const vendFil=document.getElementById('funil-vend-fil');
+  if(vendFil){
+    const cur=vendFil.value;
+    vendFil.innerHTML='<option value="">Toda a equipe</option>'+vendedores().map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+    vendFil.value=cur;
+  }
+
+  const vFil=vendFil?.value||'';
+  const periodo=document.getElementById('funil-periodo')?.value||'semana';
+  const now=new Date(); now.setHours(0,0,0,0);
+
+  // Filter records
+  let rows=DB.funil.filter(r=>!vFil||r.vend===vFil||r.vend==='Equipe');
+  if(periodo==='semana'){
+    const dow=now.getDay(); const seg=new Date(now); seg.setDate(now.getDate()-(dow===0?6:dow-1));
+    const dom=new Date(seg); dom.setDate(seg.getDate()+6);
+    rows=rows.filter(r=>{ const d=new Date(r.sem+'T12:00:00'); return d>=seg&&d<=dom; });
+  } else if(periodo==='mes'){
+    const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    rows=rows.filter(r=>r.sem?.startsWith(mes));
+  }
+
+  // Label
+  const periodLabel=periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos os registros';
+  const el=document.getElementById('funil-periodo-label');
+  if(el) el.textContent=periodLabel+(vFil?' · '+vFil:'');
+
+  // Totals
+  const tots={};
+  CAMPOS.forEach(c=>{ tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0); });
+
+  // ── KPIs ─────────────────────────────────────────────────────────────────
+  const kpiEl=document.getElementById('funil-kpis');
+  if(kpiEl){
+    const kpis=[
+      {label:'Anúncios',val:tots.anuncios,icon:'📣',cor:'var(--blue)'},
+      {label:'Atendidas',val:tots.atendidas,icon:'✅',cor:'var(--green)'},
+      {label:'Agendamentos',val:tots.agendamentos,icon:'📅',cor:'var(--accent)'},
+      {label:'Fechamentos',val:tots.fechamentos,icon:'🏆',cor:'var(--yellow)'},
+    ];
+    kpiEl.innerHTML=kpis.map(k=>'<div class="kpi"><div class="kpi-icon">'+k.icon+'</div><div class="kpi-label">'+k.label+'</div><div class="kpi-val" style="color:'+k.cor+'">'+k.val+'</div></div>').join('');
+  }
+
+  // ── Conversão ─────────────────────────────────────────────────────────────
+  const convEl=document.getElementById('funil-conversao');
+  if(convEl){
+    const etapas=[
+      {label:'Anúncios',val:tots.anuncios,next:'Números'},
+      {label:'Números',val:tots.numeros,next:'Retornos'},
+      {label:'Retornos',val:tots.retornos,next:'Discadas'},
+      {label:'Discadas',val:tots.discadas,next:'Atendidas'},
+      {label:'Atendidas',val:tots.atendidas,next:'Agendamentos'},
+      {label:'Agendamentos',val:tots.agendamentos,next:'Visitas'},
+      {label:'Visitas',val:tots.visitas,next:'Fechamentos'},
+      {label:'Fechamentos',val:tots.fechamentos,next:null},
+    ];
+    const max=Math.max(...etapas.map(e=>e.val),1);
+    convEl.innerHTML=etapas.map((e,i)=>{
+      const pct=e.next&&etapas[i+1]?e.val>0?Math.round(etapas[i+1].val/e.val*100):0:null;
+      const barW=Math.round(e.val/max*100);
+      const cor=CORES[i]||'var(--accent)';
+      return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'+
+        '<div style="width:110px;font-size:12px;color:var(--text2);text-align:right;flex-shrink:0">'+e.label+'</div>'+
+        '<div style="flex:1;height:28px;background:var(--bg3);border-radius:6px;overflow:hidden">'+
+          '<div style="height:100%;width:'+barW+'%;background:'+cor+';border-radius:6px;display:flex;align-items:center;padding-left:8px;transition:width .8s">'+
+            (barW>10?'<span style="font-size:11px;color:#fff;font-weight:700">'+e.val+'</span>':'')+
+          '</div>'+
+        '</div>'+
+        (barW<=10?'<span style="font-size:11px;color:var(--text2);width:28px">'+e.val+'</span>':'<span style="width:28px"></span>')+
+        (pct!==null?'<div style="font-size:10px;color:var(--text3);width:44px;text-align:right">'+pct+'%↓</div>':'<div style="width:44px"></div>')+
+      '</div>';
+    }).join('')||'<div style="color:var(--text3);font-size:13px">Sem dados para o período.</div>';
+  }
+
+  // ── Metas vs Realizado ─────────────────────────────────────────────────────
+  const metaEl=document.getElementById('funil-metas');
+  if(metaEl){
+    const metaGeral=DB.metaFunil||{};
+    const metaVend=DB.metaFunilVend||{};
+    const hasAnyMeta=CAMPOS.some(c=>metaGeral[c]>0)||Object.keys(metaVend).length>0;
+    if(!hasAnyMeta){
+      metaEl.innerHTML='<div style="font-size:12px;color:var(--text3)">Nenhuma meta definida. Clique em <strong>🎯 Definir Metas</strong> para configurar.</div>';
+    } else {
+      let html='';
+      // Geral
+      if(CAMPOS.some(c=>metaGeral[c]>0)){
+        html+='<div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">🏆 Meta Geral da Equipe</div>';
+        html+=CAMPOS.map((c,i)=>{
+          const m=metaGeral[c]||0; if(!m) return '';
+          const v=tots[c]||0;
+          const pct=Math.min(Math.round(v/m*100),100);
+          const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
+          return '<div style="margin-bottom:10px">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
+              '<span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span>'+
+              '<span style="font-size:11px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
+            '</div>'+
+            '<div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
+              '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div>'+
+            '</div></div>';
+        }).join('');
+      }
+      // Por vendedor
+      Object.entries(metaVend).forEach(([vend,meta])=>{
+        if(!CAMPOS.some(c=>meta[c]>0)) return;
+        const vRows=rows.filter(r=>r.vend===vend);
+        const vTots={};
+        CAMPOS.forEach(c=>{ vTots[c]=vRows.reduce((s,r)=>s+(r[c]||0),0); });
+        html+='<div style="font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px">👤 '+vend+'</div>';
+        html+=CAMPOS.map((c,i)=>{
+          const m=meta[c]||0; if(!m) return '';
+          const v=vTots[c]||0;
+          const pct=Math.min(Math.round(v/m*100),100);
+          const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--blue)';
+          return '<div style="margin-bottom:10px">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
+              '<span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span>'+
+              '<span style="font-size:11px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
+            '</div>'+
+            '<div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
+              '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div>'+
+            '</div></div>';
+        }).join('');
+      });
+      metaEl.innerHTML=html;
+    }
+  }
+
+  // ── Tabela histórico ───────────────────────────────────────────────────────
+  const tbody=document.querySelector('#tbl-funil tbody');
+  if(tbody){
+    const allRows=(vFil?DB.funil.filter(r=>r.vend===vFil||r.vend==='Equipe'):DB.funil).slice().sort((a,b)=>(b.sem||'').localeCompare(a.sem||''));
+    tbody.innerHTML=allRows.map((r,i)=>{
+      const idx=DB.funil.indexOf(r);
+      const semDate=r.sem?new Date(r.sem+'T12:00:00'):null;
+      const semLabel=semDate?semDate.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):r.sem;
+      const isThisWeek=(()=>{if(!semDate)return false;const n=new Date();n.setHours(0,0,0,0);const dow2=n.getDay();const seg3=new Date(n);seg3.setDate(n.getDate()-(dow2===0?6:dow2-1));return semDate>=seg3&&semDate<=new Date(seg3.getTime()+6*864e5);})();
+      return '<tr class="'+(isThisWeek?'expanded':'')+'">'+
+        '<td class="mono" style="font-size:11px">'+semLabel+(isThisWeek?'<span class="badge-novo" style="margin-left:4px">Atual</span>':'')+'</td>'+
+        '<td style="font-weight:500">'+r.vend+'</td>'+
+        CAMPOS.map(c=>'<td class="mono" style="text-align:center">'+(r[c]||0)+'</td>').join('')+
+        '<td style="white-space:nowrap">'+
+        '<button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> '+
+        '<button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td>'+
+      '</tr>';
+    }).join('')||'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';
+  }
+}
+
+function editFunilBtn(btn){
+  editFunil(btn.dataset.sem, btn.dataset.vend);
+}
+
+function editFunil(sem, vend){
+  openModal('funil');
+  setTimeout(()=>{
+    const sel=document.getElementById('f-fn-sem');
+    if(sel){
+      let found=false;
+      for(const opt of sel.options){ if(opt.value===sem){sel.value=sem;found=true;break;} }
+      if(!found){
+        const d=new Date(sem+'T12:00:00');
+        const fim=new Date(d); fim.setDate(d.getDate()+5);
+        const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+        const opt=document.createElement('option'); opt.value=sem; opt.text=label; opt.selected=true;
+        sel.appendChild(opt); sel.value=sem;
+      }
+    }
+    const vendSel=document.getElementById('f-fn-vend');
+    if(vendSel) vendSel.value=vend;
+    loadFunilSemana();
+  },60);
+}
+
+function delFunil(i){
+  if(!confirm('Excluir este registro?')) return;
+  DB.funil.splice(i,1);
+  saveData();
+  renderFunil();
+  toast('✓ Registro excluído');
+}
+
 function renderDashMeta(){
   const el=document.getElementById('dash-meta-body');
   if(!el) return;
   const ok=r=>r.status!=='Cancelado';
   const now=new Date();
   const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  // Sum all vendor metas for current month
-  const metaTotal=DB.metas.filter(m=>m.mes===mes).reduce((s,m)=>s+(m.meta_vol||0),0);
-  const volMes=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)).reduce((s,r)=>s+r.valor_liq,0)+
-               DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)).reduce((s,r)=>s+r.valor_liq,0);
-  if(!metaTotal){
-    el.innerHTML='<div style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:10px">Nenhuma meta definida para este mês.</div>'+
-      '<button class="btn btn-o" style="font-size:12px;padding:5px 14px" onclick="openModal(\'meta\')">+ Definir Meta</button>';
+  const vends=vendedores();
+  const metasDoMes=DB.metas.filter(m=>m.mes===mes);
+
+  if(!metasDoMes.length){
+    el.innerHTML=
+      '<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Nenhuma meta definida para este mês.</div>'+
+      '<button class="btn btn-o" style="font-size:12px;padding:5px 14px" onclick="nav(\'metas\')">+ Definir Metas</button>';
     return;
   }
-  const pct=Math.min(Math.round(volMes/metaTotal*100),100);
-  const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
-  el.innerHTML=
-    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">'+
-      '<span style="font-size:26px;font-weight:800;letter-spacing:-.03em;color:'+cor+'">'+pct+'%</span>'+
-      '<span style="font-size:11px;color:var(--text3)">'+fmt(volMes)+' / '+fmt(metaTotal)+'</span>'+
-    '</div>'+
-    '<div style="height:8px;background:var(--bg3);border-radius:999px;overflow:hidden;margin-bottom:6px">'+
-      '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width 1s cubic-bezier(.4,0,.2,1)"></div>'+
-    '</div>'+
-    '<div style="font-size:11px;color:var(--text3)">Faltam '+fmt(Math.max(metaTotal-volMes,0))+' para bater a meta</div>';
+
+  // Show per-vendedor progress bars
+  let html='';
+  let totalVol=0, totalMeta=0;
+
+  metasDoMes.forEach(m=>{
+    const vol=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)&&r.vendedor===m.vendedor).reduce((s,r)=>s+r.valor_liq,0)+
+              DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)&&r.vendedor===m.vendedor).reduce((s,r)=>s+r.valor_liq,0);
+    const pct=m.meta_vol>0?Math.min(Math.round(vol/m.meta_vol*100),100):0;
+    const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
+    totalVol+=vol; totalMeta+=m.meta_vol||0;
+
+    html+=
+      '<div style="margin-bottom:12px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
+          '<span style="font-size:12px;font-weight:600;color:var(--text)">'+m.vendedor+'</span>'+
+          '<span style="font-size:11px;font-family:DM Mono,monospace;color:'+cor+';font-weight:700">'+pct+'%</span>'+
+        '</div>'+
+        '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden;margin-bottom:3px">'+
+          '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width 1s cubic-bezier(.4,0,.2,1)"></div>'+
+        '</div>'+
+        '<div style="display:flex;justify-content:space-between">'+
+          '<span style="font-size:10px;color:var(--text3)">'+fmtK(vol)+'</span>'+
+          '<span style="font-size:10px;color:var(--text3)">meta: '+fmtK(m.meta_vol)+'</span>'+
+        '</div>'+
+      '</div>';
+  });
+
+  // Total summary
+  const totalPct=totalMeta>0?Math.min(Math.round(totalVol/totalMeta*100),100):0;
+  const totalCor=totalPct>=100?'var(--green)':totalPct>=70?'var(--yellow)':'var(--accent)';
+  html+=
+    '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">'+
+      '<span style="font-size:11px;color:var(--text3)">Total do grupo</span>'+
+      '<span style="font-size:13px;font-weight:700;color:'+totalCor+'">'+totalPct+'% · '+fmtK(totalVol)+' / '+fmtK(totalMeta)+'</span>'+
+    '</div>';
+
+  el.innerHTML=html;
 }
 
 function renderDashCountdown(){
@@ -4793,6 +5176,62 @@ function addMemberToWeek(mes,sIdx){
 
 // ═══════════════════════════════ CADASTRO ════════════════════════════════════
 const delBtn=(fn,i,label)=>`<button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="${fn}(${i})" title="Excluir ${label}">✕</button>`;
+function editCad(tipo, i){
+  if(tipo==='vend'){
+    const v=DB.vendedores[i];
+    if(!v) return;
+    openModal('vend');
+    setTimeout(()=>{
+      const set=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+      set('f-nome',v.nome);
+      const supSel=document.getElementById('f-sup');
+      if(supSel) supSel.value=v.supervisor||'';
+      set('f-pa',v.pct_ades);
+      set('f-pl',v.pct_lin);
+      // Change save to update
+      modalEditIdx={tipo:'vend',i};
+      document.getElementById('m-title').textContent='✏ Editar Vendedor';
+    },30);
+  } else if(tipo==='sup'){
+    const s=DB.supervisores[i];
+    if(!s) return;
+    openModal('sup');
+    setTimeout(()=>{
+      const set=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+      set('f-supnome',s.nome);
+      set('f-supa',s.pct_ades);
+      set('f-supl',s.pct_lin);
+      modalEditIdx={tipo:'sup',i};
+      document.getElementById('m-title').textContent='✏ Editar Supervisora';
+    },30);
+  } else if(tipo==='tab'){
+    const t=DB.tabelas[i];
+    if(!t) return;
+    openModal('tab');
+    setTimeout(()=>{
+      const set=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+      set('f-tnome',t.nome);
+      set('f-tpct',t.pct);
+      modalEditIdx={tipo:'tab',i};
+      document.getElementById('m-title').textContent='✏ Editar Tabela';
+    },30);
+  } else if(tipo==='stat'){
+    const s=DB.statusList[i];
+    if(!s) return;
+    openModal('stat');
+    setTimeout(()=>{
+      const set=(id,val)=>{const el=document.getElementById(id);if(el&&val!=null)el.value=val;};
+      set('f-snome',s.nome);
+      set('f-scor',s.cor);
+      set('f-sdesc',s.desc||'');
+      modalEditIdx={tipo:'stat',i};
+      document.getElementById('m-title').textContent='✏ Editar Status';
+    },30);
+  }
+}
+
+let modalEditIdx=null;
+
 function renderCad(){
   loadSupabaseConfigUI();
   updateAutoSaveUI();
@@ -4800,21 +5239,33 @@ function renderCad(){
   document.querySelector('#tbl-vend tbody').innerHTML=DB.vendedores.map((v,i)=>`<tr>
     <td>${v.nome}</td><td>${v.supervisor||'—'}</td>
     <td class="mono">${fmtP(v.pct_ades)}</td><td class="mono">${fmtP(v.pct_lin)}</td>
-    <td>${delBtn('delCad_vend',i,'vendedor')}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-g" style="padding:3px 8px;font-size:11px" onclick="editCad('vend',${i})">✏</button>
+      ${delBtn('delCad_vend',i,'vendedor')}
+    </td>
   </tr>`).join('');
   document.querySelector('#tbl-tab tbody').innerHTML=DB.tabelas.map((t,i)=>`<tr>
     <td>${t.nome}</td><td class="mono val-o">${fmtP(t.pct)}</td>
-    <td>${delBtn('delCad_tab',i,'tabela')}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-g" style="padding:3px 8px;font-size:11px" onclick="editCad('tab',${i})">✏</button>
+      ${delBtn('delCad_tab',i,'tabela')}
+    </td>
   </tr>`).join('');
   document.querySelector('#tbl-sup tbody').innerHTML=DB.supervisores.map((s,i)=>`<tr>
     <td>${s.nome}</td><td class="mono">${fmtP(s.pct_ades)}</td><td class="mono">${fmtP(s.pct_lin)}</td>
-    <td>${delBtn('delCad_sup',i,'supervisor')}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-g" style="padding:3px 8px;font-size:11px" onclick="editCad('sup',${i})">✏</button>
+      ${delBtn('delCad_sup',i,'supervisor')}
+    </td>
   </tr>`).join('');
   document.querySelector('#tbl-stat tbody').innerHTML=DB.statusList.map((s,i)=>`<tr>
     <td><span class="badge" style="background:${s.cor}22;color:${s.cor}"><span style="width:6px;height:6px;border-radius:50%;background:${s.cor};display:inline-block;margin-right:4px"></span>${s.nome}</span></td>
     <td><span style="display:inline-block;width:16px;height:16px;border-radius:4px;background:${s.cor};vertical-align:middle"></span> <span class="mono" style="font-size:11px">${s.cor}</span></td>
     <td style="font-size:12px;color:var(--text2)">${s.desc||'—'}</td>
-    <td>${delBtn('delCad_stat',i,'status')}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-g" style="padding:3px 8px;font-size:11px" onclick="editCad('stat',${i})">✏</button>
+      ${delBtn('delCad_stat',i,'status')}
+    </td>
   </tr>`).join('');
 }
 function delCad_vend(i){if(confirm(`Excluir vendedor "${DB.vendedores[i].nome}"?`)){DB.vendedores.splice(i,1);saveData();renderCad();toast('✓ Vendedor excluído');}}
@@ -5090,8 +5541,9 @@ function openModal(type='ades'){
     <div class="fg full"><label class="flabel">Observações</label><input class="finput" id="f-ind-obs" placeholder="Obs. adicionais"></div>`;
   } else if(type==='vend'){
     title='Novo Vendedor';sub='Adicionar ao cadastro';
+    const supOpts3=`<option value="">Nenhum</option>`+DB.supervisores.map(s=>`<option>${s.nome}</option>`).join('');
     form=`<div class="fg"><label class="flabel">Nome</label><input class="finput" id="f-nome" placeholder="Nome completo"></div>
-    <div class="fg"><label class="flabel">Supervisor</label><input class="finput" id="f-sup" placeholder="Nome do supervisor"></div>
+    <div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-sup">${supOpts3}</select></div>
     <div class="fg"><label class="flabel">% Com. Adesionada</label><input class="finput" id="f-pa" type="number" step="0.001"></div>
     <div class="fg"><label class="flabel">% Com. Linear</label><input class="finput" id="f-pl" type="number" step="0.001"></div>`;
   } else if(type==='stat'){
@@ -5119,7 +5571,91 @@ function openModal(type='ades'){
     <div class="fg full"><label class="flabel">Colaboradores (separados por vírgula)</label><input class="finput" id="f-wmem" value="Beatriz, Rafael, Isaac" placeholder="Beatriz, Rafael, Isaac"></div>
     <div class="fg full"><div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--accent)">💡 Escolha a data de início que os dias (seg a sáb) serão preenchidos automaticamente.</div></div>`;
     setTimeout(()=>autoFillWeekDays(),80);
-  } else if(type==='pres'){
+  } else if(type==='meta-grupo'){
+    title='🎯 Meta do Grupo';sub='Define o volume alvo da equipe supervisionada';
+    const supSel2=document.getElementById('sup-supervisora-sel');
+    const mesSel2=document.getElementById('sup-mes-sel');
+    const curSup=supSel2?.value||DB.supervisores[0]?.nome||'';
+    const curMesG=mesSel2?.value||getMonthKey();
+    const supOpts4=DB.supervisores.map(s=>`<option value="${s.nome}"${s.nome===curSup?' selected':''}>${s.nome}</option>`).join('');
+    // Future months
+    const fmths=[];
+    const nowG=new Date();
+    for(let i=-3;i<=12;i++){
+      const d=new Date(nowG.getFullYear(),nowG.getMonth()+i,1);
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      fmths.push(k);
+    }
+    const mOptsG=fmths.map(m=>`<option value="${m}"${m===curMesG?' selected':''}>${fmtMonth(m)}</option>`).join('');
+    // Load existing
+    const existing=DB.metasGrupo?.find(m=>m.supervisor===curSup&&m.mes===curMesG);
+    form=`<div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-mg-sup" onchange="preencherMetaGrupo()">${supOpts4}</select></div>
+    <div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-mg-mes" onchange="preencherMetaGrupo()">${mOptsG}</select></div>
+    <div class="fg"><label class="flabel">Meta Volume do Grupo (R$)</label><input class="finput" id="f-mg-vol" type="number" step="1000" placeholder="ex: 2000000" value="${existing?.meta_vol||''}"></div>
+    <div class="fg"><label class="flabel">Meta Qtd. Vendas do Grupo</label><input class="finput" id="f-mg-qtd" type="number" step="1" placeholder="ex: 15" value="${existing?.meta_qtd||''}"></div>`;
+  } else if(type==='funil'){
+    title='📊 Registrar / Atualizar Semana';sub='';
+    const vOpts9=['Equipe',...vendedores()].map(v=>`<option value="${v}">${v==='Equipe'?'Toda equipe':v}</option>`).join('');
+    // Generate week options: last 12 + next 4
+    const weekOpts=[];
+    const now2=new Date();
+    const dow2=now2.getDay(); const seg2=new Date(now2);
+    seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+    for(let w=-12;w<=4;w++){
+      const d=new Date(seg2); d.setDate(seg2.getDate()+w*7);
+      const fim=new Date(d); fim.setDate(d.getDate()+5);
+      const key=d.toISOString().slice(0,10);
+      const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      weekOpts.push(`<option value="${key}"${w===0?' selected':''}>${label}</option>`);
+    }
+    form=`<div class="fg full">
+      <label class="flabel">Semana</label>
+      <select class="finput" id="f-fn-sem" onchange="loadFunilSemana()">${weekOpts.join('')}</select>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3)">Ou escolha pelo calendário:</span>
+        <input type="date" class="finput" id="f-fn-sem-date" value="${now2.toISOString().slice(0,10)}" style="max-width:160px;font-size:12px;padding:5px 8px" onchange="syncFunilDate(this.value)">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">Vendedor</label>
+      <select class="finput" id="f-fn-vend" onchange="loadFunilSemana()">${vOpts9}</select>
+    </div>
+    <div id="f-fn-atualiza-aviso" style="display:none;background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--green);margin-top:4px" class="fg full">
+      ✅ Registro existente carregado — edite os valores e salve para atualizar.
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">📝 Preencha os totais acumulados da semana até hoje:</div>
+    </div>
+    <div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-fn-anuncios" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-fn-numeros" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-fn-retornos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-fn-discadas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-fn-atendidas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-fn-agendamentos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-fn-visitas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-fn-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
+    setTimeout(()=>loadFunilSemana(),50);
+    } else if(type==='meta-funil'){
+    title='🎯 Definir Metas do Funil';sub='Configure metas gerais e por vendedor';
+    const vOpts10=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
+    // Load geral meta
+    const mg=DB.metaFunil||{};
+    const mv_inputs=''
+    +`<div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-mf-anuncios" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-mf-numeros" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-mf-retornos" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-mf-discadas" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-mf-atendidas" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-mf-agendamentos" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-mf-visitas" type="number" step="1" min="0" placeholder="0"></div>`
+    +`<div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-mf-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
+    form=`<div class="fg full" style="margin-bottom:8px">
+      <label class="flabel">Para quem é a meta?</label>
+      <select class="finput" id="f-mf-vend" onchange="loadMetaFunilVend()">${vOpts10}</select>
+    </div>
+    <div class="fgrid" style="gap:10px" id="f-mf-campos">${mv_inputs}</div>`;
+
+    } else if(type==='pres'){
     title='Registrar Presença Avulsa';sub='Marcar presença para uma data específica';
     const mOpts=Object.keys(DB.presenca).map(m=>`<option>${m}</option>`).join('');
     form=`<div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-mes">${mOpts}</select></div>
@@ -5133,9 +5669,18 @@ function openModal(type='ades'){
   document.getElementById('m-sub').textContent=sub||'';
   document.getElementById('m-form').innerHTML=form||'';
   document.getElementById('overlay').classList.add('open');
-  // Mostra botão "💼 Salvar + Minhas Comissões" só para ades e lin
+
+  // Reset save button visibility
+  const btnSave=document.getElementById('m-save');
   const btnCom=document.getElementById('m-save-com');
+  if(btnSave) btnSave.style.display='';
   if(btnCom) btnCom.style.display=(type==='ades'||type==='lin')?'':'none';
+
+  // For stepped modals hide save until last step
+  if(type==='ades'||type==='lin'){
+    if(btnSave) btnSave.style.display='none';
+    if(btnCom) btnCom.style.display='none';
+  }
 }
 
 function saveModalECom(){
@@ -5311,6 +5856,46 @@ function saveModal(){
     };
     if(editType==='contempl'&&editIdx!==null) DB.contempl[editIdx]=rec;
     else DB.contempl.push(rec);
+  } else if(modalType==='funil'){
+    const sem=g('f-fn-sem');
+    if(!sem){alert('Informe a semana.');return;}
+    const vend=g('f-fn-vend')||'Equipe';
+    const rec={sem,vend};
+    rec.anuncios=gn('f-fn-anuncios');
+    rec.numeros=gn('f-fn-numeros');
+    rec.retornos=gn('f-fn-retornos');
+    rec.discadas=gn('f-fn-discadas');
+    rec.atendidas=gn('f-fn-atendidas');
+    rec.agendamentos=gn('f-fn-agendamentos');
+    rec.visitas=gn('f-fn-visitas');
+    rec.fechamentos=gn('f-fn-fechamentos');
+    // Upsert: update existing or add new
+    const existing=DB.funil.findIndex(r=>r.sem===sem&&r.vend===vend);
+    if(existing>=0){ DB.funil[existing]=rec; toast('✓ Semana atualizada!'); }
+    else { DB.funil.push(rec); toast('✓ Semana registrada!'); }
+    setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
+  } else if(modalType==='meta-funil'){
+    if(!DB.metaFunil) DB.metaFunil={};
+    if(!DB.metaFunilVend) DB.metaFunilVend={};
+    const mfVend=document.getElementById('f-mf-vend')?.value||'Geral (equipe)';
+    const recMF={anuncios:gn('f-mf-anuncios'),numeros:gn('f-mf-numeros'),retornos:gn('f-mf-retornos'),discadas:gn('f-mf-discadas'),atendidas:gn('f-mf-atendidas'),agendamentos:gn('f-mf-agendamentos'),visitas:gn('f-mf-visitas'),fechamentos:gn('f-mf-fechamentos')};
+    if(mfVend==='Geral (equipe)'){
+      Object.assign(DB.metaFunil, recMF);
+    } else {
+      DB.metaFunilVend[mfVend]=recMF;
+    }
+    setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
+  } else if(modalType==='meta-grupo'){
+    const sup=g('f-mg-sup');
+    const mes=g('f-mg-mes');
+    if(!sup){alert('Selecione a supervisora.');return;}
+    if(!mes){alert('Selecione o mês.');return;}
+    if(!DB.metasGrupo) DB.metasGrupo=[];
+    const recG={supervisor:sup,mes,meta_vol:gn('f-mg-vol'),meta_qtd:gn('f-mg-qtd')};
+    const existingIdx=DB.metasGrupo.findIndex(m=>m.supervisor===sup&&m.mes===mes);
+    if(existingIdx>=0) DB.metasGrupo[existingIdx]=recG;
+    else DB.metasGrupo.push(recG);
+    setTimeout(()=>{if(activePage==='sup-dash')renderSupDash();},50);
   } else if(modalType==='meta'){
     const vend=g('f-meta-vend');
     const mes=g('f-meta-mes');
@@ -5339,16 +5924,24 @@ function saveModal(){
     DB.indicacoes.push({data:g('f-ind-data'),indicado_por:g('f-ind-por'),cliente:g('f-ind-cli').trim(),vendedor:g('f-ind-vend'),obs:g('f-ind-obs'),convertido:false});
   } else if(modalType==='vend'){
     if(!g('f-nome').trim()){alert('Informe o nome do vendedor.');return;}
-    DB.vendedores.push({nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl')});
+    const recV={nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl')};
+    if(modalEditIdx&&modalEditIdx.tipo==='vend'){DB.vendedores[modalEditIdx.i]=recV;modalEditIdx=null;}
+    else DB.vendedores.push(recV);
   } else if(modalType==='stat'){
     if(!g('f-snome').trim()){alert('Informe o nome do status.');return;}
-    DB.statusList.push({nome:g('f-snome').trim(),cor:g('f-scor')||'#60a5fa',desc:g('f-sdesc')});
+    const recSt={nome:g('f-snome').trim(),cor:g('f-scor')||'#60a5fa',desc:g('f-sdesc')};
+    if(modalEditIdx&&modalEditIdx.tipo==='stat'){DB.statusList[modalEditIdx.i]=recSt;modalEditIdx=null;}
+    else DB.statusList.push(recSt);
   } else if(modalType==='tab'){
     if(!g('f-tnome').trim()){alert('Informe o nome da tabela.');return;}
-    DB.tabelas.push({nome:g('f-tnome').trim(),pct:gn('f-tpct')});
+    const recT={nome:g('f-tnome').trim(),pct:gn('f-tpct')};
+    if(modalEditIdx&&modalEditIdx.tipo==='tab'){DB.tabelas[modalEditIdx.i]=recT;modalEditIdx=null;}
+    else DB.tabelas.push(recT);
   } else if(modalType==='sup'){
     if(!g('f-supnome').trim()){alert('Informe o nome do supervisor.');return;}
-    DB.supervisores.push({nome:g('f-supnome').trim(),pct_ades:gn('f-supa'),pct_lin:gn('f-supl')});
+    const recS={nome:g('f-supnome').trim(),pct_ades:gn('f-supa'),pct_lin:gn('f-supl')};
+    if(modalEditIdx&&modalEditIdx.tipo==='sup'){DB.supervisores[modalEditIdx.i]=recS;modalEditIdx=null;}
+    else DB.supervisores.push(recS);
   } else if(modalType==='week'){
     // Garante que os dias foram preenchidos automaticamente
     if(document.getElementById('f-wstart')&&(!g('f-wdias').trim())){autoFillWeekDays();}
