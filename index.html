@@ -6154,6 +6154,10 @@ function applySnap(snap){
   if(!Array.isArray(DB.minhasVendas)) DB.minhasVendas=[];
   if(!Array.isArray(DB.parcelas)) DB.parcelas=[];
   if(!Array.isArray(DB.comissoesManual)) DB.comissoesManual=[];
+  if(!Array.isArray(DB.funil)) DB.funil=[];
+  if(!DB.metaFunil||typeof DB.metaFunil!=='object') DB.metaFunil={};
+  if(!DB.metaFunilVend||typeof DB.metaFunilVend!=='object') DB.metaFunilVend={};
+  if(!Array.isArray(DB.metasGrupo)) DB.metasGrupo=[];
   if(!Array.isArray(DB.canceladas)) DB.canceladas=[];
   if(!Array.isArray(DB.acessosPortal)) DB.acessosPortal=[];
 }
