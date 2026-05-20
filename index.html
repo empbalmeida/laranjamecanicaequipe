@@ -455,6 +455,8 @@ select.finput option{background:var(--bg2);}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
 .tr-expand{cursor:pointer;transition:background .12s;}
 /* Badge novo */
+.sup-val{filter:blur(4px);transition:filter .2s;user-select:none;}
+.sup-visible .sup-val{filter:none;}
 .badge-novo{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:1px 5px;border-radius:4px;background:rgba(48,209,88,.15);color:var(--green);margin-left:5px;vertical-align:middle;font-family:'DM Mono',monospace;}
 /* Sortable headers */
 th.sortable{cursor:pointer;user-select:none;transition:color .15s;}
@@ -660,6 +662,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   <button class="mob-nav-link" onclick="nav('vendas-mensais');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Vendas Mensais
   </button>
+  <button class="mob-nav-link" onclick="nav('diario');closeMobDrawer()">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Diário da Equipe
+  </button>
   <button class="mob-nav-link" onclick="nav('funil');closeMobDrawer()">
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Funil de Vendas
   </button>
@@ -717,6 +722,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
     <div class="sidebar-sep"></div>
     <div class="sidebar-section">Vendas</div>
+    <button class="sidebar-link" id="sl-diario" onclick="nav('diario')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Diário da Equipe
+    </button>
     <button class="sidebar-link" id="sl-funil" onclick="nav('funil')">
       <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Funil de Vendas
     </button>
@@ -1004,6 +1012,99 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   </div>
 
   <!-- ADESIONADA -->
+  <!-- DIÁRIO DA EQUIPE -->
+  <div class="page" id="page-diario">
+    <div class="section-sm">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+        <div class="sh" style="margin-bottom:0">
+          <div class="sh-title">📓 Diário da Equipe</div>
+          <div class="sh-sub">Acompanhamento semanal individual e visão de liderança</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-g" onclick="gerarPDFDiario()">📄 PDF Reunião</button>
+          <button class="btn btn-g" onclick="openModal('diario-gestao')">👔 Reunião c/ Gestão</button>
+          <button class="btn btn-o" onclick="openModal('diario-reg')">+ Registrar Semana</button>
+        </div>
+      </div>
+
+      <!-- Semana + Vendedor selector -->
+      <div class="filters" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">
+        <select class="fi" id="diario-vend" onchange="renderDiario()" style="min-width:160px">
+          <option value="">Selecione o vendedor...</option>
+        </select>
+        <select class="fi" id="diario-semana" onchange="renderDiario()" style="min-width:200px">
+          <option value="">Semana atual</option>
+        </select>
+        <button class="btn btn-g" style="font-size:12px" onclick="renderDiarioComparativo()">⚖️ Comparativo equipe</button>
+      </div>
+
+      <!-- Semáforo da equipe -->
+      <div id="diario-semaforo" style="margin-bottom:16px"></div>
+
+      <!-- Métricas automáticas + semáforo individual -->
+      <div class="grid2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">📊 Métricas da Semana</div><span id="diario-metrica-label" style="font-size:11px;color:var(--text3)"></span></div>
+          <div id="diario-metricas" style="padding:14px 22px"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">💡 Sugestões Inteligentes</div></div>
+          <div id="diario-sugestoes" style="padding:14px 22px"></div>
+        </div>
+      </div>
+
+      <!-- Registro semanal atual -->
+      <div class="card" style="margin-bottom:16px" id="diario-reg-card">
+        <div class="card-hd">
+          <div class="card-title">📝 Registro da Semana</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-g" style="font-size:11px;padding:3px 10px" id="diario-edit-btn" onclick="editarDiarioAtual()">✏ Editar</button>
+          </div>
+        </div>
+        <div id="diario-reg-view" style="padding:16px 22px"></div>
+      </div>
+
+      <!-- Plano de ação + compromissos -->
+      <div class="grid2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">🎯 Plano de Ação</div></div>
+          <div id="diario-plano" style="padding:14px 22px"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">✅ Compromissos da Semana Anterior</div></div>
+          <div id="diario-compromissos" style="padding:14px 22px"></div>
+        </div>
+      </div>
+
+      <!-- Evolução pessoal -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">📈 Evolução Pessoal</div>
+          <select class="fi" id="diario-evol-campo" onchange="renderDiario()" style="font-size:11px;padding:3px 8px;min-width:140px">
+            <option value="motivacao">Motivação</option>
+            <option value="fechamentos">Fechamentos</option>
+            <option value="agendamentos">Agendamentos</option>
+            <option value="visitas">Visitas</option>
+          </select>
+        </div>
+        <div id="diario-evolucao" style="padding:16px 20px 8px"></div>
+      </div>
+
+      <!-- Padrões identificados -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">🔍 Padrões Identificados</div><span style="font-size:11px;color:var(--text3)">Baseado nos últimos registros</span></div>
+        <div id="diario-padroes" style="padding:14px 22px"></div>
+      </div>
+
+      <!-- Histórico -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">📋 Histórico de Registros</div></div>
+        <div id="diario-historico" style="padding:14px 22px"></div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- FUNIL DE VENDAS -->
   <div class="page" id="page-funil">
     <div class="section-sm">
@@ -1151,7 +1252,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 <th class="sortable" data-col="valor_liq" data-tbl="ades" onclick="sortTable('ades',this)">Líquido<span class="sort-icon">↕</span></th>
 <th>% Com.</th>
 <th class="sortable" data-col="com_rs" data-tbl="ades" onclick="sortTable('ades',this)">Com. (R$)<span class="sort-icon">↕</span></th>
-<th>👑 Supervisora</th>
+<th>👑 Supervisora <button onclick="toggleSupVisivel()" id="sup-eye-btn" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0 2px;color:inherit" title="Mostrar/ocultar">👁️</button></th>
 <th class="sortable" data-col="data_pagamento" data-tbl="ades" onclick="sortTable('ades',this)">Data Pagto.<span class="sort-icon">↕</span></th>
 <th>Status</th><th>Obs.</th><th></th></tr></thead><tbody></tbody></table></div></div>
       </div>
@@ -1183,7 +1284,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 <th>%M1</th>
 <th class="sortable" data-col="com_m1" data-tbl="lin" onclick="sortTable('lin',this)">Com.M1<span class="sort-icon">↕</span></th>
 <th>%M2</th><th>Com.M2</th><th>%M3</th><th>Com.M3</th>
-<th>👑 Supervisora</th>
+<th>👑 Supervisora <button onclick="toggleSupVisivel()" style="background:none;border:none;cursor:pointer;font-size:12px;padding:0 2px;color:inherit" title="Mostrar/ocultar">👁️</button></th>
 <th class="sortable" data-col="data_pagamento" data-tbl="lin" onclick="sortTable('lin',this)">Data Pagto.<span class="sort-icon">↕</span></th>
 <th>Status</th><th>Obs.</th><th></th></tr></thead><tbody></tbody></table></div></div>
       </div>
@@ -2326,6 +2427,8 @@ let DB = {
   ],
   funil:[],
   metaFunil:{},
+  diario:[],
+  diarioGestao:[],
   adesionada:[
     {vendedor:'Rafael',cliente:'Fátima',telefone:'',contrato:'',data_contrato:'2026-01-17',data_pagamento:'2026-01-17',tabela:'VIP 7 C/0',valor_bruto:225363.7,valor_liq:225363.7,pct_com:0.006,com_rs:1352.18,status:'Pago',obs:'PROMOVE'},
     {vendedor:'Rafael',cliente:'JOSÉ',telefone:'',contrato:'',data_contrato:'2026-01-16',data_pagamento:'2026-01-16',tabela:'VIP 7 C/0',valor_bruto:213502.45,valor_liq:213502.45,pct_com:0.006,com_rs:1281.01,status:'Pago',obs:'PROMOVE'},
@@ -2675,7 +2778,7 @@ function stats(){
 }
 
 // ═══════════════════════════════ NAVIGATE ════════════════════════════════════
-const TITLES={dashboard:'Dashboard',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
+const TITLES={dashboard:'Dashboard',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
@@ -2805,6 +2908,7 @@ function render(p){
   else if(p==='comunicacao')renderComunicacao();
   else if(p==='presenca')renderPresenca();
   else if(p==='funil')renderFunil();
+  else if(p==='diario')renderDiario();
   else if(p==='portal')renderPortal();
   else if(p==='cadastro')renderCad();
   setTimeout(()=>{
@@ -3457,6 +3561,389 @@ function loadMetaFunilVend(){
     const el=document.getElementById('f-mf-'+c);
     if(el) el.value=rec[c]||'';
   });
+}
+
+// ══════════════════════════ DIÁRIO DA EQUIPE ═════════════════════════════════
+
+function setMotivacao(n){
+  [1,2,3,4,5].forEach(i=>{
+    const btn=document.getElementById('mot-btn-'+i);
+    if(btn){btn.className='btn '+(i===n?'btn-o':'btn-g');btn.style.cssText='font-size:16px;padding:4px 10px';}
+  });
+  const inp=document.getElementById('f-di-motivacao');
+  if(inp) inp.value=n;
+}
+
+function carregarDiarioExistente(){
+  const vend=document.getElementById('f-di-vend')?.value||'';
+  const sem=document.getElementById('f-di-sem')?.value||'';
+  const aviso=document.getElementById('f-di-aviso');
+  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  if(existing){
+    const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
+    set('f-di-gargalos',existing.gargalos);
+    set('f-di-desenvolvimento',existing.desenvolvimento);
+    set('f-di-metas',existing.metas);
+    set('f-di-plano',existing.plano);
+    set('f-di-destaque',existing.destaque);
+    setMotivacao(existing.motivacao||3);
+    if(aviso) aviso.style.display='';
+  } else {
+    ['f-di-gargalos','f-di-desenvolvimento','f-di-metas','f-di-plano','f-di-destaque'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.value='';
+    });
+    setMotivacao(3);
+    if(aviso) aviso.style.display='none';
+  }
+}
+
+function editarDiarioAtual(){
+  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
+  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  openModal('diario-reg');
+  setTimeout(()=>{
+    const vs=document.getElementById('f-di-vend');if(vs)vs.value=vend;
+    const ss=document.getElementById('f-di-sem');if(ss)ss.value=sem;
+    carregarDiarioExistente();
+  },40);
+}
+
+function getSemAtual(){
+  const now=new Date();const dow=now.getDay();
+  const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
+  return seg.toISOString().slice(0,10);
+}
+
+function fmtSemLabel(sem){
+  const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+
+function renderDiario(){
+  // Populate vendedor select
+  const vSel=document.getElementById('diario-vend');
+  const vends=vendedores();
+  if(vSel){
+    const cur=vSel.value||vends[0]||'';
+    vSel.innerHTML=vends.map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+    if(!vSel.value&&vends[0]) vSel.value=vends[0];
+  }
+  const vend=vSel?.value||vends[0]||'';
+
+  // Populate semana select
+  const sSel=document.getElementById('diario-semana');
+  const allSems=[...new Set(DB.diario.filter(d=>d.vend===vend).map(d=>d.sem))].sort().reverse();
+  const semAtual=getSemAtual();
+  if(!allSems.includes(semAtual)) allSems.unshift(semAtual);
+  if(sSel){
+    const cur=sSel.value||semAtual;
+    sSel.innerHTML=allSems.map(s=>`<option value="${s}"${s===cur?' selected':''}>${fmtSemLabel(s)}${s===semAtual?' (atual)':''}</option>`).join('');
+    if(!sSel.value) sSel.value=semAtual;
+  }
+  const sem=sSel?.value||semAtual;
+
+  // ── SEMÁFORO DA EQUIPE ──────────────────────────────────────────────────
+  const semEl=document.getElementById('diario-semaforo');
+  if(semEl){
+    const chips=vends.map(v=>{
+      const reg=DB.diario.filter(d=>d.vend===v).sort((a,b)=>b.sem.localeCompare(a.sem))[0];
+      // Get funil data for current week
+      const funilRows=DB.funil.filter(r=>r.vend===v&&r.sem===semAtual);
+      const fechamentos=funilRows.reduce((s,r)=>s+(r.fechamentos||0),0);
+      const metaFech=(DB.metaFunilVend?.[v]?.fechamentos||DB.metaFunil?.fechamentos||0);
+      const pct=metaFech>0?Math.round(fechamentos/metaFech*100):null;
+      const semaforo=pct===null?'⚪':pct>=100?'🟢':pct>=70?'🟡':'🔴';
+      const mot=reg?.motivacao||0;
+      const motEmoji=mot>=4?'🔥':mot>=3?'🙂':mot>=2?'😐':'😞';
+      const isSelected=v===vend;
+      return`<div onclick="document.getElementById('diario-vend').value='${v}';renderDiario()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:${isSelected?'rgba(249,115,22,.1)':'var(--bg3)'};border:${isSelected?'1.5px solid var(--accent)':'1px solid var(--border)'};border-radius:10px;cursor:pointer;min-width:140px;transition:all .15s">
+        <div style="font-size:18px">${semaforo}</div>
+        <div>
+          <div style="font-size:12px;font-weight:600">${v}</div>
+          <div style="font-size:10px;color:var(--text3)">${motEmoji} ${mot?['','Baixa','Regular','Ok','Boa','Alta'][mot]:'—'} · ${pct!==null?pct+'% meta':'sem meta'}</div>
+        </div>
+      </div>`;
+    }).join('');
+    semEl.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+chips+'</div>';
+  }
+
+  // ── MÉTRICAS AUTOMÁTICAS ──────────────────────────────────────────────
+  const metEl=document.getElementById('diario-metricas');
+  const metLbl=document.getElementById('diario-metrica-label');
+  if(metEl){
+    if(metLbl) metLbl.textContent=vend+(sem?' · '+fmtSemLabel(sem):'');
+    const funilRows=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
+    const vendaRows=[...DB.adesionada,...DB.linear].filter(r=>r.vendedor===vend&&r.status!=='Cancelado'&&r.data_contrato?.startsWith(sem?.slice(0,7)||''));
+    const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+    const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+    const icons=['📱','✅','📅','🤝','🏆'];
+    const funilTots={};campos.forEach(c=>{funilTots[c]=funilRows.reduce((s,r)=>s+(r[c]||0),0);});
+    const metaVend=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
+    const volVendas=vendaRows.reduce((s,r)=>s+(r.valor_liq||0),0);
+    
+    let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
+    campos.forEach((c,i)=>{
+      const v=funilTots[c];const m=metaVend[c]||0;
+      const pct=m>0?Math.min(Math.round(v/m*100),100):null;
+      const cor=pct===null?'var(--text2)':pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
+      html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px">'+
+        '<div style="font-size:10px;color:var(--text3)">'+icons[i]+' '+labels[i]+'</div>'+
+        '<div style="font-size:18px;font-weight:700;color:'+cor+'">'+v+'</div>'+
+        (m>0?'<div style="font-size:9px;color:'+cor+'">'+pct+'% da meta '+m+'</div>':'')+
+      '</div>';
+    });
+    html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;grid-column:1/-1">'+
+      '<div style="font-size:10px;color:var(--text3)">💰 Volume vendas (mês)</div>'+
+      '<div style="font-size:18px;font-weight:700;color:var(--green)">'+fmtK(volVendas)+'</div>'+
+      '<div style="font-size:9px;color:var(--text3)">'+vendaRows.length+' venda(s)</div>'+
+    '</div></div>';
+    metEl.innerHTML=html;
+  }
+
+  // ── SUGESTÕES INTELIGENTES ────────────────────────────────────────────
+  const sugEl=document.getElementById('diario-sugestoes');
+  if(sugEl){
+    const sugs=[];
+    const semsVend=[...new Set(DB.funil.filter(r=>r.vend===vend).map(r=>r.sem))].sort().reverse();
+    if(semsVend.length>=2){
+      const s1=semsVend[0],s2=semsVend[1];
+      const t1={},t2={};
+      ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+        t1[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);
+        t2[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);
+      });
+      if(t2.atendidas>0&&t1.atendidas>0){
+        const tx1=t1.atendidas>0?Math.round(t1.agendamentos/t1.atendidas*100):0;
+        const tx2=t2.atendidas>0?Math.round(t2.agendamentos/t2.atendidas*100):0;
+        if(tx1<tx2-15) sugs.push({icon:'⚠️',cor:'var(--yellow)',txt:'Conversão atendida→agendamento caiu de '+tx2+'% para '+tx1+'% — trabalhar a abordagem'});
+      }
+      if(t2.visitas>0&&t1.visitas>0){
+        const tx1=t1.visitas>0?Math.round(t1.fechamentos/t1.visitas*100):0;
+        const tx2=t2.visitas>0?Math.round(t2.fechamentos/t2.visitas*100):0;
+        if(tx1<tx2-10) sugs.push({icon:'🚨',cor:'var(--red)',txt:'Conversão visita→fechamento caiu — foco na apresentação e contorno de objeções'});
+        else if(tx1>tx2+10) sugs.push({icon:'🌟',cor:'var(--green)',txt:'Conversão visita→fechamento subiu '+tx1+'% — manter a estratégia!'});
+      }
+      if(t1.discadas<t2.discadas*0.8) sugs.push({icon:'📉',cor:'var(--accent)',txt:'Volume de discadas caiu vs semana anterior — verificar prospecção'});
+      else if(t1.discadas>t2.discadas*1.2) sugs.push({icon:'📈',cor:'var(--green)',txt:'Volume de discadas cresceu — ótima prospecção!'});
+    }
+    // Check repeated gargalos
+    const regsVend=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,4);
+    const gargaloPalavras={};
+    regsVend.forEach(r=>{
+      (r.gargalos||'').toLowerCase().split(/\s+/).filter(w=>w.length>5).forEach(w=>{gargaloPalavras[w]=(gargaloPalavras[w]||0)+1;});
+    });
+    const recorrentes=Object.entries(gargaloPalavras).filter(([w,n])=>n>=2).map(([w])=>w);
+    if(recorrentes.length) sugs.push({icon:'🔄',cor:'var(--purple)',txt:'Gargalo recorrente detectado: "'+recorrentes.slice(0,2).join('", "')+'" aparece em múltiplos registros'});
+    if(!sugs.length) sugs.push({icon:'✅',cor:'var(--green)',txt:'Nenhum alerta identificado esta semana. Continue monitorando!'});
+    sugEl.innerHTML=sugs.map(s=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:16px;flex-shrink:0">'+s.icon+'</span>'+
+      '<span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span>'+
+    '</div>').join('');
+  }
+
+  // ── REGISTRO ATUAL ────────────────────────────────────────────────────
+  const regView=document.getElementById('diario-reg-view');
+  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  if(regView){
+    if(!existing){
+      regView.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum registro para esta semana. <button class="btn btn-o" style="font-size:12px;margin-left:8px" onclick="editarDiarioAtual()">+ Registrar agora</button></div>';
+    } else {
+      const motEmojis=['','😞','😐','🙂','😊','🔥'];
+      const motLabels=['','Baixa','Regular','Ok','Boa','Alta'];
+      const mot=existing.motivacao||3;
+      regView.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+        ['gargalos|🚧 Gargalos','desenvolvimento|📈 Desenvolvimento','metas|🎯 Próximas metas','destaque|🌟 Destaque'].map(f=>{
+          const [k,l]=f.split('|');
+          return existing[k]?'<div style="grid-column:'+(k==='gargalos'||k==='desenvolvimento'?'span 1':'span 1')+'">'+
+            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+l+'</div>'+
+            '<div style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap">'+existing[k]+'</div>'+
+          '</div>':'';
+        }).join('')+
+      '</div>'+
+      '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">'+
+        '<span style="font-size:20px">'+motEmojis[mot]+'</span>'+
+        '<span style="font-size:12px;color:var(--text2)">Motivação: <strong>'+motLabels[mot]+'</strong></span>'+
+      '</div>';
+    }
+  }
+
+  // ── PLANO DE AÇÃO + COMPROMISSOS ──────────────────────────────────────
+  const planoEl=document.getElementById('diario-plano');
+  if(planoEl){
+    if(existing?.plano){
+      planoEl.innerHTML='<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+existing.plano+'</div>';
+    } else {
+      planoEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem plano registrado para esta semana.</div>';
+    }
+  }
+  const compEl=document.getElementById('diario-compromissos');
+  if(compEl){
+    // Get metas from previous week
+    const semAnterior=allSems[allSems.indexOf(sem)+1]||null;
+    const regAnt=semAnterior?DB.diario.find(d=>d.vend===vend&&d.sem===semAnterior):null;
+    if(regAnt?.metas){
+      compEl.innerHTML='<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Combinado na semana de '+fmtSemLabel(semAnterior)+':</div>'+
+        '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+regAnt.metas+'</div>';
+    } else {
+      compEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem compromissos da semana anterior.</div>';
+    }
+  }
+
+  // ── EVOLUÇÃO PESSOAL ──────────────────────────────────────────────────
+  const evolEl=document.getElementById('diario-evolucao');
+  const evolCampo=document.getElementById('diario-evol-campo')?.value||'motivacao';
+  if(evolEl){
+    const regsVend2=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>a.sem.localeCompare(b.sem)).slice(-10);
+    if(regsVend2.length<2){evolEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para ver a evolução.</div>';return;}
+    const vals=regsVend2.map(r=>{
+      let v=0;
+      if(evolCampo==='motivacao') v=r.motivacao||0;
+      else{const fr=DB.funil.filter(f=>f.vend===vend&&f.sem===r.sem);v=fr.reduce((s,f)=>s+(f[evolCampo]||0),0);}
+      const d=new Date(r.sem+'T12:00:00');
+      return{label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v};
+    });
+    const mx=evolCampo==='motivacao'?5:Math.max(...vals.map(v=>v.v),1);
+    const h=80,bW=44,gap=8,padL=8;const svgW=padL*2+vals.length*(bW+gap);
+    const metaLine=evolCampo==='motivacao'?null:DB.metaFunilVend?.[vend]?.[evolCampo]||DB.metaFunil?.[evolCampo]||0;
+    let svg='<svg viewBox="0 0 '+svgW+' '+(h+28)+'" style="width:100%;height:'+(h+28)+'px">';
+    if(metaLine&&metaLine>0){const my=Math.round((1-metaLine/mx)*h);svg+='<line x1="0" y1="'+my+'" x2="'+svgW+'" y2="'+my+'" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4,3" opacity=".6"/>';}
+    svg+=vals.map((d,i)=>{
+      const bh=Math.max(Math.round((d.v/mx)*h),d.v>0?4:0);
+      const x=padL+i*(bW+gap);const isCur=i===vals.length-1;
+      const cor=isCur?'var(--accent)':'var(--purple)';
+      return'<rect x="'+x+'" y="'+(h-bh)+'" width="'+bW+'" height="'+bh+'" rx="5" fill="'+cor+'" opacity="'+(isCur?'1':'.7')+'"/>'+
+        (d.v>0?'<text x="'+(x+bW/2)+'" y="'+(h-bh-5)+'" text-anchor="middle" font-size="10" fill="var(--text)" font-family="DM Mono">'+d.v+'</text>':'')+
+        '<text x="'+(x+bW/2)+'" y="'+(h+16)+'" text-anchor="middle" font-size="9" fill="'+(isCur?'var(--accent)':'var(--text3)')+'" font-family="DM Mono">'+d.label+'</text>';
+    }).join('');
+    svg+='</svg>';
+    evolEl.innerHTML='<div style="overflow-x:auto">'+svg+'</div>';
+  }
+
+  // ── PADRÕES ────────────────────────────────────────────────────────────
+  const padEl=document.getElementById('diario-padroes');
+  if(padEl){
+    const regsP=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,6);
+    if(regsP.length<2){padEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para identificar padrões.</div>';}
+    else{
+      const padroes=[];
+      // Motivação trend
+      const mots=regsP.map(r=>r.motivacao||3);
+      const avgMot=mots.reduce((a,b)=>a+b,0)/mots.length;
+      if(avgMot<3) padroes.push({icon:'😟',txt:'Motivação consistentemente baixa nas últimas semanas — atenção'});
+      else if(avgMot>=4) padroes.push({icon:'🔥',txt:'Alta energia nas últimas semanas — reconhecer e manter'});
+      // Gargalo recurrence
+      const gargWords={};
+      regsP.forEach(r=>(r.gargalos||'').split(/[\s,;.]+/).filter(w=>w.length>5).forEach(w=>{gargWords[w]=(gargWords[w]||0)+1;}));
+      const rep=Object.entries(gargWords).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]);
+      if(rep.length) padroes.push({icon:'🔄',txt:'Gargalo recorrente: "'+rep[0][0]+'" mencionado em '+rep[0][1]+' semanas — priorizar no desenvolvimento'});
+      // Funil trend
+      const funilVend=DB.funil.filter(r=>r.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,4);
+      if(funilVend.length>=2){
+        const avg1=funilVend.slice(0,2).reduce((s,r)=>s+(r.fechamentos||0),0)/2;
+        const avg2=funilVend.slice(2).reduce((s,r)=>s+(r.fechamentos||0),0)/Math.max(funilVend.slice(2).length,1);
+        if(avg1>avg2*1.2) padroes.push({icon:'📈',txt:'Fechamentos em crescimento nas últimas semanas'});
+        else if(avg1<avg2*0.8) padroes.push({icon:'📉',txt:'Fechamentos em queda — revisar estratégia de conversão'});
+      }
+      if(!padroes.length) padroes.push({icon:'✅',txt:'Nenhum padrão negativo identificado. Desempenho consistente.'});
+      padEl.innerHTML=padroes.map(p=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+        '<span style="font-size:18px">'+p.icon+'</span>'+
+        '<span style="font-size:13px;color:var(--text);line-height:1.6">'+p.txt+'</span></div>').join('');
+    }
+  }
+
+  // ── HISTÓRICO ────────────────────────────────────────────────────────
+  const histEl=document.getElementById('diario-historico');
+  if(histEl){
+    const regsH=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem));
+    if(!regsH.length){histEl.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum registro ainda.</div>';return;}
+    const motEmojis=['','😞','😐','🙂','😊','🔥'];
+    histEl.innerHTML=regsH.map(r=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
+        '<div style="font-size:12px;font-weight:600;color:var(--accent)">📅 '+fmtSemLabel(r.sem)+'</div>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span style="font-size:14px">'+motEmojis[r.motivacao||3]+'</span>'+
+          '<button class="btn btn-g" style="font-size:10px;padding:2px 7px" data-vend="'+r.vend+'" data-sem="'+r.sem+'" onclick="editarDiarioBtn(this)">✏</button>'+
+        '</div>'+
+      '</div>'+
+      (r.gargalos?'<div style="font-size:11px;color:var(--text3)"><strong>Gargalo:</strong> '+r.gargalos.slice(0,80)+(r.gargalos.length>80?'...':'')+'</div>':'')+
+      (r.destaque?'<div style="font-size:11px;color:var(--green)">⭐ '+r.destaque+'</div>':'')+
+    '</div>').join('');
+  }
+}
+
+function editarDiarioBtn(btn){
+  editarDiarioSem(btn.dataset.vend, btn.dataset.sem);
+}
+
+function editarDiarioSem(vend, sem){
+  openModal('diario-reg');
+  setTimeout(()=>{
+    const vs=document.getElementById('f-di-vend');if(vs)vs.value=vend;
+    const ss=document.getElementById('f-di-sem');if(ss){for(const o of ss.options){if(o.value===sem){ss.value=sem;break;}}}
+    carregarDiarioExistente();
+  },40);
+}
+
+function renderDiarioComparativo(){
+  // Open a simple comparativo view
+  const vends=vendedores();
+  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  const motEmojis=['','😞','😐','🙂','😊','🔥'];
+  const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const labels=['Disc','Atend','Agend','Visita','Fech'];
+  const rows=vends.map(v=>{
+    const reg=DB.diario.find(d=>d.vend===v&&d.sem===sem);
+    const fr=DB.funil.filter(r=>r.vend===v&&r.sem===sem);
+    const tots={};campos.forEach(c=>{tots[c]=fr.reduce((s,r)=>s+(r[c]||0),0);});
+    const metaFech=DB.metaFunilVend?.[v]?.fechamentos||DB.metaFunil?.fechamentos||0;
+    const pct=metaFech>0?Math.round(tots.fechamentos/metaFech*100):null;
+    const semaforo=pct===null?'⚪':pct>=100?'🟢':pct>=70?'🟡':'🔴';
+    return{v,reg,tots,pct,semaforo};
+  });
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comparativo '+fmtSemLabel(sem)+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}h1{color:#f97316;margin-bottom:4px}p{color:#6b7280;font-size:13px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#f97316;color:#fff;padding:10px 14px;text-align:center}td{padding:10px 14px;border-bottom:1px solid #f3f4f6;text-align:center}td:first-child{text-align:left;font-weight:600}tr:nth-child(even) td{background:#fafafa}@media print{th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+
+    '<h1>📊 Comparativo da Equipe</h1><p>'+fmtSemLabel(sem)+'</p>'+
+    '<table><thead><tr><th>Vendedor</th><th>Status</th><th>Motivação</th>'+labels.map(l=>'<th>'+l+'</th>').join('')+'<th>Meta Fech.</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td>'+r.v+'</td><td style="font-size:18px">'+r.semaforo+'</td><td style="font-size:16px">'+motEmojis[r.reg?.motivacao||0]+'</td>'+campos.map(c=>'<td>'+r.tots[c]+'</td>').join('')+'<td style="color:'+(r.pct===null?'#6b7280':r.pct>=100?'#16a34a':r.pct>=70?'#ca8a04':'#dc2626')+';font-weight:700">'+(r.pct!==null?r.pct+'%':'—')+'</td></tr>').join('')+
+    '</tbody></table></body></html>';
+  const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}
+  w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
+}
+
+function gerarPDFDiario(){
+  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
+  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  const reg=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  const fr=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
+  const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+  const tots={};campos.forEach(c=>{tots[c]=fr.reduce((s,r)=>s+(r[c]||0),0);});
+  const motEmojis=['','😞','😐','🙂','😊','🔥'];
+  const motLabels=['','Baixa','Regular','Ok','Boa','Alta'];
+  const mot=reg?.motivacao||0;
+  const dataHoje=new Date().toLocaleDateString('pt-BR');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Diário '+vend+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:28px;color:#1a1a1a}'+
+    '.hdr{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;padding:22px 28px;border-radius:10px;margin-bottom:20px}'+
+    '.hdr h1{font-size:20px;margin-bottom:4px}.hdr p{font-size:12px;opacity:.85}'+
+    '.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}'+
+    '.kpi{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center}'+
+    '.kl{font-size:9px;text-transform:uppercase;color:#6b7280}.kv{font-size:20px;font-weight:800;color:#f97316}'+
+    '.sec{margin-bottom:18px}.sec h2{font-size:13px;font-weight:700;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:4px;margin-bottom:10px}'+
+    '.box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap}'+
+    '.footer{margin-top:20px;font-size:10px;color:#9ca3af;text-align:center;padding-top:12px;border-top:1px solid #e5e7eb}'+
+    '@media print{.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+
+    '<div class="hdr"><h1>📓 Diário — '+vend+'</h1><p>Semana de '+fmtSemLabel(sem)+' · Gerado em '+dataHoje+'</p></div>'+
+    '<div class="grid">'+campos.map((c,i)=>'<div class="kpi"><div class="kl">'+labels[i]+'</div><div class="kv">'+tots[c]+'</div></div>').join('')+'</div>'+
+    (mot?'<div class="sec"><h2>Motivação / Energia</h2><div class="box">'+motEmojis[mot]+' '+motLabels[mot]+'</div></div>':'')+
+    (reg?.gargalos?'<div class="sec"><h2>🚧 Gargalos Identificados</h2><div class="box">'+reg.gargalos+'</div></div>':'')+
+    (reg?.desenvolvimento?'<div class="sec"><h2>📈 Desenvolvimento Pessoal</h2><div class="box">'+reg.desenvolvimento+'</div></div>':'')+
+    (reg?.metas?'<div class="sec"><h2>🎯 Metas Próxima Semana</h2><div class="box">'+reg.metas+'</div></div>':'')+
+    (reg?.plano?'<div class="sec"><h2>✅ Plano de Ação</h2><div class="box">'+reg.plano+'</div></div>':'')+
+    (reg?.destaque?'<div class="sec"><h2>🌟 Destaque da Semana</h2><div class="box">'+reg.destaque+'</div></div>':'')+
+    '<div class="footer">Laranja Mecânica 🍊 · '+dataHoje+'</div></body></html>';
+  const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}
+  w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
 }
 
 function renderFunil(){
@@ -4381,7 +4868,7 @@ function renderAdes(data){
     const hoje0=new Date().toISOString().slice(0,10);
     const ontem=new Date(Date.now()-864e5).toISOString().slice(0,10);
     const isNovo=r.data_contrato===hoje0||r.data_contrato===ontem;
-    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.12);color:var(--purple);white-space:nowrap">${r.supervisor} · ${fmt(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
+    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.15);color:var(--purple);border:1px solid rgba(191,90,242,.35);font-weight:600;white-space:nowrap">${r.supervisor} · ${fmt(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
     return`<tr class="tr-expand" id="tr-${uid}" onclick="toggleRowDetail('${uid}',event)">
       <td class="mono">${fmtD(r.data_contrato)}</td>
       <td>${r.vendedor}</td><td style="font-weight:500">${r.cliente}${isNovo?'<span class="badge-novo">Novo</span>':''}</td>
@@ -4419,7 +4906,7 @@ function renderAdes(data){
           <div class="detail-item"><span class="detail-label">Data Contrato</span><span class="detail-val mono">${fmtD(r.data_contrato)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Pagamento</span><span class="detail-val mono">${fmtD(r.data_pagamento)}</span></div>
           <div class="detail-item"><span class="detail-label">Status</span><span class="detail-val">${r.status||'—'}</span></div>
-          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
+          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
           ${r.obs?`<div class="detail-item" style="grid-column:1/-1"><span class="detail-label">Obs.</span><span class="detail-val" style="color:var(--text2)">${r.obs}</span></div>`:''}
         </div>
         <div class="detail-actions">
@@ -4459,7 +4946,7 @@ function renderLin(data){
     const hoje0=new Date().toISOString().slice(0,10);
     const ontem=new Date(Date.now()-864e5).toISOString().slice(0,10);
     const isNovo=r.data_contrato===hoje0||r.data_contrato===ontem;
-    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.12);color:var(--purple);white-space:nowrap">${r.supervisor} · ${fmt(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
+    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.15);color:var(--purple);border:1px solid rgba(191,90,242,.35);font-weight:600;white-space:nowrap">${r.supervisor} · ${fmt(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
     return`<tr class="tr-expand" id="tr-${uid}" onclick="toggleRowDetail('${uid}',event)">
       <td class="mono">${fmtD(r.data_contrato)}</td>
       <td>${r.vendedor}</td><td style="font-weight:500">${r.cliente}${isNovo?'<span class="badge-novo">Novo</span>':''}</td>
@@ -4497,7 +4984,7 @@ function renderLin(data){
           <div class="detail-item"><span class="detail-label">Com. M3</span><span class="detail-val" style="color:var(--accent)">${fmtP(r.pct_m3)} = ${fmt(r.com_m3)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Contrato</span><span class="detail-val mono">${fmtD(r.data_contrato)}</span></div>
           <div class="detail-item"><span class="detail-label">Status</span><span class="detail-val">${r.status||'—'}</span></div>
-          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
+          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
           ${r.obs?`<div class="detail-item" style="grid-column:1/-1"><span class="detail-label">Obs.</span><span class="detail-val" style="color:var(--text2)">${r.obs}</span></div>`:''}
         </div>
         <div class="detail-actions">
@@ -5514,6 +6001,7 @@ function openModal(type='ades'){
         <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-family:'DM Mono',monospace">👑 Supervisora (opcional)</div>
         <div class="fgrid" style="gap:10px">
           <div class="fg"><label class="flabel">Supervisor</label><select class="finput" id="f-sup-nome"><option value="">Nenhum</option>${supOpts}</select></div>
+          <div class="fg"><label class="flabel">Tabela Supervisora</label><select class="finput" id="f-sup-tab" onchange="autoSupPct('ades')"><option value="">Selecione a tabela…</option>${tOpts}</select></div>
           <div class="fg"><label class="flabel">% s/ Líquido</label><input class="finput" id="f-sup-pct" type="number" step="0.0001" placeholder="ex: 0.001" oninput="calcSupAdes()"></div>
           <div class="fg"><label class="flabel">Comissão Sup. (R$)</label><input class="finput" id="f-sup-val" type="number" step="0.01" style="color:var(--purple)"></div>
           <div class="fg"><label class="flabel">Mês Referência</label><input class="finput" id="f-sup-mes" placeholder="ex: abr/2026"></div>
@@ -5577,6 +6065,7 @@ function openModal(type='ades'){
         <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-family:'DM Mono',monospace">👑 Supervisora (opcional)</div>
         <div class="fgrid" style="gap:10px">
           <div class="fg"><label class="flabel">Supervisor</label><select class="finput" id="f-sup-nome"><option value="">Nenhum</option>${supOpts}</select></div>
+          <div class="fg"><label class="flabel">Tabela Supervisora</label><select class="finput" id="f-sup-tab" onchange="autoSupPct('lin')"><option value="">Selecione a tabela…</option>${tOpts}</select></div>
           <div class="fg"><label class="flabel">% s/ Líquido</label><input class="finput" id="f-sup-pct" type="number" step="0.0001" placeholder="ex: 0.001" oninput="calcSupLin()"></div>
           <div class="fg"><label class="flabel">Comissão Sup. (R$)</label><input class="finput" id="f-sup-val" type="number" step="0.01" style="color:var(--purple)"></div>
           <div class="fg"><label class="flabel">Mês Referência</label><input class="finput" id="f-sup-mes" placeholder="ex: abr/2026"></div>
@@ -5859,6 +6348,39 @@ function openModal(type='ades'){
       <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Use {nome}, {grupo}, {valor}, {data} como variáveis</div>
       <textarea class="finput" id="f-tmpl-texto" rows="5" placeholder="Olá {nome}! Passando para lembrar..." style="resize:vertical;font-family:inherit"></textarea>
     </div>`;
+  } else if(type==='diario-reg'){
+    title='📓 Registrar Semana';sub='Acompanhamento individual do vendedor';
+    const vOpts11=vendedores().map(v=>`<option value="${v}">${v}</option>`).join('');
+    const now=new Date();
+    const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
+    const semKey=seg.toISOString().slice(0,10);
+    // Week options
+    const weekOpts2=[];
+    for(let w=-8;w<=2;w++){const d=new Date(seg);d.setDate(seg.getDate()+w*7);const fim=new Date(d);fim.setDate(d.getDate()+5);const key=d.toISOString().slice(0,10);const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});weekOpts2.push(`<option value="${key}"${key===semKey?' selected':''}>${label}</option>`);}
+    form=`<div class="fg"><label class="flabel">Vendedor</label><select class="finput" id="f-di-vend" onchange="carregarDiarioExistente()">${vOpts11}</select></div>
+    <div class="fg"><label class="flabel">Semana</label><select class="finput" id="f-di-sem" onchange="carregarDiarioExistente()">${weekOpts2.join('')}</select></div>
+    <div class="fg"><label class="flabel">Motivação / Energia</label>
+      <div style="display:flex;gap:8px;margin-top:6px" id="f-di-mot-btns">
+        ${[1,2,3,4,5].map(n=>'<button type="button" onclick="setMotivacao('+n+')" id="mot-btn-'+n+'" class="btn btn-g" style="font-size:16px;padding:4px 10px">'+['😞','😐','🙂','😊','🔥'][n-1]+'</button>').join('')}
+      </div>
+      <input type="hidden" id="f-di-motivacao" value="3">
+    </div>
+    <div class="fg full"><label class="flabel">🚧 Gargalos identificados</label><textarea class="finput" id="f-di-gargalos" rows="3" placeholder="Onde o vendedor está travando esta semana..." style="resize:vertical;font-family:inherit"></textarea></div>
+    <div class="fg full"><label class="flabel">📈 Desenvolvimento pessoal</label><textarea class="finput" id="f-di-desenvolvimento" rows="3" placeholder="Pontos trabalhados, conquistas, comportamentos observados..." style="resize:vertical;font-family:inherit"></textarea></div>
+    <div class="fg full"><label class="flabel">🎯 Metas para a próxima semana</label><textarea class="finput" id="f-di-metas" rows="2" placeholder="O que foi combinado como foco..." style="resize:vertical;font-family:inherit"></textarea></div>
+    <div class="fg full"><label class="flabel">✅ Plano de ação (tarefas com prazo)</label><textarea class="finput" id="f-di-plano" rows="3" placeholder="Ex: Rafael vai fazer 10 ligações extras até sexta..." style="resize:vertical;font-family:inherit"></textarea></div>
+    <div class="fg full"><label class="flabel">🌟 Destaque da semana</label><input class="finput" id="f-di-destaque" placeholder="Melhor momento ou conquista..."></div>
+    <div id="f-di-aviso" style="display:none;background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--green)" class="fg full">✅ Registro existente carregado — edite e salve para atualizar.</div>`;
+    setTimeout(()=>{setMotivacao(3);},30);
+  } else if(type==='diario-gestao'){
+    title='👔 Reunião com a Gestão';sub='Registro do que foi discutido com a liderança';
+    const now2=new Date();
+    form=`<div class="fg"><label class="flabel">Data da Reunião</label><input class="finput" id="f-dg-data" type="date" value="${now2.toISOString().slice(0,10)}"></div>
+    <div class="fg full"><label class="flabel">🌟 Destaque da equipe</label><input class="finput" id="f-dg-destaque" placeholder="Melhor resultado da semana..."></div>
+    <div class="fg full"><label class="flabel">⚠️ Maior desafio</label><input class="finput" id="f-dg-desafio" placeholder="Principal dificuldade da equipe..."></div>
+    <div class="fg full"><label class="flabel">📋 Pontos discutidos</label><textarea class="finput" id="f-dg-pontos" rows="4" placeholder="O que foi tratado na reunião..." style="resize:vertical;font-family:inherit"></textarea></div>
+    <div class="fg full"><label class="flabel">✅ Decisões tomadas</label><textarea class="finput" id="f-dg-decisoes" rows="3" placeholder="O que foi decidido e quem é responsável..." style="resize:vertical;font-family:inherit"></textarea></div>
+    <div class="fg full"><label class="flabel">🎯 Próximos passos</label><textarea class="finput" id="f-dg-proximos" rows="2" placeholder="Ações para a semana..." style="resize:vertical;font-family:inherit"></textarea></div>`;
   } else if(type==='pres'){
     title='Registrar Presença Avulsa';sub='Marcar presença para uma data específica';
     const mOpts=Object.keys(DB.presenca).map(m=>`<option>${m}</option>`).join('');
@@ -5932,6 +6454,18 @@ function autoPct(){
   if(t&&document.getElementById('f-pct'))document.getElementById('f-pct').value=t.pct;
   calcSupAdes();
 }
+function autoSupPct(tipo){
+  const tabSel=document.getElementById('f-sup-tab');
+  const pctEl=document.getElementById('f-sup-pct');
+  if(!tabSel||!pctEl) return;
+  const val=parseFloat(tabSel.value)||0;
+  if(val>0){
+    pctEl.value=val;
+    if(tipo==='ades') calcSupAdes();
+    else calcSupLin();
+  }
+}
+
 function calcSupAdes(){
   const liq=parseFloat(document.getElementById('f-liq')?.value)||0;
   const pct=parseFloat(document.getElementById('f-sup-pct')?.value)||0;
@@ -6089,6 +6623,22 @@ function saveModal(){
       DB.metaFunilVend[mfVend]=recMF;
     }
     setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
+  } else if(modalType==='diario-reg'){
+    const vend=g('f-di-vend');const sem=g('f-di-sem');
+    if(!vend){alert('Selecione o vendedor.');return;}
+    if(!sem){alert('Selecione a semana.');return;}
+    const rec={vend,sem,motivacao:parseInt(document.getElementById('f-di-motivacao')?.value||'3'),gargalos:g('f-di-gargalos'),desenvolvimento:g('f-di-desenvolvimento'),metas:g('f-di-metas'),plano:g('f-di-plano'),destaque:g('f-di-destaque'),ts:Date.now()};
+    if(!DB.diario) DB.diario=[];
+    const idx=DB.diario.findIndex(d=>d.vend===vend&&d.sem===sem);
+    if(idx>=0){DB.diario[idx]=rec;toast('✓ Registro atualizado!');}
+    else{DB.diario.push(rec);toast('✓ Semana registrada!');}
+    setTimeout(()=>{if(activePage==='diario')renderDiario();},50);
+  } else if(modalType==='diario-gestao'){
+    const rec={data:g('f-dg-data'),destaque:g('f-dg-destaque'),desafio:g('f-dg-desafio'),pontos:g('f-dg-pontos'),decisoes:g('f-dg-decisoes'),proximos:g('f-dg-proximos'),ts:Date.now()};
+    if(!DB.diarioGestao) DB.diarioGestao=[];
+    DB.diarioGestao.push(rec);
+    toast('✓ Reunião registrada!');
+    setTimeout(()=>{if(activePage==='diario')renderDiario();},50);
   } else if(modalType==='template-msg'){
     const nome=(g('f-tmpl-nome')||'').trim();
     const texto=(document.getElementById('f-tmpl-texto')?.value||'').trim();
@@ -6345,6 +6895,8 @@ function buildSnap(){
     indicacoes: DB.indicacoes||[],
     presenca: DB.presenca,
     funil: DB.funil||[],
+    diario: DB.diario||[],
+    diarioGestao: DB.diarioGestao||[],
     metaFunil: DB.metaFunil||{},
     msgTemplates: DB.msgTemplates||[],
     metaFunilVend: DB.metaFunilVend||{},
@@ -6360,6 +6912,8 @@ function applySnap(snap){
   keys.forEach(k=>{ if(snap[k]!=null) DB[k]=snap[k]; });
   // Merge new fields — preserve local data if Supabase snap is empty/missing
   if(snap.msgTemplates&&Array.isArray(snap.msgTemplates)) DB.msgTemplates=snap.msgTemplates;
+  if(snap.diario&&Array.isArray(snap.diario)) DB.diario=snap.diario;
+  if(snap.diarioGestao&&Array.isArray(snap.diarioGestao)) DB.diarioGestao=snap.diarioGestao;
   ['funil','metasGrupo'].forEach(k=>{
     if(snap[k]!=null&&Array.isArray(snap[k])&&snap[k].length>0) DB[k]=snap[k];
     else if(!Array.isArray(DB[k])||DB[k].length===0) DB[k]=snap[k]||[];
@@ -8464,6 +9018,21 @@ document.addEventListener('click', e=>{
     document.querySelectorAll('.nav-group.open').forEach(g=>g.classList.remove('open'));
   }
 });
+
+let _supVisivel=false;
+function toggleSupVisivel(){
+  _supVisivel=!_supVisivel;
+  const btn=document.getElementById('sup-eye-btn');
+  if(btn) btn.textContent=_supVisivel?'🙈':'👁️';
+  // Toggle class on table wrappers
+  document.querySelectorAll('.tbl-wrap').forEach(t=>{
+    _supVisivel?t.classList.add('sup-visible'):t.classList.remove('sup-visible');
+  });
+  // Also in expanded row panels
+  document.querySelectorAll('.detail-panel').forEach(t=>{
+    _supVisivel?t.classList.add('sup-visible'):t.classList.remove('sup-visible');
+  });
+}
 
 function toggleTheme(){
   const html=document.documentElement;
