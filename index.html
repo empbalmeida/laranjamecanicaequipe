@@ -3837,7 +3837,7 @@ function renderDiario(){
       return{label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v};
     });
     const mx=evolCampo==='motivacao'?5:Math.max(...vals.map(v=>v.v),1);
-    const h=80,bW=44,gap=8,padL=8;const svgW=padL*2+vals.length*(bW+gap);
+    const h=90,bW=44,gap=8,padL=8;const svgW=padL*2+vals.length*(bW+gap);
     const metaLine=evolCampo==='motivacao'?null:DB.metaFunilVend?.[vend]?.[evolCampo]||DB.metaFunil?.[evolCampo]||0;
     let svg='<svg viewBox="0 0 '+svgW+' '+(h+28)+'" style="width:100%;height:'+(h+28)+'px">';
     if(metaLine&&metaLine>0){const my=Math.round((1-metaLine/mx)*h);svg+='<line x1="0" y1="'+my+'" x2="'+svgW+'" y2="'+my+'" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4,3" opacity=".6"/>';}
@@ -4148,14 +4148,22 @@ function renderFunil(){
     if(!hasAny){metaEl.innerHTML='<div style="font-size:12px;color:var(--text3)">Clique em <strong>🎯 Metas</strong> para configurar.</div>';if(projEl)projEl.textContent='';}
     else{
       // Multiplier based on dia/semana toggle and number of weeks in filter
-      const mTipo2=_metaTipoAtual||'dia';
+      const mTipo2=_metaTipoAtual||'semana';
       const semsNoFiltro2=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
-      const mult=mTipo2==='dia'?semsNoFiltro2.length*5:semsNoFiltro2.length||1;
+      const numSems=semsNoFiltro2.length||1;
+      // meta por semana × número de semanas no filtro; ou meta por dia × dias úteis
       const getMetaVal=(metaObj,c)=>{
         if(!metaObj) return 0;
-        const tab=metaObj[mTipo2];
-        if(tab&&tab[c]) return tab[c]*mult;
-        return (metaObj[c]||0)*(mTipo2==='semana'?semsNoFiltro2.length||1:mult);
+        // Try new format {dia:{}, semana:{}} first, then flat
+        const tabSem=metaObj['semana'];
+        const tabDia=metaObj['dia'];
+        if(mTipo2==='semana'){
+          const base=tabSem?.[c]||metaObj[c]||0;
+          return base*numSems;
+        } else {
+          const base=tabDia?.[c]||metaObj[c]||0;
+          return base*(numSems*5);
+        }
       };
       const renderBars=(meta,tots2,corBase,label)=>{
         let h='';
@@ -4271,14 +4279,26 @@ function renderFunil(){
       if(!hasData) delete byWeek[sem];
     });
     if(!Object.keys(byWeek).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';return;}
-    tbody.innerHTML=Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([sem,recs])=>{
+    tbody.innerHTML=Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([sem,recs],wi)=>{
       const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
       const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
       const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
       const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
       const wTots={};CAMPOS.forEach(c=>{wTots[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});
-      let h='<tr style="background:var(--bg3)"><td colspan="2" style="padding:8px 14px;font-weight:700;font-size:12px;color:var(--accent)">📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')+'<td></td></tr>';
-      h+=recs.map(r=>{const idx=DB.funil.indexOf(r);return'<tr><td></td><td style="font-size:12px;padding-left:18px;color:var(--text2)">'+r.vend+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center">'+(r[c]||0)+'</td>').join('')+'<td style="white-space:nowrap"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';}).join('');
+      const grpId='funil-grp-'+wi;
+      let h='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(\''+grpId+'\')">';
+      h+='<td colspan="2" style="padding:8px 14px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+grpId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>';
+      h+=CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')+'<td></td></tr>';
+      // Detail rows — shown only for current week by default
+      h+='<tr id="'+grpId+'"'+(isNow?'':' style="display:none"')+'>'
+       +'<td colspan="11" style="padding:0"><table style="width:100%">'
+       +recs.map(r=>{const idx=DB.funil.indexOf(r);
+        return'<tr><td style="width:60px"></td><td style="font-size:12px;padding:6px 14px;color:var(--text2)">'+r.vend+'</td>'
+          +CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')
+          +'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> '
+          +'<button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';
+       }).join('')
+       +'</table></td></tr>';
       return h;
     }).join('');
   }
@@ -4295,6 +4315,15 @@ function renderFunilSemana(){
   if(chosen&&semSel) semSel.value=chosen;
 }
 
+
+function toggleFunilGrp(id){
+  const tbody=document.getElementById(id);
+  const ico=document.getElementById(id+'-ico');
+  if(!tbody) return;
+  const hidden=tbody.style.display==='none';
+  tbody.style.display=hidden?'':'none';
+  if(ico) ico.textContent=hidden?'▾':'▸';
+}
 
 function delFunil(i){
   if(!confirm('Excluir este registro?')) return;
@@ -9063,74 +9092,104 @@ function parseCSVFunil(text){
   const grid = lines.map(l=>l.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
   const resultado = [];
 
-  const colMap = {
-    'ANUN.':'anuncios','ANÚN.':'anuncios','ANÚNCIO':'anuncios','ANUNCIO':'anuncios',
+  const VENDS=['BEATRIZ','RAFAEL','ISAAC','JULIA'];
+  const INDICADOR_MAP={
+    'ANÚNCIO':'anuncios','ANUNCIO':'anuncios',
     'NÚMEROS':'numeros','NUMEROS':'numeros',
     'RETORNOS':'retornos','RETORNO':'retornos',
-    'DISCADAS':'discadas','DISCADA':'discadas',
-    'ATENDIDAS':'atendidas','ATENDIDA':'atendidas',
+    'DISCADAS':'discadas',
+    'ATENDIDAS':'atendidas',
+    'AGENDAMENTO':'agendamentos','AGENDAMENTOS':'agendamentos',
+    'VISITAS':'visitas','VISITA':'visitas',
+    'FECHAMENTO':'fechamentos','FECHAMENTOS':'fechamentos'
+  };
+  const COL_MAP={
+    'ANUN.':'anuncios','ANÚN.':'anuncios','ANÚNCIO':'anuncios','ANUNCIO':'anuncios',
+    'NÚMEROS':'numeros','NUMEROS':'numeros',
+    'RETORNOS':'retornos',
+    'DISCADAS':'discadas',
+    'ATENDIDAS':'atendidas',
     'AGENDAM.':'agendamentos','AGENDAMENTO':'agendamentos','AGENDAMENTOS':'agendamentos',
     'VISITA':'visitas','VISITAS':'visitas',
     'FECHAMENTO':'fechamentos','FECHAMENTOS':'fechamentos'
   };
 
-  const VENDS_CONHECIDOS=['BEATRIZ','RAFAEL','ISAAC','JULIA'];
+  let semanaAtual=null;
+  // Store retornos from detail blocks: {sem: {vend: value}}
+  const retornosMap={};
+  const detailRecs={}; // full detail per vend per sem
 
-  let semanaAtual = null;
-  let ultimaSemanaHeader = null; // track to avoid TOTAL MENSAL
+  for(let i=0;i<grid.length;i++){
+    const row=grid[i];
+    const cell0=(row[0]||'').trim().toUpperCase();
 
-  for(let i=0; i<grid.length; i++){
-    const row = grid[i];
-    const cell0 = (row[0]||'').trim().toUpperCase();
-
-    // Detect week header: "SEMANA 04 A 09/05" or " SEMANA 18 A 23/05"
-    if(cell0.includes('SEMANA') && cell0.includes('A') && !cell0.includes('TOTAL')){
-      const m = cell0.match(/(\d{1,2})\s*A\s*\d{1,2}\/(\d{2})/);
+    // Detect week header
+    if(cell0.includes('SEMANA')&&cell0.includes('A')&&!cell0.includes('TOTAL')){
+      const m=cell0.match(/(\d{1,2})\s*A\s*\d{1,2}\/(\d{2})/);
       if(m){
-        const dia=parseInt(m[1]); const mes=parseInt(m[2]); const ano=new Date().getFullYear();
+        const dia=parseInt(m[1]),mes=parseInt(m[2]),ano=new Date().getFullYear();
         const d=new Date(ano,mes-1,dia,12);
-        const dow=d.getDay(); // 0=sun
-        const seg=new Date(d); seg.setDate(d.getDate()-(dow===0?6:dow-1));
+        const dow=d.getDay();
+        const seg=new Date(d);seg.setDate(d.getDate()-(dow===0?6:dow-1));
         semanaAtual=seg.toISOString().slice(0,10);
-        ultimaSemanaHeader=semanaAtual;
+        if(!retornosMap[semanaAtual]) retornosMap[semanaAtual]={};
+        if(!detailRecs[semanaAtual]) detailRecs[semanaAtual]={};
       }
       continue;
     }
 
-    // Stop at TOTAL MENSAL — don't read that block
-    if(cell0.includes('TOTAL') && cell0.includes('MENSAL')){
-      semanaAtual=null;
+    // Stop at TOTAL MENSAL
+    if(cell0.includes('TOTAL')&&cell0.includes('MENSAL')){semanaAtual=null;continue;}
+
+    // Detect vendor detail block header (BEATRIZ, RAFAEL, ISAAC + day columns)
+    if(VENDS.includes(cell0)&&semanaAtual&&row.length>3){
+      const hasDates=row.slice(1,7).some(c=>c.includes('/'));
+      if(hasDates){
+        // Find TOTAL column (col index 7 or where header says TOTAL)
+        let totalCol=7;
+        for(let c=0;c<row.length;c++){if((row[c]||'').trim().toUpperCase()==='TOTAL'){totalCol=c;break;}}
+        if(!detailRecs[semanaAtual][cell0]) detailRecs[semanaAtual][cell0]={};
+        // Read indicator rows below
+        for(let j=i+1;j<=i+9&&j<grid.length;j++){
+          const r2=grid[j];
+          const ind=(r2[0]||'').trim().toUpperCase();
+          const campo=INDICADOR_MAP[ind];
+          if(campo){
+            const val=parseInt((r2[totalCol]||'').replace(/[^\d]/g,''))||0;
+            detailRecs[semanaAtual][cell0][campo]=val;
+          }
+        }
+      }
       continue;
     }
 
-    // Detect summary table header row: "NOME, Anun., Números, Discadas..."
-    if(cell0==='NOME' && semanaAtual){
+    // Detect summary table header: NOME, Anun., Números...
+    if(cell0==='NOME'&&semanaAtual){
       const header=row.map(c=>c.trim().toUpperCase());
       const campoMap={};
-      header.forEach((h,ci)=>{ if(colMap[h]) campoMap[ci]=colMap[h]; });
+      header.forEach((h,ci)=>{if(COL_MAP[h]) campoMap[ci]=COL_MAP[h];});
       if(Object.keys(campoMap).length===0) continue;
 
-      // Read vendor rows until blank or TOTAL
-      for(let j=i+1; j<Math.min(i+8,grid.length); j++){
+      for(let j=i+1;j<Math.min(i+8,grid.length);j++){
         const r2=grid[j];
         const nome=(r2[0]||'').trim().toUpperCase();
         if(!nome||nome==='TOTAL'||nome==='') continue;
-        // Skip non-vendor rows
-        if(!VENDS_CONHECIDOS.includes(nome)&&!nome.match(/^[A-Z]{3,}$/)) continue;
-
-        const rec={
-          sem:semanaAtual,
-          vend:nome.charAt(0)+nome.slice(1).toLowerCase(),
+        if(!nome.match(/^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ]{3,}$/)) continue;
+        
+        const vendNorm=nome.charAt(0)+nome.slice(1).toLowerCase();
+        const rec={sem:semanaAtual,vend:vendNorm,
           anuncios:0,numeros:0,retornos:0,discadas:0,
-          atendidas:0,agendamentos:0,visitas:0,fechamentos:0
-        };
+          atendidas:0,agendamentos:0,visitas:0,fechamentos:0};
+        
         Object.entries(campoMap).forEach(([ci,campo])=>{
-          const val=parseInt((r2[ci]||'').replace(/[^\d]/g,''))||0;
-          rec[campo]=val;
+          rec[campo]=parseInt((r2[ci]||'').replace(/[^\d]/g,''))||0;
         });
 
-        // Only add if has some data
-        const temDados=Object.values(rec).some((v,i)=>i>1&&v>0);
+        // Merge retornos from detail block
+        const detail=detailRecs[semanaAtual]?.[nome];
+        if(detail?.retornos) rec.retornos=detail.retornos;
+
+        const temDados=Object.entries(rec).some(([k,v])=>k!=='sem'&&k!=='vend'&&v>0);
         if(temDados&&!resultado.find(r=>r.sem===rec.sem&&r.vend===rec.vend)){
           resultado.push(rec);
         }
@@ -9140,6 +9199,7 @@ function parseCSVFunil(text){
 
   return resultado;
 }
+
 
 function copiarSemanaAnterior(){
   const semanas=[...new Set(DB.funil.map(r=>r.sem).filter(Boolean))].sort().reverse();
