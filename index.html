@@ -1117,6 +1117,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <button class="btn btn-g" onclick="gerarRelatorioFunil()">📄 PDF</button>
           <button class="btn btn-g" onclick="copiarSemanaAnterior()">📋 Copiar semana ant.</button>
           <button class="btn btn-g" onclick="openModal('meta-funil')">🎯 Metas</button>
+          <label class="btn btn-g" style="cursor:pointer" title="Importar CSV exportado do Google Sheets">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importarCSVFunil(this)"></label>
           <button class="btn btn-o" onclick="openModal('funil')">+ Registrar Semana</button>
         </div>
       </div>
@@ -1180,7 +1181,13 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <div class="card" style="margin-bottom:16px">
         <div class="card-hd">
           <div class="card-title">🎯 Metas vs Realizado</div>
-          <span id="funil-projecao" style="font-size:11px;color:var(--text3)"></span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+              <button id="meta-tipo-dia" onclick="setMetaTipo('dia')" class="btn" style="border-radius:0;border:none;font-size:11px;padding:4px 10px;background:var(--accent);color:#fff">Por dia</button>
+              <button id="meta-tipo-sem" onclick="setMetaTipo('semana')" class="btn btn-g" style="border-radius:0;border:none;font-size:11px;padding:4px 10px">Por semana</button>
+            </div>
+            <span id="funil-projecao" style="font-size:11px;color:var(--text3)"></span>
+          </div>
         </div>
         <div id="funil-metas" style="padding:16px 22px"></div>
       </div>
@@ -2412,7 +2419,6 @@ let DB = {
     {nome:'Beatriz',supervisor:'',pct_ades:0,pct_lin:0},
     {nome:'Rafael',supervisor:'Beatriz',pct_ades:0,pct_lin:0},
     {nome:'Isaac',supervisor:'Beatriz',pct_ades:0,pct_lin:0},
-    {nome:'Julia',supervisor:'',pct_ades:0,pct_lin:0},
   ],
   supervisores:[{nome:'Beatriz Almeida',pct_ades:0.001,pct_lin:0.001}],
   statusList:[
@@ -2758,7 +2764,7 @@ function badge(s){
 }
 
 function vendedores(){
-  const norm=v=>v?v.charAt(0).toUpperCase()+v.slice(1).toLowerCase().replace(/^(beatriz|rafael|julia)$/i,m=>m.charAt(0).toUpperCase()+m.slice(1)):v;
+  const norm=v=>v?v.charAt(0).toUpperCase()+v.slice(1).toLowerCase().replace(/^(beatriz|rafael)$/i,m=>m.charAt(0).toUpperCase()+m.slice(1)):v;
   // Collect and normalise all seller names
   const s=new Set();
   DB.adesionada.forEach(r=>{if(r.vendedor)s.add(r.vendedor.trim());});
@@ -3533,6 +3539,17 @@ function loadFunilSemana(){
   }
 }
 
+let _metaTipoAtual='dia';
+
+function setMetaTipo(tipo){
+  _metaTipoAtual=tipo;
+  const btnDia=document.getElementById('meta-tipo-dia');
+  const btnSem=document.getElementById('meta-tipo-sem');
+  if(btnDia){btnDia.style.background=tipo==='dia'?'var(--accent)':'var(--bg3)';btnDia.style.color=tipo==='dia'?'#fff':'var(--text)';}
+  if(btnSem){btnSem.style.background=tipo==='semana'?'var(--accent)':'var(--bg3)';btnSem.style.color=tipo==='semana'?'#fff':'var(--text)';}
+  renderFunil();
+}
+
 function syncFunilDate(val){
   const d=new Date(val+'T12:00:00');
   const dow=d.getDay();
@@ -3553,13 +3570,30 @@ function syncFunilDate(val){
   loadFunilSemana();
 }
 
+let _metaFunilTab='dia';
+
+function switchMetaFunilTab(tab){
+  _metaFunilTab=tab;
+  const dia=document.getElementById('mf-campos-dia');
+  const sem=document.getElementById('mf-campos-sem');
+  const btnDia=document.getElementById('mf-tab-dia');
+  const btnSem=document.getElementById('mf-tab-sem');
+  if(dia) dia.style.display=tab==='dia'?'grid':'none';
+  if(sem) sem.style.display=tab==='semana'?'grid':'none';
+  if(btnDia){btnDia.style.background=tab==='dia'?'var(--accent)':'var(--bg3)';btnDia.style.color=tab==='dia'?'#fff':'var(--text)';}
+  if(btnSem){btnSem.style.background=tab==='semana'?'var(--accent)':'var(--bg3)';btnSem.style.color=tab==='semana'?'#fff':'var(--text)';}
+  loadMetaFunilVend();
+}
+
 function loadMetaFunilVend(){
   const vend=document.getElementById('f-mf-vend')?.value||'Geral (equipe)';
   const isGeral=vend==='Geral (equipe)';
   const rec=isGeral?(DB.metaFunil||{}):(DB.metaFunilVend?.[vend]||{});
+  const tab=_metaFunilTab||'dia';
+  const recTab=rec[tab]||rec||{};
   ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
-    const el=document.getElementById('f-mf-'+c);
-    if(el) el.value=rec[c]||'';
+    const el=document.getElementById('f-mf-'+c+'-'+tab);
+    if(el) el.value=recTab[c]||'';
   });
 }
 
@@ -6304,6 +6338,107 @@ function openModal(type='ades'){
     <div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-fn-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
     setTimeout(()=>loadFunilSemana(),50);
     } else if(type==='meta-funil'){
+    title='🎯 Definir Metas do Funil';sub='Configure metas por dia e por semana';
+    const vOpts10=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
+    form=`<div class="fg full" style="margin-bottom:8px">
+      <label class="flabel">Para quem é a meta?</label>
+      <select class="finput" id="f-mf-vend" onchange="loadMetaFunilVend()"></select>
+    </div>
+    <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px" class="fg full">
+      <button onclick="switchMetaFunilTab('dia')" id="mf-tab-dia" class="btn" style="border-radius:0;border:none;flex:1;font-size:12px;padding:6px;background:var(--accent);color:#fff">📅 Por dia</button>
+      <button onclick="switchMetaFunilTab('semana')" id="mf-tab-sem" class="btn btn-g" style="border-radius:0;border:none;flex:1;font-size:12px;padding:6px">📆 Por semana</button>
+    </div>
+    <div id="mf-campos-dia" class="fgrid" style="gap:10px">
+      <div class="fg"><label class="flabel">Anúncios/dia</label><input class="finput" id="f-mf-anuncios-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Números/dia</label><input class="finput" id="f-mf-numeros-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Retornos/dia</label><input class="finput" id="f-mf-retornos-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Discadas/dia</label><input class="finput" id="f-mf-discadas-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Atendidas/dia</label><input class="finput" id="f-mf-atendidas-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Agendamentos/dia</label><input class="finput" id="f-mf-agendamentos-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Visitas/dia</label><input class="finput" id="f-mf-visitas-dia" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Fechamentos/dia</label><input class="finput" id="f-mf-fechamentos-dia" type="number" step="1" min="0" placeholder="0"></div>
+    </div>
+    <div id="mf-campos-sem" class="fgrid" style="gap:10px;display:none">
+      <div class="fg"><label class="flabel">Anúncios/semana</label><input class="finput" id="f-mf-anuncios-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Números/semana</label><input class="finput" id="f-mf-numeros-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Retornos/semana</label><input class="finput" id="f-mf-retornos-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Discadas/semana</label><input class="finput" id="f-mf-discadas-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Atendidas/semana</label><input class="finput" id="f-mf-atendidas-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Agendamentos/semana</label><input class="finput" id="f-mf-agendamentos-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Visitas/semana</label><input class="finput" id="f-mf-visitas-sem" type="number" step="1" min="0" placeholder="0"></div>
+<div class="fg"><label class="flabel">Fechamentos/semana</label><input class="finput" id="f-mf-fechamentos-sem" type="number" step="1" min="0" placeholder="0"></div>
+    </div>`;
+    setTimeout(()=>{
+      const vs=document.getElementById('f-mf-vend');
+      if(vs) vs.innerHTML=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
+      loadMetaFunilVend();
+    },30);
+
+    } else if(type==='meta-grupo'){
+    title='🎯 Meta do Grupo';sub='Define o volume alvo da equipe supervisionada';
+    const supSel2=document.getElementById('sup-supervisora-sel');
+    const mesSel2=document.getElementById('sup-mes-sel');
+    const curSup=supSel2?.value||DB.supervisores[0]?.nome||'';
+    const curMesG=mesSel2?.value||getMonthKey();
+    const supOpts4=DB.supervisores.map(s=>`<option value="${s.nome}"${s.nome===curSup?' selected':''}>${s.nome}</option>`).join('');
+    // Future months
+    const fmths=[];
+    const nowG=new Date();
+    for(let i=-3;i<=12;i++){
+      const d=new Date(nowG.getFullYear(),nowG.getMonth()+i,1);
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      fmths.push(k);
+    }
+    const mOptsG=fmths.map(m=>`<option value="${m}"${m===curMesG?' selected':''}>${fmtMonth(m)}</option>`).join('');
+    // Load existing
+    const existing=DB.metasGrupo?.find(m=>m.supervisor===curSup&&m.mes===curMesG);
+    form=`<div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-mg-sup" onchange="preencherMetaGrupo()">${supOpts4}</select></div>
+    <div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-mg-mes" onchange="preencherMetaGrupo()">${mOptsG}</select></div>
+    <div class="fg"><label class="flabel">Meta Volume do Grupo (R$)</label><input class="finput" id="f-mg-vol" type="number" step="1000" placeholder="ex: 2000000" value="${existing?.meta_vol||''}"></div>
+    <div class="fg"><label class="flabel">Meta Qtd. Vendas do Grupo</label><input class="finput" id="f-mg-qtd" type="number" step="1" placeholder="ex: 15" value="${existing?.meta_qtd||''}"></div>`;
+  } else if(type==='funil'){
+    title='📊 Registrar / Atualizar Semana';sub='';
+    const vOpts9=['Equipe',...vendedores()].map(v=>`<option value="${v}">${v==='Equipe'?'Toda equipe':v}</option>`).join('');
+    // Generate week options: last 12 + next 4
+    const weekOpts=[];
+    const now2=new Date();
+    const dow2=now2.getDay(); const seg2=new Date(now2);
+    seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+    for(let w=-12;w<=4;w++){
+      const d=new Date(seg2); d.setDate(seg2.getDate()+w*7);
+      const fim=new Date(d); fim.setDate(d.getDate()+5);
+      const key=d.toISOString().slice(0,10);
+      const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      weekOpts.push(`<option value="${key}"${w===0?' selected':''}>${label}</option>`);
+    }
+    form=`<div class="fg full">
+      <label class="flabel">Semana</label>
+      <select class="finput" id="f-fn-sem" onchange="loadFunilSemana()">${weekOpts.join('')}</select>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3)">Ou escolha pelo calendário:</span>
+        <input type="date" class="finput" id="f-fn-sem-date" value="${now2.toISOString().slice(0,10)}" style="max-width:160px;font-size:12px;padding:5px 8px" onchange="syncFunilDate(this.value)">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">Vendedor</label>
+      <select class="finput" id="f-fn-vend" onchange="loadFunilSemana()">${vOpts9}</select>
+    </div>
+    <div id="f-fn-atualiza-aviso" style="display:none;background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--green);margin-top:4px" class="fg full">
+      ✅ Registro existente carregado — edite os valores e salve para atualizar.
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">📝 Preencha os totais acumulados da semana até hoje:</div>
+    </div>
+    <div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-fn-anuncios" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-fn-numeros" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-fn-retornos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-fn-discadas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-fn-atendidas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-fn-agendamentos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-fn-visitas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-fn-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
+    setTimeout(()=>loadFunilSemana(),50);
+    } else if(type==='meta-funil'){
     title='🎯 Definir Metas do Funil';sub='Configure metas gerais e por vendedor';
     const vOpts10=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
     // Load geral meta
@@ -6616,11 +6751,17 @@ function saveModal(){
     if(!DB.metaFunil) DB.metaFunil={};
     if(!DB.metaFunilVend) DB.metaFunilVend={};
     const mfVend=document.getElementById('f-mf-vend')?.value||'Geral (equipe)';
-    const recMF={anuncios:gn('f-mf-anuncios'),numeros:gn('f-mf-numeros'),retornos:gn('f-mf-retornos'),discadas:gn('f-mf-discadas'),atendidas:gn('f-mf-atendidas'),agendamentos:gn('f-mf-agendamentos'),visitas:gn('f-mf-visitas'),fechamentos:gn('f-mf-fechamentos')};
+    const tab=_metaFunilTab||'dia';
+    const recMF={anuncios:gn('f-mf-anuncios-'+tab),numeros:gn('f-mf-numeros-'+tab),retornos:gn('f-mf-retornos-'+tab),discadas:gn('f-mf-discadas-'+tab),atendidas:gn('f-mf-atendidas-'+tab),agendamentos:gn('f-mf-agendamentos-'+tab),visitas:gn('f-mf-visitas-'+tab),fechamentos:gn('f-mf-fechamentos-'+tab)};
     if(mfVend==='Geral (equipe)'){
+      if(!DB.metaFunil[tab]) DB.metaFunil[tab]={};
+      Object.assign(DB.metaFunil[tab], recMF);
+      // Keep backward compat: also store flat
       Object.assign(DB.metaFunil, recMF);
     } else {
-      DB.metaFunilVend[mfVend]=recMF;
+      if(!DB.metaFunilVend[mfVend]) DB.metaFunilVend[mfVend]={};
+      if(!DB.metaFunilVend[mfVend][tab]) DB.metaFunilVend[mfVend][tab]={};
+      Object.assign(DB.metaFunilVend[mfVend][tab], recMF);
     }
     setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
   } else if(modalType==='diario-reg'){
@@ -8853,6 +8994,136 @@ function editFunil(sem, vend){
     if(vendSel) vendSel.value=vend;
     loadFunilSemana();
   },60);
+}
+
+function importarCSVFunil(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const text = e.target.result;
+    const resultado = parseCSVFunil(text);
+
+    if(!resultado || resultado.length === 0){
+      toast('⚠️ Nenhum dado encontrado. Verifique se exportou a aba correta.');
+      return;
+    }
+
+    // Group by week for preview
+    const porSemana = {};
+    resultado.forEach(r=>{
+      if(!porSemana[r.sem]) porSemana[r.sem]=[];
+      porSemana[r.sem].push(r);
+    });
+
+    const semanas = Object.keys(porSemana).sort();
+    const preview = semanas.map(s=>{
+      const d=new Date(s+'T12:00:00');
+      const fim=new Date(d);fim.setDate(d.getDate()+5);
+      const lbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const vends=porSemana[s].map(r=>r.vend+' (fech:'+r.fechamentos+')').join(', ');
+      return lbl+': '+vends;
+    }).join('\n');
+
+    if(!confirm(semanas.length+' semana(s) encontrada(s):\n\n'+preview+'\n\nImportar tudo?')) return;
+
+    // Upsert all
+    if(!DB.funil) DB.funil=[];
+    let count=0;
+    resultado.forEach(rec=>{
+      const idx=DB.funil.findIndex(r=>r.sem===rec.sem&&r.vend===rec.vend);
+      if(idx>=0){ DB.funil[idx]=rec; }
+      else{ DB.funil.push(rec); count++; }
+    });
+    saveData();
+    renderFunil();
+    toast('✓ '+resultado.length+' registros em '+semanas.length+' semana(s) importados!');
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value='';
+}
+
+function parseCSVFunil(text){
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  const grid = lines.map(l=>l.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
+  const resultado = [];
+
+  const colMap = {
+    'ANUN.':'anuncios','ANÚN.':'anuncios','ANÚNCIO':'anuncios','ANUNCIO':'anuncios',
+    'NÚMEROS':'numeros','NUMEROS':'numeros',
+    'RETORNOS':'retornos','RETORNO':'retornos',
+    'DISCADAS':'discadas','DISCADA':'discadas',
+    'ATENDIDAS':'atendidas','ATENDIDA':'atendidas',
+    'AGENDAM.':'agendamentos','AGENDAMENTO':'agendamentos','AGENDAMENTOS':'agendamentos',
+    'VISITA':'visitas','VISITAS':'visitas',
+    'FECHAMENTO':'fechamentos','FECHAMENTOS':'fechamentos'
+  };
+
+  const VENDS_CONHECIDOS=['BEATRIZ','RAFAEL','ISAAC','JULIA'];
+
+  let semanaAtual = null;
+  let ultimaSemanaHeader = null; // track to avoid TOTAL MENSAL
+
+  for(let i=0; i<grid.length; i++){
+    const row = grid[i];
+    const cell0 = (row[0]||'').trim().toUpperCase();
+
+    // Detect week header: "SEMANA 04 A 09/05" or " SEMANA 18 A 23/05"
+    if(cell0.includes('SEMANA') && cell0.includes('A') && !cell0.includes('TOTAL')){
+      const m = cell0.match(/(\d{1,2})\s*A\s*\d{1,2}\/(\d{2})/);
+      if(m){
+        const dia=parseInt(m[1]); const mes=parseInt(m[2]); const ano=new Date().getFullYear();
+        const d=new Date(ano,mes-1,dia,12);
+        const dow=d.getDay(); // 0=sun
+        const seg=new Date(d); seg.setDate(d.getDate()-(dow===0?6:dow-1));
+        semanaAtual=seg.toISOString().slice(0,10);
+        ultimaSemanaHeader=semanaAtual;
+      }
+      continue;
+    }
+
+    // Stop at TOTAL MENSAL — don't read that block
+    if(cell0.includes('TOTAL') && cell0.includes('MENSAL')){
+      semanaAtual=null;
+      continue;
+    }
+
+    // Detect summary table header row: "NOME, Anun., Números, Discadas..."
+    if(cell0==='NOME' && semanaAtual){
+      const header=row.map(c=>c.trim().toUpperCase());
+      const campoMap={};
+      header.forEach((h,ci)=>{ if(colMap[h]) campoMap[ci]=colMap[h]; });
+      if(Object.keys(campoMap).length===0) continue;
+
+      // Read vendor rows until blank or TOTAL
+      for(let j=i+1; j<Math.min(i+8,grid.length); j++){
+        const r2=grid[j];
+        const nome=(r2[0]||'').trim().toUpperCase();
+        if(!nome||nome==='TOTAL'||nome==='') continue;
+        // Skip non-vendor rows
+        if(!VENDS_CONHECIDOS.includes(nome)&&!nome.match(/^[A-Z]{3,}$/)) continue;
+
+        const rec={
+          sem:semanaAtual,
+          vend:nome.charAt(0)+nome.slice(1).toLowerCase(),
+          anuncios:0,numeros:0,retornos:0,discadas:0,
+          atendidas:0,agendamentos:0,visitas:0,fechamentos:0
+        };
+        Object.entries(campoMap).forEach(([ci,campo])=>{
+          const val=parseInt((r2[ci]||'').replace(/[^\d]/g,''))||0;
+          rec[campo]=val;
+        });
+
+        // Only add if has some data
+        const temDados=Object.values(rec).some((v,i)=>i>1&&v>0);
+        if(temDados&&!resultado.find(r=>r.sem===rec.sem&&r.vend===rec.vend)){
+          resultado.push(rec);
+        }
+      }
+    }
+  }
+
+  return resultado;
 }
 
 function copiarSemanaAnterior(){
