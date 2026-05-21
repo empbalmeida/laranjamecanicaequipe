@@ -4147,11 +4147,21 @@ function renderFunil(){
     const hasAny=CAMPOS.some(c=>metaGeral[c]>0)||Object.keys(metaVend).length>0;
     if(!hasAny){metaEl.innerHTML='<div style="font-size:12px;color:var(--text3)">Clique em <strong>🎯 Metas</strong> para configurar.</div>';if(projEl)projEl.textContent='';}
     else{
+      // Multiplier based on dia/semana toggle and number of weeks in filter
+      const mTipo2=_metaTipoAtual||'dia';
+      const semsNoFiltro2=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
+      const mult=mTipo2==='dia'?semsNoFiltro2.length*5:semsNoFiltro2.length||1;
+      const getMetaVal=(metaObj,c)=>{
+        if(!metaObj) return 0;
+        const tab=metaObj[mTipo2];
+        if(tab&&tab[c]) return tab[c]*mult;
+        return (metaObj[c]||0)*(mTipo2==='semana'?semsNoFiltro2.length||1:mult);
+      };
       const renderBars=(meta,tots2,corBase,label)=>{
         let h='';
         if(label) h+='<div style="font-size:11px;font-weight:700;color:'+corBase+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+label+'</div>';
         h+=CAMPOS.map((c,i)=>{
-          const m=meta[c]||0;if(!m)return'';
+          const m=getMetaVal(meta,c);if(!m)return'';
           const v=tots2[c]||0;const pct=Math.min(Math.round(v/m*100),100);const falta=Math.max(m-v,0);
           const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':corBase;
           const pctRest=falta>0?Math.round(falta/m*100):0;
@@ -4172,7 +4182,7 @@ function renderFunil(){
       let html=CAMPOS.some(c=>metaGeral[c]>0)?renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe'):'';
       Object.entries(metaVend).forEach(([vend,meta])=>{
         if(!CAMPOS.some(c=>meta[c]>0))return;
-        const vTots={};CAMPOS.forEach(c=>{vTots[c]=allRows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});
+        const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});
         html+=renderBars(meta,vTots,'var(--blue)','👤 '+vend);
       });
       metaEl.innerHTML=html;
@@ -4255,6 +4265,11 @@ function renderFunil(){
       return true;
     }).slice().sort((a,b)=>(b.sem||'').localeCompare(a.sem||''));
     const byWeek={};filtered.forEach(r=>{if(!byWeek[r.sem])byWeek[r.sem]=[];byWeek[r.sem].push(r);});
+    // Filter out weeks where all values are 0
+    Object.keys(byWeek).forEach(sem=>{
+      const hasData=byWeek[sem].some(r=>CAMPOS.some(c=>r[c]>0));
+      if(!hasData) delete byWeek[sem];
+    });
     if(!Object.keys(byWeek).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';return;}
     tbody.innerHTML=Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([sem,recs])=>{
       const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
