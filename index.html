@@ -3736,25 +3736,22 @@ function renderFunil(){
     });
     const mxV=Math.max(...vals.map(v=>v.v),1);
     const meta=metaGeral[evolCampo]||0;
-    const h=80,bW=36,gap=8,padL=8;
+    const h=100,bW=44,gap=10,padL=10;
     const svgW=padL*2+vals.length*(bW+gap);
     const metaY=meta>0?Math.round((1-meta/mxV)*h):null;
-    let svg='<svg viewBox="0 0 '+svgW+' '+(h+28)+'" style="width:100%;height:'+(h+28)+'px;min-width:'+Math.max(svgW,200)+'px">';
-    if(metaY!==null) svg+='<line x1="0" y1="'+metaY+'" x2="'+svgW+'" y2="'+metaY+'" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4,3" opacity=".6"/><text x="4" y="'+(metaY-3)+'" font-size="9" fill="var(--green)" font-family="DM Mono">meta '+meta+'</text>';
+    let svg='<svg viewBox="0 0 '+svgW+' '+(h+32)+'" style="width:100%;height:'+(h+32)+'px">';
     svg+=vals.map((d,i)=>{
       const bh=Math.max(Math.round((d.v/mxV)*h),d.v>0?4:0);
       const x=padL+i*(bW+gap);
       const isCur=i===vals.length-1;
       const cor=isCur?'var(--accent)':'var(--blue)';
-      return'<rect x="'+x+'" y="'+(h-bh)+'" width="'+bW+'" height="'+bh+'" rx="5" fill="'+cor+'" opacity="'+(isCur?'1':'.7')+'"/>'+
-        (d.v>0?'<text x="'+(x+bW/2)+'" y="'+(h-bh-4)+'" text-anchor="middle" font-size="10" fill="var(--text)" font-family="DM Mono">'+d.v+'</text>':'')+
-        '<text x="'+(x+bW/2)+'" y="'+(h+16)+'" text-anchor="middle" font-size="9" fill="'+(isCur?'var(--accent)':'var(--text3)')+'" font-family="DM Mono">'+d.label+'</text>';
+      const numTxt=d.v>0?'<text x="'+(x+bW/2)+'" y="'+(h-bh-6)+'" text-anchor="middle" font-size="11" fill="var(--text)" font-family="DM Mono">'+d.v+'</text>':'';
+      const lblTxt='<text x="'+(x+bW/2)+'" y="'+(h+18)+'" text-anchor="middle" font-size="10" fill="'+(isCur?'var(--accent)':'var(--text3)')+'" font-family="DM Mono">'+d.label+'</text>';
+      return '<rect x="'+x+'" y="'+(h-bh)+'" width="'+bW+'" height="'+bh+'" rx="5" fill="'+cor+'" opacity="'+(isCur?'1':'.7')+'"/>'+numTxt+lblTxt;
     }).join('');
     svg+='</svg>';
     evolEl.innerHTML='<div style="overflow-x:auto">'+svg+'</div>';
   }
-
-  // ── TAXAS DE CONVERSÃO ────────────────────────────────────────────────────
   const convEl=document.getElementById('funil-conversao');
   if(convEl){
     // Historical averages per week
@@ -3792,14 +3789,15 @@ function renderFunil(){
       // meta por semana × número de semanas no filtro; ou meta por dia × dias úteis
       const getMetaVal=(metaObj,c)=>{
         if(!metaObj) return 0;
-        // New structure: {semsex:{}, sab:{}, sabIgual, semanas}
-        const semsex=metaObj.semsex||{};
-        const sab=metaObj.sab||semsex;
-        const metaSemanas=metaObj.semanas||1;
-        // Total = (semsex[c]*5 + sab[c]*1) * semanas
-        const vSS=semsex[c]||metaObj[c]||0;
-        const vSab=metaObj.sabIgual?vSS:(sab[c]||metaObj[c]||0);
-        return (vSS*5+vSab*1)*metaSemanas;
+        const semanas=metaObj.semanas||1;
+        // New structure with semsex/sab
+        if(metaObj.semsex){
+          const vSS=metaObj.semsex[c]||0;
+          const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);
+          return (vSS*5+vSab*1)*semanas;
+        }
+        // Old flat structure — treat as weekly meta
+        return (metaObj[c]||0)*semanas;
       };
       const renderBars=(meta,tots2,corBase,label,metaObj)=>{
         let h='';
@@ -3815,7 +3813,7 @@ function renderFunil(){
               '<div style="text-align:right">'+
                 '<span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
                 (falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+' ('+pctRest+'%)</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+
-                (metaObj?.semanas?'<br><span style="font-size:9px;color:var(--text3)">'+((metaObj.semsex||{})[c]||0)+'/dia×5 + '+((metaObj.sab||{})[c]||0)+'/sáb × '+metaObj.semanas+'sem</span>':'')+
+                (metaObj?.semsex?'<br><span style="font-size:9px;color:var(--text3)">'+(metaObj.semsex[c]||0)+'/dia×5 + '+(metaObj.sabIgual?metaObj.semsex[c]||0:metaObj.sab?.[c]||0)+'/sáb × '+(metaObj.semanas||1)+'sem = '+((metaObj.semsex[c]||0)*5+(metaObj.sabIgual?metaObj.semsex[c]||0:metaObj.sab?.[c]||0))+'×'+(metaObj.semanas||1)+'</span>':'')+
               '</div>'+
             '</div>'+
             '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
@@ -3826,7 +3824,7 @@ function renderFunil(){
       };
       let html=renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe',metaGeral);
       Object.entries(metaVend).forEach(([vend,meta])=>{
-        if(!CAMPOS.some(c=>meta[c]>0))return;
+        const metaHasData=CAMPOS.some(c=>(meta.semsex?.[c]||meta[c]||0)>0||(meta.sab?.[c]||0)>0);if(!metaHasData)return;
         const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});
         html+=renderBars(meta,vTots,'var(--blue)','👤 '+vend,meta);
       });
