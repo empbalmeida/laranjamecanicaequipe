@@ -3570,415 +3570,53 @@ function syncFunilDate(val){
   loadFunilSemana();
 }
 
-let _metaFunilTab='dia';
+// ── Meta Funil helpers ───────────────────────────────────────────────────────
 
-function switchMetaFunilTab(tab){
-  _metaFunilTab=tab;
-  const dia=document.getElementById('mf-campos-dia');
-  const sem=document.getElementById('mf-campos-sem');
-  const btnDia=document.getElementById('mf-tab-dia');
-  const btnSem=document.getElementById('mf-tab-sem');
-  if(dia) dia.style.display=tab==='dia'?'grid':'none';
-  if(sem) sem.style.display=tab==='semana'?'grid':'none';
-  if(btnDia){btnDia.style.background=tab==='dia'?'var(--accent)':'var(--bg3)';btnDia.style.color=tab==='dia'?'#fff':'var(--text)';}
-  if(btnSem){btnSem.style.background=tab==='semana'?'var(--accent)':'var(--bg3)';btnSem.style.color=tab==='semana'?'#fff':'var(--text)';}
-  loadMetaFunilVend();
+function toggleSabIgual(){
+  const cb=document.getElementById('f-mf-sab-igual');
+  const campos=document.getElementById('f-mf-sab-campos');
+  if(!cb||!campos) return;
+  campos.style.opacity=cb.checked?'0.4':'1';
+  campos.querySelectorAll('input').forEach(el=>el.disabled=cb.checked);
+  atualizarPreviewMeta();
+}
+
+function atualizarPreviewMeta(){
+  const semanas=parseInt(document.getElementById('f-mf-semanas')?.value)||1;
+  const sabIgual=document.getElementById('f-mf-sab-igual')?.checked;
+  const preview=document.getElementById('f-mf-preview-text');
+  if(!preview) return;
+  const lines=[];
+  ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach((c,i)=>{
+    const vSS=parseInt(document.getElementById('f-mf-'+c+'-semsex')?.value)||0;
+    const vSab=sabIgual?vSS:(parseInt(document.getElementById('f-mf-'+c+'-sab')?.value)||0);
+    if(!vSS&&!vSab) return;
+    const total=(vSS*5+vSab*1)*semanas;
+    lines.push(['📣','📞','🔄','📱','✅','📅','🤝','🏆'][i]+' '+['Anúncios','Números','Retornos','Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'][i]+': '+total+' ('+vSS+'/dia×5 + '+vSab+'/sab×'+semanas+'sem)');
+  });
+  preview.innerHTML=lines.length?lines.join('<br>'):'Preencha os campos acima';
 }
 
 function loadMetaFunilVend(){
   const vend=document.getElementById('f-mf-vend')?.value||'Geral (equipe)';
   const isGeral=vend==='Geral (equipe)';
   const rec=isGeral?(DB.metaFunil||{}):(DB.metaFunilVend?.[vend]||{});
-  const tab=_metaFunilTab||'dia';
-  const recTab=rec[tab]||rec||{};
+  const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v||'';};
+  // Load seg-sex
   ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
-    const el=document.getElementById('f-mf-'+c+'-'+tab);
-    if(el) el.value=recTab[c]||'';
+    set('f-mf-'+c+'-semsex', rec.semsex?.[c]||rec[c]||'');
+    set('f-mf-'+c+'-sab', rec.sab?.[c]||rec[c]||'');
   });
+  set('f-mf-semanas', rec.semanas||1);
+  // Check if sab=semsex
+  const cb=document.getElementById('f-mf-sab-igual');
+  if(cb) cb.checked=!!rec.sabIgual;
+  toggleSabIgual();
+  atualizarPreviewMeta();
 }
 
-// ══════════════════════════ DIÁRIO DA EQUIPE ═════════════════════════════════
+function switchMetaFunilTab(){}  // legacy stub
 
-function setMotivacao(n){
-  [1,2,3,4,5].forEach(i=>{
-    const btn=document.getElementById('mot-btn-'+i);
-    if(btn){btn.className='btn '+(i===n?'btn-o':'btn-g');btn.style.cssText='font-size:16px;padding:4px 10px';}
-  });
-  const inp=document.getElementById('f-di-motivacao');
-  if(inp) inp.value=n;
-}
-
-function carregarDiarioExistente(){
-  const vend=document.getElementById('f-di-vend')?.value||'';
-  const sem=document.getElementById('f-di-sem')?.value||'';
-  const aviso=document.getElementById('f-di-aviso');
-  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
-  if(existing){
-    const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
-    set('f-di-gargalos',existing.gargalos);
-    set('f-di-desenvolvimento',existing.desenvolvimento);
-    set('f-di-metas',existing.metas);
-    set('f-di-plano',existing.plano);
-    set('f-di-destaque',existing.destaque);
-    setMotivacao(existing.motivacao||3);
-    if(aviso) aviso.style.display='';
-  } else {
-    ['f-di-gargalos','f-di-desenvolvimento','f-di-metas','f-di-plano','f-di-destaque'].forEach(id=>{
-      const el=document.getElementById(id);if(el)el.value='';
-    });
-    setMotivacao(3);
-    if(aviso) aviso.style.display='none';
-  }
-}
-
-function editarDiarioAtual(){
-  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
-  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
-  openModal('diario-reg');
-  setTimeout(()=>{
-    const vs=document.getElementById('f-di-vend');if(vs)vs.value=vend;
-    const ss=document.getElementById('f-di-sem');if(ss)ss.value=sem;
-    carregarDiarioExistente();
-  },40);
-}
-
-function getSemAtual(){
-  const now=new Date();const dow=now.getDay();
-  const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
-  return seg.toISOString().slice(0,10);
-}
-
-function fmtSemLabel(sem){
-  const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
-  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-}
-
-function renderDiario(){
-  // Populate vendedor select
-  const vSel=document.getElementById('diario-vend');
-  const vends=vendedores();
-  if(vSel){
-    const cur=vSel.value||vends[0]||'';
-    vSel.innerHTML=vends.map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
-    if(!vSel.value&&vends[0]) vSel.value=vends[0];
-  }
-  const vend=vSel?.value||vends[0]||'';
-
-  // Populate semana select
-  const sSel=document.getElementById('diario-semana');
-  const allSems=[...new Set(DB.diario.filter(d=>d.vend===vend).map(d=>d.sem))].sort().reverse();
-  const semAtual=getSemAtual();
-  if(!allSems.includes(semAtual)) allSems.unshift(semAtual);
-  if(sSel){
-    const cur=sSel.value||semAtual;
-    sSel.innerHTML=allSems.map(s=>`<option value="${s}"${s===cur?' selected':''}>${fmtSemLabel(s)}${s===semAtual?' (atual)':''}</option>`).join('');
-    if(!sSel.value) sSel.value=semAtual;
-  }
-  const sem=sSel?.value||semAtual;
-
-  // ── SEMÁFORO DA EQUIPE ──────────────────────────────────────────────────
-  const semEl=document.getElementById('diario-semaforo');
-  if(semEl){
-    const chips=vends.map(v=>{
-      const reg=DB.diario.filter(d=>d.vend===v).sort((a,b)=>b.sem.localeCompare(a.sem))[0];
-      // Get funil data for current week
-      const funilRows=DB.funil.filter(r=>r.vend===v&&r.sem===semAtual);
-      const fechamentos=funilRows.reduce((s,r)=>s+(r.fechamentos||0),0);
-      const metaFech=(DB.metaFunilVend?.[v]?.fechamentos||DB.metaFunil?.fechamentos||0);
-      const pct=metaFech>0?Math.round(fechamentos/metaFech*100):null;
-      const semaforo=pct===null?'⚪':pct>=100?'🟢':pct>=70?'🟡':'🔴';
-      const mot=reg?.motivacao||0;
-      const motEmoji=mot>=4?'🔥':mot>=3?'🙂':mot>=2?'😐':'😞';
-      const isSelected=v===vend;
-      return`<div onclick="document.getElementById('diario-vend').value='${v}';renderDiario()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:${isSelected?'rgba(249,115,22,.1)':'var(--bg3)'};border:${isSelected?'1.5px solid var(--accent)':'1px solid var(--border)'};border-radius:10px;cursor:pointer;min-width:140px;transition:all .15s">
-        <div style="font-size:18px">${semaforo}</div>
-        <div>
-          <div style="font-size:12px;font-weight:600">${v}</div>
-          <div style="font-size:10px;color:var(--text3)">${motEmoji} ${mot?['','Baixa','Regular','Ok','Boa','Alta'][mot]:'—'} · ${pct!==null?pct+'% meta':'sem meta'}</div>
-        </div>
-      </div>`;
-    }).join('');
-    semEl.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+chips+'</div>';
-  }
-
-  // ── MÉTRICAS AUTOMÁTICAS ──────────────────────────────────────────────
-  const metEl=document.getElementById('diario-metricas');
-  const metLbl=document.getElementById('diario-metrica-label');
-  if(metEl){
-    if(metLbl) metLbl.textContent=vend+(sem?' · '+fmtSemLabel(sem):'');
-    const funilRows=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
-    const vendaRows=[...DB.adesionada,...DB.linear].filter(r=>r.vendedor===vend&&r.status!=='Cancelado'&&r.data_contrato?.startsWith(sem?.slice(0,7)||''));
-    const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
-    const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
-    const icons=['📱','✅','📅','🤝','🏆'];
-    const funilTots={};campos.forEach(c=>{funilTots[c]=funilRows.reduce((s,r)=>s+(r[c]||0),0);});
-    const metaVend=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
-    const volVendas=vendaRows.reduce((s,r)=>s+(r.valor_liq||0),0);
-    
-    let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
-    campos.forEach((c,i)=>{
-      const v=funilTots[c];const m=metaVend[c]||0;
-      const pct=m>0?Math.min(Math.round(v/m*100),100):null;
-      const cor=pct===null?'var(--text2)':pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
-      html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px">'+
-        '<div style="font-size:10px;color:var(--text3)">'+icons[i]+' '+labels[i]+'</div>'+
-        '<div style="font-size:18px;font-weight:700;color:'+cor+'">'+v+'</div>'+
-        (m>0?'<div style="font-size:9px;color:'+cor+'">'+pct+'% da meta '+m+'</div>':'')+
-      '</div>';
-    });
-    html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;grid-column:1/-1">'+
-      '<div style="font-size:10px;color:var(--text3)">💰 Volume vendas (mês)</div>'+
-      '<div style="font-size:18px;font-weight:700;color:var(--green)">'+fmtK(volVendas)+'</div>'+
-      '<div style="font-size:9px;color:var(--text3)">'+vendaRows.length+' venda(s)</div>'+
-    '</div></div>';
-    metEl.innerHTML=html;
-  }
-
-  // ── SUGESTÕES INTELIGENTES ────────────────────────────────────────────
-  const sugEl=document.getElementById('diario-sugestoes');
-  if(sugEl){
-    const sugs=[];
-    const semsVend=[...new Set(DB.funil.filter(r=>r.vend===vend).map(r=>r.sem))].sort().reverse();
-    if(semsVend.length>=2){
-      const s1=semsVend[0],s2=semsVend[1];
-      const t1={},t2={};
-      ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
-        t1[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);
-        t2[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);
-      });
-      if(t2.atendidas>0&&t1.atendidas>0){
-        const tx1=t1.atendidas>0?Math.round(t1.agendamentos/t1.atendidas*100):0;
-        const tx2=t2.atendidas>0?Math.round(t2.agendamentos/t2.atendidas*100):0;
-        if(tx1<tx2-15) sugs.push({icon:'⚠️',cor:'var(--yellow)',txt:'Conversão atendida→agendamento caiu de '+tx2+'% para '+tx1+'% — trabalhar a abordagem'});
-      }
-      if(t2.visitas>0&&t1.visitas>0){
-        const tx1=t1.visitas>0?Math.round(t1.fechamentos/t1.visitas*100):0;
-        const tx2=t2.visitas>0?Math.round(t2.fechamentos/t2.visitas*100):0;
-        if(tx1<tx2-10) sugs.push({icon:'🚨',cor:'var(--red)',txt:'Conversão visita→fechamento caiu — foco na apresentação e contorno de objeções'});
-        else if(tx1>tx2+10) sugs.push({icon:'🌟',cor:'var(--green)',txt:'Conversão visita→fechamento subiu '+tx1+'% — manter a estratégia!'});
-      }
-      if(t1.discadas<t2.discadas*0.8) sugs.push({icon:'📉',cor:'var(--accent)',txt:'Volume de discadas caiu vs semana anterior — verificar prospecção'});
-      else if(t1.discadas>t2.discadas*1.2) sugs.push({icon:'📈',cor:'var(--green)',txt:'Volume de discadas cresceu — ótima prospecção!'});
-    }
-    // Check repeated gargalos
-    const regsVend=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,4);
-    const gargaloPalavras={};
-    regsVend.forEach(r=>{
-      (r.gargalos||'').toLowerCase().split(/\s+/).filter(w=>w.length>5).forEach(w=>{gargaloPalavras[w]=(gargaloPalavras[w]||0)+1;});
-    });
-    const recorrentes=Object.entries(gargaloPalavras).filter(([w,n])=>n>=2).map(([w])=>w);
-    if(recorrentes.length) sugs.push({icon:'🔄',cor:'var(--purple)',txt:'Gargalo recorrente detectado: "'+recorrentes.slice(0,2).join('", "')+'" aparece em múltiplos registros'});
-    if(!sugs.length) sugs.push({icon:'✅',cor:'var(--green)',txt:'Nenhum alerta identificado esta semana. Continue monitorando!'});
-    sugEl.innerHTML=sugs.map(s=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
-      '<span style="font-size:16px;flex-shrink:0">'+s.icon+'</span>'+
-      '<span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span>'+
-    '</div>').join('');
-  }
-
-  // ── REGISTRO ATUAL ────────────────────────────────────────────────────
-  const regView=document.getElementById('diario-reg-view');
-  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
-  if(regView){
-    if(!existing){
-      regView.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px 0">Nenhum registro para esta semana. <button class="btn btn-o" style="font-size:12px;margin-left:8px" onclick="editarDiarioAtual()">+ Registrar agora</button></div>';
-    } else {
-      const motEmojis=['','😞','😐','🙂','😊','🔥'];
-      const motLabels=['','Baixa','Regular','Ok','Boa','Alta'];
-      const mot=existing.motivacao||3;
-      regView.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
-        ['gargalos|🚧 Gargalos','desenvolvimento|📈 Desenvolvimento','metas|🎯 Próximas metas','destaque|🌟 Destaque'].map(f=>{
-          const [k,l]=f.split('|');
-          return existing[k]?'<div style="grid-column:'+(k==='gargalos'||k==='desenvolvimento'?'span 1':'span 1')+'">'+
-            '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+l+'</div>'+
-            '<div style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap">'+existing[k]+'</div>'+
-          '</div>':'';
-        }).join('')+
-      '</div>'+
-      '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">'+
-        '<span style="font-size:20px">'+motEmojis[mot]+'</span>'+
-        '<span style="font-size:12px;color:var(--text2)">Motivação: <strong>'+motLabels[mot]+'</strong></span>'+
-      '</div>';
-    }
-  }
-
-  // ── PLANO DE AÇÃO + COMPROMISSOS ──────────────────────────────────────
-  const planoEl=document.getElementById('diario-plano');
-  if(planoEl){
-    if(existing?.plano){
-      planoEl.innerHTML='<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+existing.plano+'</div>';
-    } else {
-      planoEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem plano registrado para esta semana.</div>';
-    }
-  }
-  const compEl=document.getElementById('diario-compromissos');
-  if(compEl){
-    // Get metas from previous week
-    const semAnterior=allSems[allSems.indexOf(sem)+1]||null;
-    const regAnt=semAnterior?DB.diario.find(d=>d.vend===vend&&d.sem===semAnterior):null;
-    if(regAnt?.metas){
-      compEl.innerHTML='<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Combinado na semana de '+fmtSemLabel(semAnterior)+':</div>'+
-        '<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+regAnt.metas+'</div>';
-    } else {
-      compEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem compromissos da semana anterior.</div>';
-    }
-  }
-
-  // ── EVOLUÇÃO PESSOAL ──────────────────────────────────────────────────
-  const evolEl=document.getElementById('diario-evolucao');
-  const evolCampo=document.getElementById('diario-evol-campo')?.value||'motivacao';
-  if(evolEl){
-    const regsVend2=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>a.sem.localeCompare(b.sem)).slice(-10);
-    if(regsVend2.length<2){evolEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para ver a evolução.</div>';return;}
-    const vals=regsVend2.map(r=>{
-      let v=0;
-      if(evolCampo==='motivacao') v=r.motivacao||0;
-      else{const fr=DB.funil.filter(f=>f.vend===vend&&f.sem===r.sem);v=fr.reduce((s,f)=>s+(f[evolCampo]||0),0);}
-      const d=new Date(r.sem+'T12:00:00');
-      return{label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v};
-    });
-    const mx=evolCampo==='motivacao'?5:Math.max(...vals.map(v=>v.v),1);
-    const h=90,bW=44,gap=8,padL=8;const svgW=padL*2+vals.length*(bW+gap);
-    const metaLine=evolCampo==='motivacao'?null:DB.metaFunilVend?.[vend]?.[evolCampo]||DB.metaFunil?.[evolCampo]||0;
-    let svg='<svg viewBox="0 0 '+svgW+' '+(h+28)+'" style="width:100%;height:'+(h+28)+'px">';
-    if(metaLine&&metaLine>0){const my=Math.round((1-metaLine/mx)*h);svg+='<line x1="0" y1="'+my+'" x2="'+svgW+'" y2="'+my+'" stroke="var(--green)" stroke-width="1.5" stroke-dasharray="4,3" opacity=".6"/>';}
-    svg+=vals.map((d,i)=>{
-      const bh=Math.max(Math.round((d.v/mx)*h),d.v>0?4:0);
-      const x=padL+i*(bW+gap);const isCur=i===vals.length-1;
-      const cor=isCur?'var(--accent)':'var(--purple)';
-      return'<rect x="'+x+'" y="'+(h-bh)+'" width="'+bW+'" height="'+bh+'" rx="5" fill="'+cor+'" opacity="'+(isCur?'1':'.7')+'"/>'+
-        (d.v>0?'<text x="'+(x+bW/2)+'" y="'+(h-bh-5)+'" text-anchor="middle" font-size="10" fill="var(--text)" font-family="DM Mono">'+d.v+'</text>':'')+
-        '<text x="'+(x+bW/2)+'" y="'+(h+16)+'" text-anchor="middle" font-size="9" fill="'+(isCur?'var(--accent)':'var(--text3)')+'" font-family="DM Mono">'+d.label+'</text>';
-    }).join('');
-    svg+='</svg>';
-    evolEl.innerHTML='<div style="overflow-x:auto">'+svg+'</div>';
-  }
-
-  // ── PADRÕES ────────────────────────────────────────────────────────────
-  const padEl=document.getElementById('diario-padroes');
-  if(padEl){
-    const regsP=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,6);
-    if(regsP.length<2){padEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para identificar padrões.</div>';}
-    else{
-      const padroes=[];
-      // Motivação trend
-      const mots=regsP.map(r=>r.motivacao||3);
-      const avgMot=mots.reduce((a,b)=>a+b,0)/mots.length;
-      if(avgMot<3) padroes.push({icon:'😟',txt:'Motivação consistentemente baixa nas últimas semanas — atenção'});
-      else if(avgMot>=4) padroes.push({icon:'🔥',txt:'Alta energia nas últimas semanas — reconhecer e manter'});
-      // Gargalo recurrence
-      const gargWords={};
-      regsP.forEach(r=>(r.gargalos||'').split(/[\s,;.]+/).filter(w=>w.length>5).forEach(w=>{gargWords[w]=(gargWords[w]||0)+1;}));
-      const rep=Object.entries(gargWords).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]);
-      if(rep.length) padroes.push({icon:'🔄',txt:'Gargalo recorrente: "'+rep[0][0]+'" mencionado em '+rep[0][1]+' semanas — priorizar no desenvolvimento'});
-      // Funil trend
-      const funilVend=DB.funil.filter(r=>r.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,4);
-      if(funilVend.length>=2){
-        const avg1=funilVend.slice(0,2).reduce((s,r)=>s+(r.fechamentos||0),0)/2;
-        const avg2=funilVend.slice(2).reduce((s,r)=>s+(r.fechamentos||0),0)/Math.max(funilVend.slice(2).length,1);
-        if(avg1>avg2*1.2) padroes.push({icon:'📈',txt:'Fechamentos em crescimento nas últimas semanas'});
-        else if(avg1<avg2*0.8) padroes.push({icon:'📉',txt:'Fechamentos em queda — revisar estratégia de conversão'});
-      }
-      if(!padroes.length) padroes.push({icon:'✅',txt:'Nenhum padrão negativo identificado. Desempenho consistente.'});
-      padEl.innerHTML=padroes.map(p=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
-        '<span style="font-size:18px">'+p.icon+'</span>'+
-        '<span style="font-size:13px;color:var(--text);line-height:1.6">'+p.txt+'</span></div>').join('');
-    }
-  }
-
-  // ── HISTÓRICO ────────────────────────────────────────────────────────
-  const histEl=document.getElementById('diario-historico');
-  if(histEl){
-    const regsH=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem));
-    if(!regsH.length){histEl.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum registro ainda.</div>';return;}
-    const motEmojis=['','😞','😐','🙂','😊','🔥'];
-    histEl.innerHTML=regsH.map(r=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
-        '<div style="font-size:12px;font-weight:600;color:var(--accent)">📅 '+fmtSemLabel(r.sem)+'</div>'+
-        '<div style="display:flex;align-items:center;gap:8px">'+
-          '<span style="font-size:14px">'+motEmojis[r.motivacao||3]+'</span>'+
-          '<button class="btn btn-g" style="font-size:10px;padding:2px 7px" data-vend="'+r.vend+'" data-sem="'+r.sem+'" onclick="editarDiarioBtn(this)">✏</button>'+
-        '</div>'+
-      '</div>'+
-      (r.gargalos?'<div style="font-size:11px;color:var(--text3)"><strong>Gargalo:</strong> '+r.gargalos.slice(0,80)+(r.gargalos.length>80?'...':'')+'</div>':'')+
-      (r.destaque?'<div style="font-size:11px;color:var(--green)">⭐ '+r.destaque+'</div>':'')+
-    '</div>').join('');
-  }
-}
-
-function editarDiarioBtn(btn){
-  editarDiarioSem(btn.dataset.vend, btn.dataset.sem);
-}
-
-function editarDiarioSem(vend, sem){
-  openModal('diario-reg');
-  setTimeout(()=>{
-    const vs=document.getElementById('f-di-vend');if(vs)vs.value=vend;
-    const ss=document.getElementById('f-di-sem');if(ss){for(const o of ss.options){if(o.value===sem){ss.value=sem;break;}}}
-    carregarDiarioExistente();
-  },40);
-}
-
-function renderDiarioComparativo(){
-  // Open a simple comparativo view
-  const vends=vendedores();
-  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
-  const motEmojis=['','😞','😐','🙂','😊','🔥'];
-  const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
-  const labels=['Disc','Atend','Agend','Visita','Fech'];
-  const rows=vends.map(v=>{
-    const reg=DB.diario.find(d=>d.vend===v&&d.sem===sem);
-    const fr=DB.funil.filter(r=>r.vend===v&&r.sem===sem);
-    const tots={};campos.forEach(c=>{tots[c]=fr.reduce((s,r)=>s+(r[c]||0),0);});
-    const metaFech=DB.metaFunilVend?.[v]?.fechamentos||DB.metaFunil?.fechamentos||0;
-    const pct=metaFech>0?Math.round(tots.fechamentos/metaFech*100):null;
-    const semaforo=pct===null?'⚪':pct>=100?'🟢':pct>=70?'🟡':'🔴';
-    return{v,reg,tots,pct,semaforo};
-  });
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comparativo '+fmtSemLabel(sem)+'</title>'+
-    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}h1{color:#f97316;margin-bottom:4px}p{color:#6b7280;font-size:13px;margin-bottom:20px}table{width:100%;border-collapse:collapse}th{background:#f97316;color:#fff;padding:10px 14px;text-align:center}td{padding:10px 14px;border-bottom:1px solid #f3f4f6;text-align:center}td:first-child{text-align:left;font-weight:600}tr:nth-child(even) td{background:#fafafa}@media print{th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+
-    '<h1>📊 Comparativo da Equipe</h1><p>'+fmtSemLabel(sem)+'</p>'+
-    '<table><thead><tr><th>Vendedor</th><th>Status</th><th>Motivação</th>'+labels.map(l=>'<th>'+l+'</th>').join('')+'<th>Meta Fech.</th></tr></thead><tbody>'+
-    rows.map(r=>'<tr><td>'+r.v+'</td><td style="font-size:18px">'+r.semaforo+'</td><td style="font-size:16px">'+motEmojis[r.reg?.motivacao||0]+'</td>'+campos.map(c=>'<td>'+r.tots[c]+'</td>').join('')+'<td style="color:'+(r.pct===null?'#6b7280':r.pct>=100?'#16a34a':r.pct>=70?'#ca8a04':'#dc2626')+';font-weight:700">'+(r.pct!==null?r.pct+'%':'—')+'</td></tr>').join('')+
-    '</tbody></table></body></html>';
-  const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}
-  w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
-}
-
-function gerarPDFDiario(){
-  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
-  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
-  const reg=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
-  const fr=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
-  const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
-  const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
-  const tots={};campos.forEach(c=>{tots[c]=fr.reduce((s,r)=>s+(r[c]||0),0);});
-  const motEmojis=['','😞','😐','🙂','😊','🔥'];
-  const motLabels=['','Baixa','Regular','Ok','Boa','Alta'];
-  const mot=reg?.motivacao||0;
-  const dataHoje=new Date().toLocaleDateString('pt-BR');
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Diário '+vend+'</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:28px;color:#1a1a1a}'+
-    '.hdr{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;padding:22px 28px;border-radius:10px;margin-bottom:20px}'+
-    '.hdr h1{font-size:20px;margin-bottom:4px}.hdr p{font-size:12px;opacity:.85}'+
-    '.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}'+
-    '.kpi{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center}'+
-    '.kl{font-size:9px;text-transform:uppercase;color:#6b7280}.kv{font-size:20px;font-weight:800;color:#f97316}'+
-    '.sec{margin-bottom:18px}.sec h2{font-size:13px;font-weight:700;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:4px;margin-bottom:10px}'+
-    '.box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap}'+
-    '.footer{margin-top:20px;font-size:10px;color:#9ca3af;text-align:center;padding-top:12px;border-top:1px solid #e5e7eb}'+
-    '@media print{.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+
-    '<div class="hdr"><h1>📓 Diário — '+vend+'</h1><p>Semana de '+fmtSemLabel(sem)+' · Gerado em '+dataHoje+'</p></div>'+
-    '<div class="grid">'+campos.map((c,i)=>'<div class="kpi"><div class="kl">'+labels[i]+'</div><div class="kv">'+tots[c]+'</div></div>').join('')+'</div>'+
-    (mot?'<div class="sec"><h2>Motivação / Energia</h2><div class="box">'+motEmojis[mot]+' '+motLabels[mot]+'</div></div>':'')+
-    (reg?.gargalos?'<div class="sec"><h2>🚧 Gargalos Identificados</h2><div class="box">'+reg.gargalos+'</div></div>':'')+
-    (reg?.desenvolvimento?'<div class="sec"><h2>📈 Desenvolvimento Pessoal</h2><div class="box">'+reg.desenvolvimento+'</div></div>':'')+
-    (reg?.metas?'<div class="sec"><h2>🎯 Metas Próxima Semana</h2><div class="box">'+reg.metas+'</div></div>':'')+
-    (reg?.plano?'<div class="sec"><h2>✅ Plano de Ação</h2><div class="box">'+reg.plano+'</div></div>':'')+
-    (reg?.destaque?'<div class="sec"><h2>🌟 Destaque da Semana</h2><div class="box">'+reg.destaque+'</div></div>':'')+
-    '<div class="footer">Laranja Mecânica 🍊 · '+dataHoje+'</div></body></html>';
-  const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}
-  w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
-}
 
 function renderFunil(){
   const CAMPOS=['anuncios', 'numeros', 'retornos', 'discadas', 'atendidas', 'agendamentos', 'visitas', 'fechamentos'];
@@ -4154,18 +3792,16 @@ function renderFunil(){
       // meta por semana × número de semanas no filtro; ou meta por dia × dias úteis
       const getMetaVal=(metaObj,c)=>{
         if(!metaObj) return 0;
-        // Try new format {dia:{}, semana:{}} first, then flat
-        const tabSem=metaObj['semana'];
-        const tabDia=metaObj['dia'];
-        if(mTipo2==='semana'){
-          const base=tabSem?.[c]||metaObj[c]||0;
-          return base*numSems;
-        } else {
-          const base=tabDia?.[c]||metaObj[c]||0;
-          return base*(numSems*5);
-        }
+        // New structure: {semsex:{}, sab:{}, sabIgual, semanas}
+        const semsex=metaObj.semsex||{};
+        const sab=metaObj.sab||semsex;
+        const metaSemanas=metaObj.semanas||1;
+        // Total = (semsex[c]*5 + sab[c]*1) * semanas
+        const vSS=semsex[c]||metaObj[c]||0;
+        const vSab=metaObj.sabIgual?vSS:(sab[c]||metaObj[c]||0);
+        return (vSS*5+vSab*1)*metaSemanas;
       };
-      const renderBars=(meta,tots2,corBase,label)=>{
+      const renderBars=(meta,tots2,corBase,label,metaObj)=>{
         let h='';
         if(label) h+='<div style="font-size:11px;font-weight:700;color:'+corBase+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+label+'</div>';
         h+=CAMPOS.map((c,i)=>{
@@ -4179,6 +3815,7 @@ function renderFunil(){
               '<div style="text-align:right">'+
                 '<span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
                 (falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+' ('+pctRest+'%)</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+
+                (metaObj?.semanas?'<br><span style="font-size:9px;color:var(--text3)">'+((metaObj.semsex||{})[c]||0)+'/dia×5 + '+((metaObj.sab||{})[c]||0)+'/sáb × '+metaObj.semanas+'sem</span>':'')+
               '</div>'+
             '</div>'+
             '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
@@ -4187,11 +3824,11 @@ function renderFunil(){
         }).join('');
         return h;
       };
-      let html=CAMPOS.some(c=>metaGeral[c]>0)?renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe'):'';
+      let html=renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe',metaGeral);
       Object.entries(metaVend).forEach(([vend,meta])=>{
         if(!CAMPOS.some(c=>meta[c]>0))return;
         const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});
-        html+=renderBars(meta,vTots,'var(--blue)','👤 '+vend);
+        html+=renderBars(meta,vTots,'var(--blue)','👤 '+vend,meta);
       });
       metaEl.innerHTML=html;
       // Projeção
@@ -6382,6 +6019,233 @@ function openModal(type='ades'){
     <div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-fn-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
     setTimeout(()=>loadFunilSemana(),50);
     } else if(type==='meta-funil'){
+    title='🎯 Definir Metas do Funil';sub='Configure metas por dia da semana';
+    form=`
+    <div class="fg full">
+      <label class="flabel">Para quem?</label>
+      <select class="finput" id="f-mf-vend" onchange="loadMetaFunilVend()"></select>
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">📅 Seg a Sex — Meta por dia</div>
+      <div class="fgrid" style="gap:10px">
+        <div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-mf-anuncios-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-mf-numeros-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-mf-retornos-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-mf-discadas-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-mf-atendidas-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-mf-agendamentos-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-mf-visitas-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-mf-fechamentos-semsex" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+      </div>
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px">🏖 Sábado — Meta por dia (diferente)</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="f-mf-sab-igual" onchange="toggleSabIgual()" style="accent-color:var(--accent)">
+          Igual à meta de seg-sex
+        </label>
+      </div>
+      <div id="f-mf-sab-campos" class="fgrid" style="gap:10px">
+        <div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-mf-anuncios-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-mf-numeros-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-mf-retornos-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-mf-discadas-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-mf-atendidas-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-mf-agendamentos-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-mf-visitas-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+<div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-mf-fechamentos-sab" type="number" step="1" min="0" placeholder="0" oninput="atualizarPreviewMeta()"></div>
+      </div>
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">📊 Semanas no período</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input class="finput" id="f-mf-semanas" type="number" step="1" min="1" value="1" style="max-width:80px" oninput="atualizarPreviewMeta()">
+        <span style="font-size:12px;color:var(--text3)">semana(s) — ex: 4 = meta mensal</span>
+      </div>
+    </div>
+    <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:12px 16px;margin-top:8px" class="fg full" id="f-mf-preview">
+      <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:6px">📈 Projeção do período</div>
+      <div id="f-mf-preview-text" style="font-size:12px;color:var(--text2)">Preencha os campos acima</div>
+    </div>`;
+    setTimeout(()=>{
+      const vs=document.getElementById('f-mf-vend');
+      if(vs) vs.innerHTML=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
+      loadMetaFunilVend();
+    },30);
+
+  
+  } else if(type==='meta-grupo'){
+    title='🎯 Meta do Grupo';sub='Define o volume alvo da equipe supervisionada';
+    const supSel2=document.getElementById('sup-supervisora-sel');
+    const mesSel2=document.getElementById('sup-mes-sel');
+    const curSup=supSel2?.value||DB.supervisores[0]?.nome||'';
+    const curMesG=mesSel2?.value||getMonthKey();
+    const supOpts4=DB.supervisores.map(s=>`<option value="${s.nome}"${s.nome===curSup?' selected':''}>${s.nome}</option>`).join('');
+    // Future months
+    const fmths=[];
+    const nowG=new Date();
+    for(let i=-3;i<=12;i++){
+      const d=new Date(nowG.getFullYear(),nowG.getMonth()+i,1);
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      fmths.push(k);
+    }
+    const mOptsG=fmths.map(m=>`<option value="${m}"${m===curMesG?' selected':''}>${fmtMonth(m)}</option>`).join('');
+    // Load existing
+    const existing=DB.metasGrupo?.find(m=>m.supervisor===curSup&&m.mes===curMesG);
+    form=`<div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-mg-sup" onchange="preencherMetaGrupo()">${supOpts4}</select></div>
+    <div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-mg-mes" onchange="preencherMetaGrupo()">${mOptsG}</select></div>
+    <div class="fg"><label class="flabel">Meta Volume do Grupo (R$)</label><input class="finput" id="f-mg-vol" type="number" step="1000" placeholder="ex: 2000000" value="${existing?.meta_vol||''}"></div>
+    <div class="fg"><label class="flabel">Meta Qtd. Vendas do Grupo</label><input class="finput" id="f-mg-qtd" type="number" step="1" placeholder="ex: 15" value="${existing?.meta_qtd||''}"></div>`;
+  } else if(type==='funil'){
+    title='📊 Registrar / Atualizar Semana';sub='';
+    const vOpts9=['Equipe',...vendedores()].map(v=>`<option value="${v}">${v==='Equipe'?'Toda equipe':v}</option>`).join('');
+    // Generate week options: last 12 + next 4
+    const weekOpts=[];
+    const now2=new Date();
+    const dow2=now2.getDay(); const seg2=new Date(now2);
+    seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+    for(let w=-12;w<=4;w++){
+      const d=new Date(seg2); d.setDate(seg2.getDate()+w*7);
+      const fim=new Date(d); fim.setDate(d.getDate()+5);
+      const key=d.toISOString().slice(0,10);
+      const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      weekOpts.push(`<option value="${key}"${w===0?' selected':''}>${label}</option>`);
+    }
+    form=`<div class="fg full">
+      <label class="flabel">Semana</label>
+      <select class="finput" id="f-fn-sem" onchange="loadFunilSemana()">${weekOpts.join('')}</select>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3)">Ou escolha pelo calendário:</span>
+        <input type="date" class="finput" id="f-fn-sem-date" value="${now2.toISOString().slice(0,10)}" style="max-width:160px;font-size:12px;padding:5px 8px" onchange="syncFunilDate(this.value)">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">Vendedor</label>
+      <select class="finput" id="f-fn-vend" onchange="loadFunilSemana()">${vOpts9}</select>
+    </div>
+    <div id="f-fn-atualiza-aviso" style="display:none;background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--green);margin-top:4px" class="fg full">
+      ✅ Registro existente carregado — edite os valores e salve para atualizar.
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">📝 Preencha os totais acumulados da semana até hoje:</div>
+    </div>
+    <div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-fn-anuncios" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-fn-numeros" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-fn-retornos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-fn-discadas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-fn-atendidas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-fn-agendamentos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-fn-visitas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-fn-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
+    setTimeout(()=>loadFunilSemana(),50);
+    } else if(type==='meta-funil'){
+    title='🎯 Definir Metas do Funil';sub='Configure metas e período de repetição';
+    const vOpts10=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
+    form=`
+    <div class="fg full">
+      <label class="flabel">Para quem?</label>
+      <select class="finput" id="f-mf-vend" onchange="loadMetaFunilVend()">${vOpts10}</select>
+    </div>
+    <div class="fg full">
+      <label class="flabel">Tipo de meta</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button type="button" id="mf-btn-dia" onclick="setMfTipo('dia')" class="btn btn-o" style="flex:1;font-size:12px;padding:6px">📅 Por dia</button>
+        <button type="button" id="mf-btn-semana" onclick="setMfTipo('semana')" class="btn btn-g" style="flex:1;font-size:12px;padding:6px">📆 Por semana</button>
+      </div>
+      <input type="hidden" id="f-mf-tipo" value="dia">
+    </div>
+    <div class="fg">
+      <label class="flabel">Repetir por quantos <span id="f-mf-tipo-label">dias</span>?</label>
+      <input class="finput" id="f-mf-repeticoes" type="number" step="1" min="1" value="5" placeholder="ex: 5">
+      <div style="font-size:10px;color:var(--text3);margin-top:4px">Ex: meta de 40/dia × 5 dias = 200 no período</div>
+    </div>
+    <div class="fg full" style="background:var(--bg3);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--accent);font-weight:600" id="f-mf-preview">
+      Total do período: —
+    </div>
+    <div class="fgrid" style="gap:10px;margin-top:4px">
+      ` + campos_inputs + `
+    </div>`;
+    setTimeout(()=>{
+      const vs=document.getElementById('f-mf-vend');
+      if(vs) vs.innerHTML=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
+      setMfTipo('dia');
+      loadMetaFunilVend();
+      // Add oninput to all campos
+      ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+        const el=document.getElementById('f-mf-'+c);
+        if(el) el.addEventListener('input',atualizarPreviewMeta);
+      });
+      const repEl=document.getElementById('f-mf-repeticoes');
+      if(repEl) repEl.addEventListener('input',atualizarPreviewMeta);
+    },30);
+
+
+  } else if(type==='meta-grupo'){
+    title='🎯 Meta do Grupo';sub='Define o volume alvo da equipe supervisionada';
+    const supSel2=document.getElementById('sup-supervisora-sel');
+    const mesSel2=document.getElementById('sup-mes-sel');
+    const curSup=supSel2?.value||DB.supervisores[0]?.nome||'';
+    const curMesG=mesSel2?.value||getMonthKey();
+    const supOpts4=DB.supervisores.map(s=>`<option value="${s.nome}"${s.nome===curSup?' selected':''}>${s.nome}</option>`).join('');
+    // Future months
+    const fmths=[];
+    const nowG=new Date();
+    for(let i=-3;i<=12;i++){
+      const d=new Date(nowG.getFullYear(),nowG.getMonth()+i,1);
+      const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      fmths.push(k);
+    }
+    const mOptsG=fmths.map(m=>`<option value="${m}"${m===curMesG?' selected':''}>${fmtMonth(m)}</option>`).join('');
+    // Load existing
+    const existing=DB.metasGrupo?.find(m=>m.supervisor===curSup&&m.mes===curMesG);
+    form=`<div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-mg-sup" onchange="preencherMetaGrupo()">${supOpts4}</select></div>
+    <div class="fg"><label class="flabel">Mês</label><select class="finput" id="f-mg-mes" onchange="preencherMetaGrupo()">${mOptsG}</select></div>
+    <div class="fg"><label class="flabel">Meta Volume do Grupo (R$)</label><input class="finput" id="f-mg-vol" type="number" step="1000" placeholder="ex: 2000000" value="${existing?.meta_vol||''}"></div>
+    <div class="fg"><label class="flabel">Meta Qtd. Vendas do Grupo</label><input class="finput" id="f-mg-qtd" type="number" step="1" placeholder="ex: 15" value="${existing?.meta_qtd||''}"></div>`;
+  } else if(type==='funil'){
+    title='📊 Registrar / Atualizar Semana';sub='';
+    const vOpts9=['Equipe',...vendedores()].map(v=>`<option value="${v}">${v==='Equipe'?'Toda equipe':v}</option>`).join('');
+    // Generate week options: last 12 + next 4
+    const weekOpts=[];
+    const now2=new Date();
+    const dow2=now2.getDay(); const seg2=new Date(now2);
+    seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+    for(let w=-12;w<=4;w++){
+      const d=new Date(seg2); d.setDate(seg2.getDate()+w*7);
+      const fim=new Date(d); fim.setDate(d.getDate()+5);
+      const key=d.toISOString().slice(0,10);
+      const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      weekOpts.push(`<option value="${key}"${w===0?' selected':''}>${label}</option>`);
+    }
+    form=`<div class="fg full">
+      <label class="flabel">Semana</label>
+      <select class="finput" id="f-fn-sem" onchange="loadFunilSemana()">${weekOpts.join('')}</select>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3)">Ou escolha pelo calendário:</span>
+        <input type="date" class="finput" id="f-fn-sem-date" value="${now2.toISOString().slice(0,10)}" style="max-width:160px;font-size:12px;padding:5px 8px" onchange="syncFunilDate(this.value)">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="flabel">Vendedor</label>
+      <select class="finput" id="f-fn-vend" onchange="loadFunilSemana()">${vOpts9}</select>
+    </div>
+    <div id="f-fn-atualiza-aviso" style="display:none;background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--green);margin-top:4px" class="fg full">
+      ✅ Registro existente carregado — edite os valores e salve para atualizar.
+    </div>
+    <div class="fg full" style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px">📝 Preencha os totais acumulados da semana até hoje:</div>
+    </div>
+    <div class="fg"><label class="flabel">📣 Anúncios</label><input class="finput" id="f-fn-anuncios" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📞 Números</label><input class="finput" id="f-fn-numeros" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🔄 Retornos</label><input class="finput" id="f-fn-retornos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📱 Discadas</label><input class="finput" id="f-fn-discadas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">✅ Atendidas</label><input class="finput" id="f-fn-atendidas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">📅 Agendamentos</label><input class="finput" id="f-fn-agendamentos" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🤝 Visitas</label><input class="finput" id="f-fn-visitas" type="number" step="1" min="0" placeholder="0"></div>
+    <div class="fg"><label class="flabel">🏆 Fechamentos</label><input class="finput" id="f-fn-fechamentos" type="number" step="1" min="0" placeholder="0"></div>`;
+    setTimeout(()=>loadFunilSemana(),50);
+    } else if(type==='meta-funil'){
     title='🎯 Definir Metas do Funil';sub='Configure metas por dia e por semana';
     const vOpts10=['Geral (equipe)',...vendedores()].map(v=>`<option value="${v}">${v}</option>`).join('');
     form=`<div class="fg full" style="margin-bottom:8px">
@@ -6795,17 +6659,19 @@ function saveModal(){
     if(!DB.metaFunil) DB.metaFunil={};
     if(!DB.metaFunilVend) DB.metaFunilVend={};
     const mfVend=document.getElementById('f-mf-vend')?.value||'Geral (equipe)';
-    const tab=_metaFunilTab||'dia';
-    const recMF={anuncios:gn('f-mf-anuncios-'+tab),numeros:gn('f-mf-numeros-'+tab),retornos:gn('f-mf-retornos-'+tab),discadas:gn('f-mf-discadas-'+tab),atendidas:gn('f-mf-atendidas-'+tab),agendamentos:gn('f-mf-agendamentos-'+tab),visitas:gn('f-mf-visitas-'+tab),fechamentos:gn('f-mf-fechamentos-'+tab)};
+    const sabIgual=document.getElementById('f-mf-sab-igual')?.checked||false;
+    const semanas=parseInt(document.getElementById('f-mf-semanas')?.value)||1;
+    const semsex={};const sab={};
+    ['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+      semsex[c]=gn('f-mf-'+c+'-semsex');
+      sab[c]=sabIgual?semsex[c]:(gn('f-mf-'+c+'-sab'));
+    });
+    const recMF={semsex,sab,sabIgual,semanas};
     if(mfVend==='Geral (equipe)'){
-      if(!DB.metaFunil[tab]) DB.metaFunil[tab]={};
-      Object.assign(DB.metaFunil[tab], recMF);
-      // Keep backward compat: also store flat
       Object.assign(DB.metaFunil, recMF);
     } else {
       if(!DB.metaFunilVend[mfVend]) DB.metaFunilVend[mfVend]={};
-      if(!DB.metaFunilVend[mfVend][tab]) DB.metaFunilVend[mfVend][tab]={};
-      Object.assign(DB.metaFunilVend[mfVend][tab], recMF);
+      Object.assign(DB.metaFunilVend[mfVend], recMF);
     }
     setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
   } else if(modalType==='diario-reg'){
