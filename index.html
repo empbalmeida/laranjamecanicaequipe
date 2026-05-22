@@ -3713,7 +3713,18 @@ function renderDiario(){
     const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
     const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
     const icons=['📱','✅','📅','🤝','🏆'];
-    const metaVend=DB.metaFunilVend?.[vend]?.semsex||DB.metaFunil?.semsex||{};
+    // Meta SEMANAL = semsex*5 + sab*1
+    const _mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
+    const metaVend={};
+    ['discadas','atendidas','agendamentos','visitas','fechamentos','anuncios','numeros','retornos'].forEach(c=>{
+      if(_mv.semsex){
+        const vSS=_mv.semsex[c]||0;
+        const vSab=_mv.sabIgual?vSS:(_mv.sab?.[c]||0);
+        metaVend[c]=vSS*5+vSab*1;
+      } else {
+        metaVend[c]=_mv[c]||0;
+      }
+    });
     const volVendas=vendaRows.reduce((s,r)=>s+(r.valor_liq||0),0);
     let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
     campos.forEach((c,i)=>{
@@ -4125,7 +4136,7 @@ function renderFunil(){
     }
   }
 
-  // ── RANKING POR VENDEDOR ──────────────────────────────────────────────────
+  // ── RANKING POR VENDEDOR — organizado por semana ─────────────────────────
   const rankEl=document.getElementById('funil-ranking');
   const rankCard=document.getElementById('funil-ranking-card');
   if(rankEl){
@@ -4133,54 +4144,117 @@ function renderFunil(){
     if(vends.length<2){if(rankCard)rankCard.style.display='none';}
     else{
       if(rankCard)rankCard.style.display='';
-      const dados=vends.map(v=>{
-        const vR=allRows.filter(r=>r.vend===v);
-        const d=vR.reduce((s,r)=>s+(r.discadas||0),0);
-        const a=vR.reduce((s,r)=>s+(r.atendidas||0),0);
-        const ag=vR.reduce((s,r)=>s+(r.agendamentos||0),0);
-        const f=vR.reduce((s,r)=>s+(r.fechamentos||0),0);
-        const txDA=d>0?Math.round(a/d*100):0;
-        const txAF=a>0?Math.round(f/a*100):0;
-        return{v,d,a,ag,f,txDA,txAF};
-      }).filter(d=>d.d>0||d.f>0).sort((a,b)=>b.f-a.f);
-      rankEl.innerHTML=dados.map((d,i)=>'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">'+
-        '<div style="font-size:18px;width:28px;text-align:center">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div>'+
-        '<div style="flex:1;min-width:80px"><div style="font-size:13px;font-weight:600">'+d.v+'</div>'+
-        '<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Disc→Atend: '+d.txDA+'% · Atend→Fech: '+d.txAF+'%</div></div>'+
-        '<div style="display:flex;gap:12px;font-size:12px;font-family:DM Mono,monospace">'+
-          '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">AGEND</div><div style="font-weight:700">'+d.ag+'</div></div>'+
-          '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">FECH</div><div style="font-weight:700;color:var(--green)">'+d.f+'</div></div>'+
-        '</div>'+
-      '</div>').join('')||'<div style="color:var(--text3);font-size:13px">Sem dados suficientes.</div>';
+      // Get all semanas from allRows
+      const rankSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
+      // Group by month
+      const rankByMes={};
+      rankSems.forEach(s=>{
+        const mes=s.slice(0,7);
+        if(!rankByMes[mes]) rankByMes[mes]=[];
+        rankByMes[mes].push(s);
+      });
+
+      const renderRankSem=(semRows,label)=>{
+        const dados=vends.map(v=>{
+          const vR=semRows.filter(r=>r.vend===v);
+          const d=vR.reduce((s,r)=>s+(r.discadas||0),0);
+          const a=vR.reduce((s,r)=>s+(r.atendidas||0),0);
+          const ag=vR.reduce((s,r)=>s+(r.agendamentos||0),0);
+          const f=vR.reduce((s,r)=>s+(r.fechamentos||0),0);
+          const txDA=d>0?Math.round(a/d*100):0;
+          const txAF=a>0?Math.round(f/a*100):0;
+          return{v,d,a,ag,f,txDA,txAF};
+        }).filter(x=>x.d>0||x.f>0).sort((a,b)=>b.f-a.f||b.txAF-a.txAF);
+        if(!dados.length) return'';
+        return dados.map((d,i)=>
+          '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">'+
+            '<div style="font-size:16px;width:24px;text-align:center">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div>'+
+            '<div style="flex:1;min-width:80px">'+
+              '<div style="font-size:13px;font-weight:600">'+d.v+'</div>'+
+              '<div style="font-size:10px;color:var(--text3);font-family:DM Mono">Disc→Atend: '+d.txDA+'% · Atend→Fech: '+d.txAF+'%</div>'+
+            '</div>'+
+            '<div style="display:flex;gap:12px;font-size:12px;font-family:DM Mono">'+
+              '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">AGEND</div><div style="font-weight:700">'+d.ag+'</div></div>'+
+              '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">FECH</div><div style="font-weight:700;color:var(--green)">'+d.f+'</div></div>'+
+            '</div>'+
+          '</div>'
+        ).join('');
+      };
+
+      // Build output grouped by month → week
+      let html=Object.entries(rankByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{
+        const mesDate=new Date(mes+'-01T12:00:00');
+        const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+        const mesId='rank-mes-'+mes.replace('-','');
+        const semsHtml=sems.map(s=>{
+          const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
+          const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+          const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
+          const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
+          const semRows=allRows.filter(r=>r.sem===s);
+          const semId='rank-sem-'+s;
+          const rankHtml=renderRankSem(semRows,semLabel);
+          if(!rankHtml) return'';
+          return'<div style="margin-bottom:8px">'+
+            '<div style="font-size:11px;font-weight:600;color:var(--accent);padding:6px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+semId+'">'+
+              '<span id="'+semId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+
+            '</div>'+
+            '<div id="'+semId+'"'+(isNow?'':' style="display:none"')+'>'+rankHtml+'</div>'+
+          '</div>';
+        }).join('');
+        if(!semsHtml.trim()) return'';
+        return'<div style="margin-bottom:16px">'+
+          '<div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'">'+
+            '<span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+
+          '</div>'+
+          '<div id="'+mesId+'">'+semsHtml+'</div>'+
+        '</div>';
+      }).join('');
+      rankEl.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados suficientes.</div>';
     }
   }
 
-  // ── HEATMAP SEMANAL ───────────────────────────────────────────────────────
+  // ── HEATMAP SEMANAL — organizado por mês ────────────────────────────────────
   const heatEl=document.getElementById('funil-heatmap');
   const heatCampo=document.getElementById('funil-heat-campo')?.value||'fechamentos';
   if(heatEl){
-    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().slice(-12);
+    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
     if(!semanas.length){heatEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';}
     else{
-      const vals=semanas.map(s=>{
-        const d=new Date(s+'T12:00:00');
-        const fim=new Date(d);fim.setDate(d.getDate()+5);
-        const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0);
-        return{s,label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v};
+      // Group by month
+      const byMesHeat={};
+      semanas.forEach(s=>{
+        const mes=s.slice(0,7);
+        if(!byMesHeat[mes]) byMesHeat[mes]=[];
+        byMesHeat[mes].push(s);
       });
-      const mx=Math.max(...vals.map(v=>v.v),1);
-      heatEl.innerHTML='<div style="display:flex;gap:6px;flex-wrap:wrap">'+
-        vals.map(d=>{
-          const intensity=d.v/mx;
-          const bg=d.v===0?'var(--bg3)':`rgba(249,115,22,${0.1+intensity*0.85})`;
-          const txt=d.v===0?'var(--text3)':intensity>0.5?'#fff':'var(--text)';
-          const now2=new Date();now2.setHours(0,0,0,0);const dow2=now2.getDay();const seg2=new Date(now2);seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
-          const isNow=new Date(d.s+'T12:00:00')>=seg2&&new Date(d.s+'T12:00:00')<=new Date(seg2.getTime()+6*864e5);
-          return'<div title="'+d.label+': '+d.v+' '+LABELS[CAMPOS.indexOf(heatCampo)]+'" style="width:64px;height:64px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isNow?'2px solid var(--accent)':'1px solid var(--border)')+';cursor:default">'+
-            '<div style="font-size:16px;font-weight:800;color:'+txt+'">'+d.v+'</div>'+
-            '<div style="font-size:9px;color:'+txt+';opacity:.8;font-family:DM Mono">'+d.label+'</div>'+
+      const mx=Math.max(...semanas.map(s=>allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0)),1);
+      const now2=new Date();now2.setHours(0,0,0,0);const dow2=now2.getDay();const seg2=new Date(now2);seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+      heatEl.innerHTML=Object.entries(byMesHeat).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{
+        const mesDate=new Date(mes+'-01T12:00:00');
+        const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+        const mesTot=sems.reduce((s,sem)=>s+allRows.filter(r=>r.sem===sem).reduce((ss,r)=>ss+(r[heatCampo]||0),0),0);
+        const cells=sems.map(s=>{
+          const d=new Date(s+'T12:00:00');
+          const fim=new Date(d);fim.setDate(d.getDate()+5);
+          const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+          const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0);
+          const intensity=v/mx;
+          const bg=v===0?'var(--bg3)':`rgba(249,115,22,${0.1+intensity*0.85})`;
+          const txt=v===0?'var(--text3)':intensity>0.5?'#fff':'var(--text)';
+          const isNow=new Date(s+'T12:00:00')>=seg2&&new Date(s+'T12:00:00')<=new Date(seg2.getTime()+6*864e5);
+          return'<div title="'+label+': '+v+' '+LABELS[CAMPOS.indexOf(heatCampo)]+'" style="width:72px;height:72px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isNow?'2px solid var(--accent)':'1px solid var(--border)')+';cursor:default;flex-shrink:0">'+
+            '<div style="font-size:18px;font-weight:800;color:'+txt+'">'+v+'</div>'+
+            '<div style="font-size:9px;color:'+txt+';opacity:.85;font-family:DM Mono;text-align:center;line-height:1.2">'+d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+'</div>'+
           '</div>';
-        }).join('')+'</div>';
+        }).join('');
+        return'<div style="margin-bottom:16px">'+
+          '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:capitalize;margin-bottom:8px;display:flex;align-items:center;gap:8px">'+
+            mesLabel+'<span style="font-size:10px;color:var(--text3);font-family:DM Mono">total: '+mesTot+'</span>'+
+          '</div>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">'+cells+'</div>'+
+        '</div>';
+      }).join('');
     }
   }
 
