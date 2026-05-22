@@ -1144,29 +1144,16 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <!-- KPIs -->
       <div class="kpi-grid kpi-grid-4" id="funil-kpis" style="margin-bottom:18px"></div>
 
-      <!-- Funil visual + Evolução -->
-      <div class="grid2" style="margin-bottom:16px">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">🔻 Funil Visual</div>
-            <span id="funil-periodo-label" style="font-size:12px;color:var(--text3)"></span>
-          </div>
-          <div id="funil-visual" style="padding:18px 22px"></div>
+      <!-- Funil visual -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">🔻 Funil Visual</div>
+          <span id="funil-periodo-label" style="font-size:12px;color:var(--text3)"></span>
         </div>
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">📈 Evolução Semanal</div>
-            <select class="fi" id="funil-evol-campo" onchange="renderFunil()" style="font-size:11px;padding:3px 8px;min-width:120px">
-              <option value="fechamentos">Fechamentos</option>
-              <option value="agendamentos">Agendamentos</option>
-              <option value="visitas">Visitas</option>
-              <option value="atendidas">Atendidas</option>
-              <option value="discadas">Discadas</option>
-            </select>
-          </div>
-          <div id="funil-evolucao" style="padding:16px 20px 8px"></div>
-        </div>
+        <div id="funil-visual" style="padding:18px 22px"></div>
       </div>
+
+
 
       <!-- Taxas de conversão -->
       <div class="card" style="margin-bottom:16px">
@@ -1176,6 +1163,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         </div>
         <div id="funil-conversao" style="padding:18px 22px"></div>
       </div>
+
+
 
       <!-- Metas vs Realizado -->
       <div class="card" style="margin-bottom:16px">
@@ -3616,6 +3605,277 @@ function loadMetaFunilVend(){
 }
 
 function switchMetaFunilTab(){}  // legacy stub
+
+
+// ══════════════════════════ DIÁRIO DA EQUIPE ═════════════════════════════════
+
+function setMotivacao(n){
+  [1,2,3,4,5].forEach(i=>{
+    const btn=document.getElementById('mot-btn-'+i);
+    if(btn){btn.className='btn '+(i===n?'btn-o':'btn-g');btn.style.cssText='font-size:16px;padding:4px 10px';}
+  });
+  const inp=document.getElementById('f-di-motivacao');
+  if(inp) inp.value=n;
+}
+
+function carregarDiarioExistente(){
+  const vend=document.getElementById('f-di-vend')?.value||'';
+  const sem=document.getElementById('f-di-sem')?.value||'';
+  const aviso=document.getElementById('f-di-aviso');
+  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  if(existing){
+    const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
+    set('f-di-gargalos',existing.gargalos);set('f-di-desenvolvimento',existing.desenvolvimento);
+    set('f-di-metas',existing.metas);set('f-di-plano',existing.plano);set('f-di-destaque',existing.destaque);
+    setMotivacao(existing.motivacao||3);
+    if(aviso) aviso.style.display='';
+  } else {
+    ['f-di-gargalos','f-di-desenvolvimento','f-di-metas','f-di-plano','f-di-destaque'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    setMotivacao(3);if(aviso) aviso.style.display='none';
+  }
+}
+
+function editarDiarioAtual(){
+  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
+  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  openModal('diario-reg');
+  setTimeout(()=>{const vs=document.getElementById('f-di-vend');if(vs)vs.value=vend;const ss=document.getElementById('f-di-sem');if(ss)ss.value=sem;carregarDiarioExistente();},40);
+}
+
+function getSemAtual(){
+  const now=new Date();const dow=now.getDay();
+  const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
+  return seg.toISOString().slice(0,10);
+}
+
+function fmtSemLabel(sem){
+  const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+
+function editarDiarioBtn(btn){ editarDiarioSem(btn.dataset.vend, btn.dataset.sem); }
+
+function editarDiarioSem(vend,sem){
+  openModal('diario-reg');
+  setTimeout(()=>{
+    const vs=document.getElementById('f-di-vend');if(vs)vs.value=vend;
+    const ss=document.getElementById('f-di-sem');if(ss){for(const o of ss.options){if(o.value===sem){ss.value=sem;break;}}}
+    carregarDiarioExistente();
+  },40);
+}
+
+function renderDiario(){
+  const vSel=document.getElementById('diario-vend');
+  const vends=vendedores();
+  if(vSel){const cur=vSel.value||vends[0]||'';vSel.innerHTML=vends.map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');if(!vSel.value&&vends[0])vSel.value=vends[0];}
+  const vend=vSel?.value||vends[0]||'';
+  const sSel=document.getElementById('diario-semana');
+  const allSems=[...new Set(DB.diario.filter(d=>d.vend===vend).map(d=>d.sem))].sort().reverse();
+  const semAtual=getSemAtual();
+  if(!allSems.includes(semAtual)) allSems.unshift(semAtual);
+  if(sSel){const cur=sSel.value||semAtual;sSel.innerHTML=allSems.map(s=>`<option value="${s}"${s===cur?' selected':''}>${fmtSemLabel(s)}${s===semAtual?' (atual)':''}</option>`).join('');if(!sSel.value)sSel.value=semAtual;}
+  const sem=sSel?.value||semAtual;
+
+  // Semáforo
+  const semEl=document.getElementById('diario-semaforo');
+  if(semEl){
+    const chips=vends.map(v=>{
+      const reg=DB.diario.filter(d=>d.vend===v).sort((a,b)=>b.sem.localeCompare(a.sem))[0];
+      const funilRows=DB.funil.filter(r=>r.vend===v&&r.sem===semAtual);
+      const fechamentos=funilRows.reduce((s,r)=>s+(r.fechamentos||0),0);
+      const metaF=DB.metaFunilVend?.[v]?.semsex?.fechamentos||DB.metaFunil?.semsex?.fechamentos||DB.metaFunil?.fechamentos||0;
+      const pct=metaF>0?Math.round(fechamentos/metaF*100):null;
+      const semaforo=pct===null?'⚪':pct>=100?'🟢':pct>=70?'🟡':'🔴';
+      const mot=reg?.motivacao||0;const motEmoji=mot>=4?'🔥':mot>=3?'🙂':mot>=2?'😐':'😞';
+      const isSelected=v===vend;
+      return`<div onclick="document.getElementById('diario-vend').value='${v}';renderDiario()" style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:${isSelected?'rgba(249,115,22,.1)':'var(--bg3)'};border:${isSelected?'1.5px solid var(--accent)':'1px solid var(--border)'};border-radius:10px;cursor:pointer;min-width:140px">
+        <div style="font-size:18px">${semaforo}</div>
+        <div><div style="font-size:12px;font-weight:600">${v}</div>
+        <div style="font-size:10px;color:var(--text3)">${motEmoji} ${mot?['','Baixa','Regular','Ok','Boa','Alta'][mot]:'—'} · ${pct!==null?pct+'% meta':'sem meta'}</div></div>
+      </div>`;
+    }).join('');
+    semEl.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+chips+'</div>';
+  }
+
+  // Métricas
+  const metEl=document.getElementById('diario-metricas');
+  const metLbl=document.getElementById('diario-metrica-label');
+  if(metEl){
+    if(metLbl) metLbl.textContent=vend+' · '+fmtSemLabel(sem);
+    const funilRows=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
+    const vendaRows=[...DB.adesionada,...DB.linear].filter(r=>r.vendedor===vend&&r.status!=='Cancelado'&&r.data_contrato?.startsWith(sem?.slice(0,7)||''));
+    const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+    const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+    const icons=['📱','✅','📅','🤝','🏆'];
+    const metaVend=DB.metaFunilVend?.[vend]?.semsex||DB.metaFunil?.semsex||{};
+    const volVendas=vendaRows.reduce((s,r)=>s+(r.valor_liq||0),0);
+    let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
+    campos.forEach((c,i)=>{
+      const v=funilRows.reduce((s,r)=>s+(r[c]||0),0);const m=metaVend[c]||0;
+      const pct=m>0?Math.min(Math.round(v/m*100),100):null;
+      const cor=pct===null?'var(--text2)':pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
+      html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px">'+
+        '<div style="font-size:10px;color:var(--text3)">'+icons[i]+' '+labels[i]+'</div>'+
+        '<div style="font-size:18px;font-weight:700;color:'+cor+'">'+v+'</div>'+
+        (m>0?'<div style="font-size:9px;color:'+cor+'">'+pct+'% da meta '+m+'</div>':'')+
+      '</div>';
+    });
+    html+='<div style="background:var(--bg3);border-radius:8px;padding:10px 12px;grid-column:1/-1">'+
+      '<div style="font-size:10px;color:var(--text3)">💰 Volume vendas (mês)</div>'+
+      '<div style="font-size:18px;font-weight:700;color:var(--green)">'+fmtK(volVendas)+'</div>'+
+      '<div style="font-size:9px;color:var(--text3)">'+vendaRows.length+' venda(s)</div></div></div>';
+    metEl.innerHTML=html;
+  }
+
+  // Sugestões
+  const sugEl=document.getElementById('diario-sugestoes');
+  if(sugEl){
+    const sugs=[];
+    const semsVend=[...new Set(DB.funil.filter(r=>r.vend===vend).map(r=>r.sem))].sort().reverse();
+    if(semsVend.length>=2){
+      const s1=semsVend[0],s2=semsVend[1];
+      const t1={},t2={};
+      ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+        t1[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);
+        t2[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);
+      });
+      if(t2.atendidas>0&&t1.atendidas>0){const tx1=t1.atendidas>0?Math.round(t1.agendamentos/t1.atendidas*100):0;const tx2=t2.atendidas>0?Math.round(t2.agendamentos/t2.atendidas*100):0;if(tx1<tx2-15)sugs.push({icon:'⚠️',txt:'Conversão atendida→agendamento caiu de '+tx2+'% para '+tx1+'% — trabalhar a abordagem'});}
+      if(t1.discadas<t2.discadas*0.8)sugs.push({icon:'📉',txt:'Volume de discadas caiu vs semana anterior — verificar prospecção'});
+    }
+    if(!sugs.length)sugs.push({icon:'✅',txt:'Nenhum alerta identificado. Continue monitorando!'});
+    sugEl.innerHTML=sugs.map(s=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:16px">'+s.icon+'</span><span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span></div>').join('');
+  }
+
+  // Registro atual
+  const regView=document.getElementById('diario-reg-view');
+  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  if(regView){
+    if(!existing){
+      regView.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum registro para esta semana. <button class="btn btn-o" style="font-size:12px;margin-left:8px" onclick="editarDiarioAtual()">+ Registrar agora</button></div>';
+    } else {
+      const motEmojis=['','😞','😐','🙂','😊','🔥'];const motLabels=['','Baixa','Regular','Ok','Boa','Alta'];const mot=existing.motivacao||3;
+      regView.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+        ['gargalos|🚧 Gargalos','desenvolvimento|📈 Desenvolvimento','metas|🎯 Próximas metas','destaque|🌟 Destaque'].map(f=>{
+          const [k,l]=f.split('|');
+          return existing[k]?'<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:4px">'+l+'</div><div style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap">'+existing[k]+'</div></div>':'';
+        }).join('')+
+      '</div><div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px">'+
+        '<span style="font-size:20px">'+motEmojis[mot]+'</span><span style="font-size:12px;color:var(--text2)">Motivação: <strong>'+motLabels[mot]+'</strong></span></div>';
+    }
+  }
+
+  // Plano e compromissos
+  const planoEl=document.getElementById('diario-plano');
+  if(planoEl) planoEl.innerHTML=existing?.plano?'<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+existing.plano+'</div>':'<div style="color:var(--text3);font-size:12px">Sem plano registrado.</div>';
+  const compEl=document.getElementById('diario-compromissos');
+  if(compEl){const semAnterior=allSems[allSems.indexOf(sem)+1]||null;const regAnt=semAnterior?DB.diario.find(d=>d.vend===vend&&d.sem===semAnterior):null;
+    compEl.innerHTML=regAnt?.metas?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Combinado em '+fmtSemLabel(semAnterior)+':</div><div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+regAnt.metas+'</div>':'<div style="color:var(--text3);font-size:12px">Sem compromissos da semana anterior.</div>';
+  }
+
+  // Evolução pessoal
+  const evolEl=document.getElementById('diario-evolucao');
+  const evolCampo=document.getElementById('diario-evol-campo')?.value||'motivacao';
+  if(evolEl){
+    const regsVend=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>a.sem.localeCompare(b.sem)).slice(-10);
+    if(regsVend.length<2){evolEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para ver a evolução.</div>';return;}
+    const vals=regsVend.map(r=>{
+      let v=0;if(evolCampo==='motivacao')v=r.motivacao||0;else{const fr=DB.funil.filter(f=>f.vend===vend&&f.sem===r.sem);v=fr.reduce((s,f)=>s+(f[evolCampo]||0),0);}
+      const d=new Date(r.sem+'T12:00:00');return{label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v};
+    });
+    const mx=evolCampo==='motivacao'?5:Math.max(...vals.map(v=>v.v),1);
+    const h=100,bW=44,gap=10,padL=10;const svgW=padL*2+vals.length*(bW+gap);
+    let svg='<svg viewBox="0 0 '+svgW+' '+(h+32)+'" style="width:100%;height:'+(h+32)+'px">';
+    svg+=vals.map((d,i)=>{
+      const bh=Math.max(Math.round((d.v/mx)*h),d.v>0?4:0);const x=padL+i*(bW+gap);const isCur=i===vals.length-1;const cor=isCur?'var(--accent)':'var(--purple)';
+      const numTxt=d.v>0?'<text x="'+(x+bW/2)+'" y="'+(h-bh-6)+'" text-anchor="middle" font-size="11" fill="var(--text)" font-family="DM Mono">'+d.v+'</text>':'';
+      const lblTxt='<text x="'+(x+bW/2)+'" y="'+(h+18)+'" text-anchor="middle" font-size="9" fill="'+(isCur?'var(--accent)':'var(--text3)')+'" font-family="DM Mono">'+d.label+'</text>';
+      return'<rect x="'+x+'" y="'+(h-bh)+'" width="'+bW+'" height="'+bh+'" rx="5" fill="'+cor+'" opacity="'+(isCur?'1':'.7')+'"/>'+numTxt+lblTxt;
+    }).join('');
+    svg+='</svg>';
+    evolEl.innerHTML='<div style="overflow-x:auto">'+svg+'</div>';
+  }
+
+  // Padrões
+  const padEl=document.getElementById('diario-padroes');
+  if(padEl){
+    const regsP=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,6);
+    if(regsP.length<2){padEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para identificar padrões.</div>';}
+    else{
+      const padroes=[];
+      const mots=regsP.map(r=>r.motivacao||3);const avgMot=mots.reduce((a,b)=>a+b,0)/mots.length;
+      if(avgMot<3)padroes.push({icon:'😟',txt:'Motivação consistentemente baixa — atenção'});
+      else if(avgMot>=4)padroes.push({icon:'🔥',txt:'Alta energia nas últimas semanas — reconhecer e manter'});
+      const gargWords={};regsP.forEach(r=>(r.gargalos||'').split(/[\s,;.]+/).filter(w=>w.length>5).forEach(w=>{gargWords[w]=(gargWords[w]||0)+1;}));
+      const rep=Object.entries(gargWords).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]);
+      if(rep.length)padroes.push({icon:'🔄',txt:'Gargalo recorrente: "'+rep[0][0]+'" — priorizar no desenvolvimento'});
+      if(!padroes.length)padroes.push({icon:'✅',txt:'Nenhum padrão negativo. Desempenho consistente.'});
+      padEl.innerHTML=padroes.map(p=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:18px">'+p.icon+'</span><span style="font-size:13px;color:var(--text);line-height:1.6">'+p.txt+'</span></div>').join('');
+    }
+  }
+
+  // Histórico
+  const histEl=document.getElementById('diario-historico');
+  if(histEl){
+    const regsH=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem));
+    if(!regsH.length){histEl.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum registro ainda.</div>';return;}
+    const motEmojis=['','😞','😐','🙂','😊','🔥'];
+    histEl.innerHTML=regsH.map(r=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
+        '<div style="font-size:12px;font-weight:600;color:var(--accent)">📅 '+fmtSemLabel(r.sem)+'</div>'+
+        '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:14px">'+motEmojis[r.motivacao||3]+'</span>'+
+          '<button class="btn btn-g" style="font-size:10px;padding:2px 7px" data-vend="'+r.vend+'" data-sem="'+r.sem+'" onclick="editarDiarioBtn(this)">✏</button></div>'+
+      '</div>'+
+      (r.gargalos?'<div style="font-size:11px;color:var(--text3)"><strong>Gargalo:</strong> '+r.gargalos.slice(0,80)+'</div>':'')+
+      (r.destaque?'<div style="font-size:11px;color:var(--green)">⭐ '+r.destaque+'</div>':'')+
+    '</div>').join('');
+  }
+}
+
+function renderDiarioComparativo(){
+  const vends=vendedores();const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  const motEmojis=['','😞','😐','🙂','😊','🔥'];
+  const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const labels=['Disc','Atend','Agend','Visita','Fech'];
+  const rows=vends.map(v=>{
+    const reg=DB.diario.find(d=>d.vend===v&&d.sem===sem);
+    const fr=DB.funil.filter(r=>r.vend===v&&r.sem===sem);
+    const tots={};campos.forEach(c=>{tots[c]=fr.reduce((s,r)=>s+(r[c]||0),0);});
+    const metaF=DB.metaFunilVend?.[v]?.semsex?.fechamentos||DB.metaFunil?.semsex?.fechamentos||0;
+    const pct=metaF>0?Math.round(tots.fechamentos/metaF*100):null;
+    const semaforo=pct===null?'⚪':pct>=100?'🟢':pct>=70?'🟡':'🔴';
+    return{v,reg,tots,pct,semaforo};
+  });
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comparativo</title>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}h1{color:#f97316;margin-bottom:4px}p{color:#6b7280;font-size:13px;margin-bottom:20px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#f97316;color:#fff;padding:8px 12px;text-align:center}td{padding:8px 12px;border-bottom:1px solid #f3f4f6;text-align:center}td:first-child{text-align:left;font-weight:600}@media print{th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+
+    '<h1>📊 Comparativo da Equipe</h1><p>'+fmtSemLabel(sem)+'</p>'+
+    '<table><thead><tr><th>Vendedor</th><th>Status</th><th>Motivação</th>'+labels.map(l=>'<th>'+l+'</th>').join('')+'<th>Meta Fech.</th></tr></thead><tbody>'+
+    rows.map(r=>'<tr><td>'+r.v+'</td><td style="font-size:18px">'+r.semaforo+'</td><td style="font-size:16px">'+motEmojis[r.reg?.motivacao||0]+'</td>'+campos.map(c=>'<td>'+r.tots[c]+'</td>').join('')+'<td style="color:'+(r.pct===null?'#6b7280':r.pct>=100?'#16a34a':'#dc2626')+';font-weight:700">'+(r.pct!==null?r.pct+'%':'—')+'</td></tr>').join('')+
+    '</tbody></table></body></html>';
+  const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
+}
+
+function gerarPDFDiario(){
+  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
+  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  const reg=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  const fr=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
+  const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+  const tots={};campos.forEach(c=>{tots[c]=fr.reduce((s,r)=>s+(r[c]||0),0);});
+  const motEmojis=['','😞','😐','🙂','😊','🔥'];const motLabels=['','Baixa','Regular','Ok','Boa','Alta'];const mot=reg?.motivacao||0;
+  const dataHoje=new Date().toLocaleDateString('pt-BR');
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:28px;color:#1a1a1a}.hdr{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;padding:22px 28px;border-radius:10px;margin-bottom:20px}.hdr h1{font-size:20px;margin-bottom:4px}.hdr p{font-size:12px;opacity:.85}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}.kpi{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center}.kl{font-size:9px;text-transform:uppercase;color:#6b7280}.kv{font-size:20px;font-weight:800;color:#f97316}.sec{margin-bottom:18px}.sec h2{font-size:13px;font-weight:700;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:4px;margin-bottom:10px}.box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:12px;line-height:1.7;white-space:pre-wrap}.footer{margin-top:20px;font-size:10px;color:#9ca3af;text-align:center;padding-top:12px;border-top:1px solid #e5e7eb}@media print{.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>'+
+    '<div class="hdr"><h1>📓 Diário — '+vend+'</h1><p>Semana de '+fmtSemLabel(sem)+' · '+dataHoje+'</p></div>'+
+    '<div class="grid">'+campos.map((c,i)=>'<div class="kpi"><div class="kl">'+labels[i]+'</div><div class="kv">'+tots[c]+'</div></div>').join('')+'</div>'+
+    (mot?'<div class="sec"><h2>Motivação</h2><div class="box">'+motEmojis[mot]+' '+motLabels[mot]+'</div></div>':'')+
+    (reg?.gargalos?'<div class="sec"><h2>🚧 Gargalos</h2><div class="box">'+reg.gargalos+'</div></div>':'')+
+    (reg?.desenvolvimento?'<div class="sec"><h2>📈 Desenvolvimento</h2><div class="box">'+reg.desenvolvimento+'</div></div>':'')+
+    (reg?.metas?'<div class="sec"><h2>🎯 Próxima semana</h2><div class="box">'+reg.metas+'</div></div>':'')+
+    (reg?.plano?'<div class="sec"><h2>✅ Plano de ação</h2><div class="box">'+reg.plano+'</div></div>':'')+
+    (reg?.destaque?'<div class="sec"><h2>🌟 Destaque</h2><div class="box">'+reg.destaque+'</div></div>':'')+
+    '<div class="footer">Laranja Mecânica 🍊 · '+dataHoje+'</div></body></html>';
+  const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
+}
 
 
 function renderFunil(){
