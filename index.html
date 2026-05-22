@@ -3744,11 +3744,13 @@ function renderDiario(){
     metEl.innerHTML=html;
   }
 
-  // Sugestões
+  // Sugestões Inteligentes
   const sugEl=document.getElementById('diario-sugestoes');
   if(sugEl){
     const sugs=[];
     const semsVend=[...new Set(DB.funil.filter(r=>r.vend===vend).map(r=>r.sem))].sort().reverse();
+    const metaSem=metaVend; // already calculated above as weekly
+
     if(semsVend.length>=2){
       const s1=semsVend[0],s2=semsVend[1];
       const t1={},t2={};
@@ -3756,11 +3758,72 @@ function renderDiario(){
         t1[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);
         t2[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);
       });
-      if(t2.atendidas>0&&t1.atendidas>0){const tx1=t1.atendidas>0?Math.round(t1.agendamentos/t1.atendidas*100):0;const tx2=t2.atendidas>0?Math.round(t2.agendamentos/t2.atendidas*100):0;if(tx1<tx2-15)sugs.push({icon:'⚠️',txt:'Conversão atendida→agendamento caiu de '+tx2+'% para '+tx1+'% — trabalhar a abordagem'});}
-      if(t1.discadas<t2.discadas*0.8)sugs.push({icon:'📉',txt:'Volume de discadas caiu vs semana anterior — verificar prospecção'});
+
+      // Conversão atendida→agendamento
+      if(t2.atendidas>0&&t1.atendidas>0){
+        const tx1=Math.round(t1.agendamentos/t1.atendidas*100);
+        const tx2=Math.round(t2.agendamentos/t2.atendidas*100);
+        if(tx1<tx2-15) sugs.push({icon:'⚠️',cor:'var(--yellow)',txt:'Conversão atendida→agendamento caiu de '+tx2+'% para '+tx1+'% — trabalhar a abordagem'});
+        else if(tx1>tx2+15) sugs.push({icon:'📈',cor:'var(--green)',txt:'Conversão atendida→agendamento subiu de '+tx2+'% para '+tx1+'% — ótima abordagem!'});
+      }
+      // Conversão visita→fechamento
+      if(t2.visitas>0&&t1.visitas>0){
+        const tx1=Math.round(t1.fechamentos/t1.visitas*100);
+        const tx2=Math.round(t2.fechamentos/t2.visitas*100);
+        if(tx1<tx2-10) sugs.push({icon:'🚨',cor:'var(--red)',txt:'Conversão visita→fechamento caiu de '+tx2+'% para '+tx1+'% — foco na apresentação e objeções'});
+        else if(tx1>tx2+10) sugs.push({icon:'🔥',cor:'var(--green)',txt:'Conversão visita→fechamento subiu '+tx1+'% — manter a estratégia!'});
+      }
+      // Volume discadas
+      if(t1.discadas<t2.discadas*0.8) sugs.push({icon:'📉',cor:'var(--accent)',txt:'Volume de discadas caiu '+Math.round((1-t1.discadas/t2.discadas)*100)+'% vs semana anterior — verificar prospecção'});
+      else if(t1.discadas>t2.discadas*1.2) sugs.push({icon:'📈',cor:'var(--green)',txt:'Volume de discadas cresceu '+Math.round((t1.discadas/t2.discadas-1)*100)+'% vs semana anterior — ótima prospecção!'});
     }
-    if(!sugs.length)sugs.push({icon:'✅',txt:'Nenhum alerta identificado. Continue monitorando!'});
-    sugEl.innerHTML=sugs.map(s=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:16px">'+s.icon+'</span><span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span></div>').join('');
+
+    // Ritmo do mês → projeção
+    const mesAtual=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+    const semsDoMes=semsVend.filter(s=>s.startsWith(mesAtual));
+    if(semsDoMes.length>0){
+      const fechMes=DB.funil.filter(r=>r.vend===vend&&r.sem?.startsWith(mesAtual)).reduce((s,r)=>s+(r.fechamentos||0),0);
+      const semanasMes=semsDoMes.length;
+      const ritmo=semanasMes>0?fechMes/semanasMes:0;
+      const semsRestantes=4-semanasMes;
+      const projecao=Math.round(fechMes+ritmo*semsRestantes);
+      const metaFech=metaSem.fechamentos||0;
+      if(metaFech>0&&semsRestantes>0){
+        if(projecao>=metaFech) sugs.push({icon:'🎯',cor:'var(--green)',txt:'No ritmo atual vai fechar ~'+projecao+' no mês — meta é '+metaFech*4+' ✓'});
+        else{
+          const precisa=Math.ceil((metaFech*4-fechMes)/Math.max(semsRestantes,1));
+          sugs.push({icon:'⏱',cor:'var(--yellow)',txt:'Precisa de ~'+precisa+' fechamentos/semana nas próximas '+semsRestantes+' semana(s) para bater a meta mensal'});
+        }
+      } else if(metaFech>0&&semsRestantes===0){
+        if(fechMes>=metaFech*4) sugs.push({icon:'🏆',cor:'var(--green)',txt:'Meta mensal batida! '+fechMes+'/'+metaFech*4+' fechamentos'});
+        else sugs.push({icon:'📊',cor:'var(--accent)',txt:'Mês encerrado com '+fechMes+'/'+metaFech*4+' fechamentos ('+Math.round(fechMes/(metaFech*4)*100)+'%)'});
+      }
+    }
+
+    // Distância da meta da semana atual
+    const semAtualFunil=semsVend[0];
+    if(semAtualFunil&&metaSem.fechamentos>0){
+      const fechSem=DB.funil.filter(r=>r.vend===vend&&r.sem===semAtualFunil).reduce((s,r)=>s+(r.fechamentos||0),0);
+      const pctFech=Math.round(fechSem/metaSem.fechamentos*100);
+      if(pctFech>=100) sugs.push({icon:'🏆',cor:'var(--green)',txt:'Meta de fechamentos da semana batida! ('+fechSem+'/'+metaSem.fechamentos+')'});
+      else if(pctFech>=70) sugs.push({icon:'⚡',cor:'var(--yellow)',txt:pctFech+'% da meta de fechamentos — faltam '+(metaSem.fechamentos-fechSem)+' para completar'});
+    }
+
+    // Gargalo recorrente nos registros do diário
+    const regsVendDiario=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,4);
+    const gargWords={};
+    regsVendDiario.forEach(r=>(r.gargalos||'').toLowerCase().split(/[\s,;.!?]+/).filter(w=>w.length>5).forEach(w=>{gargWords[w]=(gargWords[w]||0)+1;}));
+    const rep=Object.entries(gargWords).filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]);
+    if(rep.length) sugs.push({icon:'🔄',cor:'var(--purple)',txt:'Gargalo recorrente: "'+rep[0][0]+'" aparece em '+rep[0][1]+' registros — priorizar no desenvolvimento'});
+
+    if(!sugs.length) sugs.push({icon:'✅',cor:'var(--green)',txt:'Nenhum alerta identificado esta semana. Continue monitorando!'});
+
+    sugEl.innerHTML=sugs.map(s=>
+      '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">'+
+        '<span style="font-size:16px;flex-shrink:0">'+s.icon+'</span>'+
+        '<span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span>'+
+      '</div>'
+    ).join('');
   }
 
   // Registro atual
