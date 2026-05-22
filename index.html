@@ -1127,15 +1127,21 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <select class="fi" id="funil-vend-fil" onchange="renderFunil()" style="min-width:150px">
           <option value="">Toda a equipe</option>
         </select>
-        <select class="fi" id="funil-periodo" onchange="renderFunil()" style="min-width:160px">
+        <select class="fi" id="funil-periodo" onchange="funil_onPeriodo()" style="min-width:160px">
           <option value="semana">Esta semana</option>
           <option value="mes">Este mês</option>
           <option value="todos">Todos os registros</option>
         </select>
-        <input class="fi" id="funil-busca" placeholder="🔍 Buscar..." oninput="renderFunil()" style="min-width:140px">
+        <select class="fi" id="funil-mes-sel" onchange="renderFunil()" style="min-width:140px;display:none">
+          <option value="">Selecione o mês...</option>
+        </select>
         <select class="fi" id="funil-semana-sel" onchange="renderFunilSemana()" style="min-width:190px">
           <option value="">Ver semana específica...</option>
         </select>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="date" class="fi" id="funil-data-cal" style="min-width:150px" onchange="funil_onDataCal(this.value)" title="Escolha qualquer dia da semana">
+          <span style="font-size:10px;color:var(--text3)">📅</span>
+        </div>
       </div>
 
       <!-- Alertas inteligentes -->
@@ -3904,7 +3910,18 @@ function renderFunil(){
   });
   if(semEspec){rows=rows.filter(r=>r.sem===semEspec);}
   else if(periodo==='semana'){const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));const dom=new Date(seg);dom.setDate(seg.getDate()+6);rows=rows.filter(r=>{const d=new Date(r.sem+'T12:00:00');return d>=seg&&d<=dom;});}
-  else if(periodo==='mes'){const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');rows=rows.filter(r=>r.sem?.startsWith(mes));}
+  else if(periodo==='mes'){
+    const mesSel=document.getElementById('funil-mes-sel');
+    const mesVal=mesSel?.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+    rows=rows.filter(r=>r.sem?.startsWith(mesVal));
+    // Populate mes-sel options
+    if(mesSel){
+      const allMeses=[...new Set(DB.funil.map(r=>r.sem?.slice(0,7)).filter(Boolean))].sort().reverse();
+      const curM=mesSel.value||mesVal;
+      mesSel.innerHTML=allMeses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===curM?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`;}).join('');
+      if(!mesSel.value&&allMeses[0]) mesSel.value=allMeses[0];
+    }
+  }
 
   const elLbl=document.getElementById('funil-periodo-label');
   if(elLbl) elLbl.textContent=semEspec?'Semana específica':periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos'+(vFil?' · '+vFil:'');
@@ -4050,14 +4067,22 @@ function renderFunil(){
       const getMetaVal=(metaObj,c)=>{
         if(!metaObj) return 0;
         const semanas=metaObj.semanas||1;
-        // New structure with semsex/sab
         if(metaObj.semsex){
           const vSS=metaObj.semsex[c]||0;
           const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);
           return (vSS*5+vSab*1)*semanas;
         }
-        // Old flat structure — treat as weekly meta
         return (metaObj[c]||0)*semanas;
+      };
+      // Also get just-one-week meta for "Por semana" toggle
+      const getMetaSem=(metaObj,c)=>{
+        if(!metaObj) return 0;
+        if(metaObj.semsex){
+          const vSS=metaObj.semsex[c]||0;
+          const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);
+          return vSS*5+vSab*1;
+        }
+        return metaObj[c]||0;
       };
       const renderBars=(meta,tots2,corBase,label,metaObj)=>{
         let h='';
@@ -4073,7 +4098,7 @@ function renderFunil(){
               '<div style="text-align:right">'+
                 '<span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
                 (falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+' ('+pctRest+'%)</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+
-                (metaObj?.semsex?'<br><span style="font-size:9px;color:var(--text3)">'+(metaObj.semsex[c]||0)+'/dia×5 + '+(metaObj.sabIgual?metaObj.semsex[c]||0:metaObj.sab?.[c]||0)+'/sáb × '+(metaObj.semanas||1)+'sem = '+((metaObj.semsex[c]||0)*5+(metaObj.sabIgual?metaObj.semsex[c]||0:metaObj.sab?.[c]||0))+'×'+(metaObj.semanas||1)+'</span>':'')+
+                (metaObj?.semsex?(()=>{const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);const sem=metaObj.semanas||1;const perSem=vSS*5+vSab;return'<br><span style="font-size:9px;color:var(--text3)">'+vSS+'/dia×5 + '+vSab+'/sáb = '+perSem+'/sem × '+sem+' = '+perSem*sem+'</span>';})():'')+
               '</div>'+
             '</div>'+
             '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
@@ -4174,26 +4199,48 @@ function renderFunil(){
       if(!hasData) delete byWeek[sem];
     });
     if(!Object.keys(byWeek).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';return;}
-    tbody.innerHTML=Object.entries(byWeek).sort((a,b)=>b[0].localeCompare(a[0])).map(([sem,recs],wi)=>{
-      const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
-      const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-      const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
-      const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
-      const wTots={};CAMPOS.forEach(c=>{wTots[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});
-      const grpId='funil-grp-'+wi;
-      let h='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(\''+grpId+'\')">';
-      h+='<td colspan="2" style="padding:8px 14px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+grpId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>';
-      h+=CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')+'<td></td></tr>';
-      // Detail rows — shown only for current week by default
-      h+='<tr id="'+grpId+'"'+(isNow?'':' style="display:none"')+'>'
-       +'<td colspan="11" style="padding:0"><table style="width:100%">'
-       +recs.map(r=>{const idx=DB.funil.indexOf(r);
-        return'<tr><td style="width:60px"></td><td style="font-size:12px;padding:6px 14px;color:var(--text2)">'+r.vend+'</td>'
-          +CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')
-          +'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> '
-          +'<button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';
-       }).join('')
-       +'</table></td></tr>';
+    // Group weeks by month
+    const byMonth={};
+    Object.entries(byWeek).forEach(([sem,recs])=>{
+      const mes=sem.slice(0,7);
+      if(!byMonth[mes]) byMonth[mes]=[];
+      byMonth[mes].push([sem,recs]);
+    });
+
+    tbody.innerHTML=Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{
+      const mesDate=new Date(mes+'-01T12:00:00');
+      const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      const mesId='funil-mes-'+mes.replace('-','');
+      const mesTots={};CAMPOS.forEach(c=>{mesTots[c]=semanas.reduce((s,[,recs])=>s+recs.reduce((ss,r)=>ss+(r[c]||0),0),0);});
+      let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'">'
+        +'<td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px;color:var(--text)">'
+          +'<span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1)+'</td>'
+        +CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700;color:var(--text2)">'+mesTots[c]+'</td>').join('')
+        +'<td></td></tr>';
+      h+='<tr id="'+mesId+'"><td colspan="11" style="padding:0"><table style="width:100%">';
+      semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{
+        const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
+        const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+        const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
+        const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
+        const wTots={};CAMPOS.forEach(c=>{wTots[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});
+        const grpId='funil-grp-'+mes+wi;
+        h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+grpId+'">'
+          +'<td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)">'
+            +'<span id="'+grpId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>'
+          +CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')
+          +'<td></td></tr>';
+        h+='<tr id="'+grpId+'"'+(isNow?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';
+        recs.forEach(r=>{
+          const idx=DB.funil.indexOf(r);
+          h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'
+            +CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')
+            +'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> '
+            +'<button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';
+        });
+        h+='</table></td></tr>';
+      });
+      h+='</table></td></tr>';
       return h;
     }).join('');
   }
@@ -4206,8 +4253,38 @@ function renderFunilSemana(){
   const chosen=semSel?.value||'';
   if(chosen&&periodSel) periodSel.value='todos';
   renderFunil();
-  // Restore chosen value after renderFunil rebuilds the dropdown
   if(chosen&&semSel) semSel.value=chosen;
+}
+
+function funil_onPeriodo(){
+  const p=document.getElementById('funil-periodo')?.value;
+  const mesSel=document.getElementById('funil-mes-sel');
+  if(mesSel) mesSel.style.display=p==='mes'?'':'none';
+  renderFunil();
+}
+
+function funil_onDataCal(val){
+  if(!val) return;
+  const d=new Date(val+'T12:00:00');
+  const dow=d.getDay();
+  const seg=new Date(d);seg.setDate(d.getDate()-(dow===0?6:dow-1));
+  const key=seg.toISOString().slice(0,10);
+  // Set semana-sel to this week
+  const semSel=document.getElementById('funil-semana-sel');
+  if(semSel){
+    let found=false;
+    for(const opt of semSel.options){if(opt.value===key){semSel.value=key;found=true;break;}}
+    if(!found){
+      const fim=new Date(seg);fim.setDate(seg.getDate()+5);
+      const label=seg.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const opt=document.createElement('option');opt.value=key;opt.text=label;opt.selected=true;
+      semSel.appendChild(opt);semSel.value=key;
+    }
+    // Also set periodo to todos
+    const periodSel=document.getElementById('funil-periodo');
+    if(periodSel) periodSel.value='todos';
+  }
+  renderFunil();
 }
 
 
