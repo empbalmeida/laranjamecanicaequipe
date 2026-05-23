@@ -1447,11 +1447,11 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div style="padding:16px 20px">
           <div id="ia-chat-msgs" style="min-height:120px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
           <div style="display:flex;gap:8px">
-            <input class="finput" id="ia-chat-input" placeholder="Pergunte sobre abordagem, objeções, gestão de equipe..." style="flex:1" onkeydown="if(event.key==='Enter')enviarChatIA()">
+            <input class="finput" id="ia-chat-input" placeholder="Digite qualquer pergunta..." style="flex:1" onkeydown="if(event.key==='Enter')enviarChatIA()">
             <button class="btn btn-o" onclick="enviarChatIA()" style="white-space:nowrap">✨ Enviar</button>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px" id="ia-sugestoes-rapidas">
-            <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Como abordar um cliente que está em dúvida sobre o consórcio?')">💬 Objeção consórcio</button>
+            <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="nav('ia');setTimeout(()=>perguntarIA('Como abordar um cliente que está em dúvida sobre o consórcio?'),100)">💬 Objeção consórcio</button>
             <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Como motivar minha equipe de vendas que está com resultado abaixo?')">🔥 Motivar equipe</button>
             <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Quais as melhores técnicas de fechamento para consórcio?')">🏆 Técnicas fechamento</button>
             <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Como fazer uma abordagem inicial pelo WhatsApp para venda de consórcio?')">📱 Script WhatsApp</button>
@@ -4285,11 +4285,19 @@ async function enviarChatIA(){
 }
 
 async function perguntarIA(msg){
+  // Navigate to IA page if not there
+  if(activePage!=='ia') nav('ia');
+  await new Promise(r=>setTimeout(r,50));
   const msgsEl=document.getElementById('ia-chat-msgs');
   if(!msgsEl) return;
-
+  // Check API key
+  if(!getGeminiKey()){
+    msgsEl.innerHTML+='<div style="color:var(--red);font-size:12px;padding:8px 0">⚠️ Configure a API key em Cadastros → Inteligência Artificial</div>';
+    return;
+  }
   // Add user message
   msgsEl.innerHTML+='<div style="display:flex;justify-content:flex-end"><div style="background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:8px 14px;font-size:13px;max-width:80%;line-height:1.5">'+msg+'</div></div>';
+  msgsEl.scrollTop=msgsEl.scrollHeight;
   
   // Loading
   const loadId='ia-load-'+Date.now();
@@ -4298,11 +4306,10 @@ async function perguntarIA(msg){
 
   _chatHistory.push({role:'user',content:msg});
 
-  const context=`Você é um assistente especializado em vendas de consórcio imobiliário e veicular, e em gestão de equipes comerciais. 
-Contexto da equipe: ${vendedores().join(', ')} são os vendedores ativos.
-Responda de forma prática, direta e acionável. Use emojis moderadamente. Máximo 3 parágrafos.`;
+  const context='Você é um assistente inteligente e prestativo. Responda em português, de forma clara, direta e útil. Use emojis moderadamente quando fizer sentido.';
 
-  const prompt=context+'\n\nHistórico:\n'+_chatHistory.slice(-6).map(m=>m.role==='user'?'Usuário: '+m.content:'IA: '+m.content).join('\n')+'\nUsuário: '+msg;
+  const hist=_chatHistory.slice(-6).map(m=>(m.role==='user'?'Usuário: ':'IA: ')+m.content).join('\n');
+  const prompt=context+(hist?'\n\nHistórico:\n'+hist:'')+'\nUsuário: '+msg;
 
   try{
     const resp=await chamarGemini(prompt);
