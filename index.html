@@ -4017,10 +4017,6 @@ function getGeminiKey(){
   return localStorage.getItem('lm_gemini_key')||'AIzaSyDZBwPF7PKHlxwsORONPZvUTpfeLVhpjlA';
 }
 
-function getGeminiKey(){
-  return localStorage.getItem('lm_gemini_key')||'AIzaSyDZBwPF7PKHlxwsORONPZvUTpfeLVhpjlA';
-}
-
 function salvarGeminiKey(){
   const key=(document.getElementById('cfg-gemini-key')?.value||'').trim();
   if(!key){toast('⚠️ Cole a API key do Gemini');return;}
