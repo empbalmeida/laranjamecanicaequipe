@@ -457,6 +457,8 @@ select.finput option{background:var(--bg2);}
 /* Badge novo */
 .sup-val{filter:blur(4px);transition:filter .2s;user-select:none;}
 .sup-visible .sup-val{filter:none;}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
 .badge-novo{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:1px 5px;border-radius:4px;background:rgba(48,209,88,.15);color:var(--green);margin-left:5px;vertical-align:middle;font-family:'DM Mono',monospace;}
 /* Sortable headers */
 th.sortable{cursor:pointer;user-select:none;transition:color .15s;}
@@ -4012,208 +4014,191 @@ function gerarPDFDiario(){
 // ══════════════════════════ INTELIGÊNCIA ARTIFICIAL ══════════════════════════
 
 function getGeminiKey(){
-  return localStorage.getItem('lm_gemini_key')||'';
+  return localStorage.getItem('lm_gemini_key')||'AIzaSyDZBwPF7PKHlxwsORONPZvUTpfeLVhpjlA';
+}
+
+function getGeminiKey(){
+  return localStorage.getItem('lm_gemini_key')||'AIzaSyDZBwPF7PKHlxwsORONPZvUTpfeLVhpjlA';
 }
 
 function salvarGeminiKey(){
   const key=(document.getElementById('cfg-gemini-key')?.value||'').trim();
-  if(!key){toast('⚠️ Cole a API key antes de salvar.');return;}
+  if(!key){toast('⚠️ Cole a API key do Gemini');return;}
   localStorage.setItem('lm_gemini_key',key);
-  const el=document.getElementById('gemini-key-status');
-  if(el){el.textContent='✓ Chave salva!';el.style.color='var(--green)';}
-  toast('✓ API key do Gemini salva!');
+  toast('✓ API key salva!');
+  document.getElementById('gemini-key-status').innerHTML='<span style="color:var(--green)">✓ Chave salva</span>';
 }
 
-function testarGemini(){
-  const key=getGeminiKey();
-  if(!key){toast('⚠️ Configure a API key do Gemini em Cadastros.');return;}
-  const el=document.getElementById('gemini-key-status');
-  if(el){el.textContent='Testando...';el.style.color='var(--text3)';}
-  chamarGemini('Responda apenas: OK',(resp)=>{
-    if(el){el.textContent='✓ Conexão OK! IA pronta para usar.';el.style.color='var(--green)';}
-    toast('✓ Gemini conectado!');
-  },(err)=>{
-    if(el){el.textContent='✗ Erro: '+err;el.style.color='var(--red)';}
-    toast('✗ Erro na conexão. Verifique a key.');
-  });
-}
-
-async function chamarGemini(prompt, onSuccess, onError){
-  const key=getGeminiKey();
-  if(!key){
-    if(onError) onError('API key não configurada. Vá em Cadastros → IA.');
-    return;
-  }
+async function testarGemini(){
+  const statusEl=document.getElementById('gemini-key-status');
+  if(statusEl) statusEl.innerHTML='<span style="color:var(--text3)">Testando...</span>';
   try{
-    const resp=await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,
-      {method:'POST',headers:{'Content-Type':'application/json'},
-       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],
-         generationConfig:{temperature:0.7,maxOutputTokens:1024}})}
-    );
-    const data=await resp.json();
-    if(data.error) throw new Error(data.error.message);
-    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-    if(onSuccess) onSuccess(text.trim());
+    const r=await chamarGemini('Responda apenas: OK');
+    if(statusEl) statusEl.innerHTML='<span style="color:var(--green)">✓ Gemini conectado!</span>';
+    toast('✓ IA funcionando!');
   }catch(e){
-    if(onError) onError(e.message);
+    if(statusEl) statusEl.innerHTML='<span style="color:var(--red)">✗ Erro: '+e.message+'</span>';
+    toast('✗ Erro: '+e.message);
   }
 }
 
-// ── IA no Diário ─────────────────────────────────────────────────────────────
-function iaAnalisarDiario(){
+async function chamarGemini(prompt){
   const key=getGeminiKey();
-  if(!key){toast('⚠️ Configure a API key do Gemini em Cadastros → IA.');return;}
+  const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  });
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  const data=await resp.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+}
+
+// ── IA no Diário ──────────────────────────────────────────────────────────────
+async function iaAnalisarDiario(){
   const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
   const sem=document.getElementById('diario-semana')?.value||getSemAtual();
   const funilRows=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
-  const discadas=funilRows.reduce((s,r)=>s+(r.discadas||0),0);
-  const atendidas=funilRows.reduce((s,r)=>s+(r.atendidas||0),0);
-  const agendamentos=funilRows.reduce((s,r)=>s+(r.agendamentos||0),0);
-  const visitas=funilRows.reduce((s,r)=>s+(r.visitas||0),0);
-  const fechamentos=funilRows.reduce((s,r)=>s+(r.fechamentos||0),0);
+  const t={};
+  ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{t[c]=funilRows.reduce((s,r)=>s+(r[c]||0),0);});
   const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
-  const _mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
   const metaSem={};
+  const mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
   ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
-    if(_mv.semsex){const vSS=_mv.semsex[c]||0;const vSab=_mv.sabIgual?vSS:(_mv.sab?.[c]||0);metaSem[c]=vSS*5+vSab;}
-    else metaSem[c]=_mv[c]||0;
+    if(mv.semsex){const vSS=mv.semsex[c]||0;const vSab=mv.sabIgual?vSS:(mv.sab?.[c]||0);metaSem[c]=vSS*5+vSab;}
+    else metaSem[c]=mv[c]||0;
   });
+  
+  // Show loading modal
+  const sugEl=document.getElementById('diario-sugestoes');
+  if(sugEl) sugEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:12px 0"><div class="spinner"></div><span style="font-size:12px;color:var(--text3)">IA analisando o vendedor...</span></div>';
 
-  const txDA=discadas>0?Math.round(atendidas/discadas*100):0;
-  const txAV=atendidas>0?Math.round(visitas/atendidas*100):0;
-  const txVF=visitas>0?Math.round(fechamentos/visitas*100):0;
+  const prompt=`Você é um especialista em gestão de equipes de consórcio. Analise os dados do vendedor e forneça insights práticos em português.
 
-  const prompt='Você é especialista em gestão de equipes de vendas de consórcio. Analise os dados abaixo e forneça um diagnóstico prático e direto para a supervisora da equipe.\n\n'+
-    'VENDEDOR: '+vend+'\nSEMANA: '+fmtSemLabel(sem)+'\n\n'+
-    'MÉTRICAS DA SEMANA:\n'+
-    '- Discadas: '+discadas+' (meta: '+(metaSem.discadas||'não definida')+')\n'+
-    '- Atendidas: '+atendidas+' (meta: '+(metaSem.atendidas||'não definida')+')\n'+
-    '- Agendamentos: '+agendamentos+' (meta: '+(metaSem.agendamentos||'não definida')+')\n'+
-    '- Visitas: '+visitas+' (meta: '+(metaSem.visitas||'não definida')+')\n'+
-    '- Fechamentos: '+fechamentos+' (meta: '+(metaSem.fechamentos||'não definida')+')\n\n'+
-    'TAXAS DE CONVERSÃO:\n'+
-    '- Discada→Atendida: '+txDA+'%\n'+
-    '- Atendida→Visita: '+txAV+'%\n'+
-    '- Visita→Fechamento: '+txVF+'%\n\n'+
-    (existing?.gargalos?'GARGALOS ANOTADOS: '+existing.gargalos+'\n':'')+
-    (existing?.desenvolvimento?'DESENVOLVIMENTO: '+existing.desenvolvimento+'\n':'')+
-    '\nPor favor, forneça em formato simples e prático:\n'+
-    '1. DIAGNÓSTICO (2-3 frases sobre o desempenho geral)\n'+
-    '2. PRINCIPAL GARGALO (identifique onde está perdendo mais)\n'+
-    '3. AÇÃO IMEDIATA (1 ação concreta para esta semana)\n'+
-    '4. DESENVOLVIMENTO (1 ponto de melhoria para próxima semana)\n'+
-    '5. MENSAGEM MOTIVACIONAL (1 frase curta para o vendedor)\n\n'+
-    'Seja direto, prático e específico. Use os números reais.';
+VENDEDOR: ${vend}
+SEMANA: ${fmtSemLabel(sem)}
 
-    // Show loading in modal
-  openModal('ia-diario-result');
-  const el=document.getElementById('ia-diario-content');
-  if(el) el.innerHTML='<div style="display:flex;align-items:center;gap:10px;color:var(--text3)"><span style="font-size:20px">✨</span> Analisando dados de '+vend+'...</div>';
+MÉTRICAS DA SEMANA:
+- Discadas: ${t.discadas} (meta: ${metaSem.discadas||'não definida'})
+- Atendidas: ${t.atendidas} (meta: ${metaSem.atendidas||'não definida'})
+- Agendamentos: ${t.agendamentos} (meta: ${metaSem.agendamentos||'não definida'})
+- Visitas: ${t.visitas} (meta: ${metaSem.visitas||'não definida'})
+- Fechamentos: ${t.fechamentos} (meta: ${metaSem.fechamentos||'não definida'})
 
-  chamarGemini(prompt,(resp)=>{
-    if(el) el.innerHTML='<div style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap">'+resp+'</div>'+
-      '<div style="margin-top:16px;display:flex;gap:8px">'+
-        '<button class="btn btn-o" onclick="iaPreencherDiario(this.previousElementSibling.previousElementSibling||this.parentElement.previousElementSibling)">📝 Usar no registro</button>'+
-        '<button class="btn btn-g" onclick="copiarIaDiario()">📋 Copiar</button>'+
-      '</div>';
-  },(err)=>{
-    if(el) el.innerHTML='<div style="color:var(--red);font-size:13px">✗ Erro: '+err+'</div>';
-  });
-}
+TAXAS:
+- Disc→Atend: ${t.discadas>0?Math.round(t.atendidas/t.discadas*100):0}%
+- Atend→Agend: ${t.atendidas>0?Math.round(t.agendamentos/t.atendidas*100):0}%
+- Agend→Visita: ${t.agendamentos>0?Math.round(t.visitas/t.agendamentos*100):0}%
+- Visita→Fech: ${t.visitas>0?Math.round(t.fechamentos/t.visitas*100):0}%
 
-function copiarIaDiario(){
-  const txt=document.getElementById('ia-diario-content')?.innerText||'';
-  navigator.clipboard.writeText(txt).then(()=>toast('✓ Análise copiada!'));
-}
+${existing?.gargalos?'GARGALOS REGISTRADOS: '+existing.gargalos:''}
+${existing?.desenvolvimento?'DESENVOLVIMENTO: '+existing.desenvolvimento:''}
 
-function iaPreencherDiario(contentEl){
-  const texto=document.getElementById('ia-diario-content')?.innerText||'';
-  editarDiarioAtual();
-  setTimeout(()=>{
-    const gargEl=document.getElementById('f-di-gargalos');
-    const devEl=document.getElementById('f-di-desenvolvimento');
-    const planoEl=document.getElementById('f-di-plano');
-    // Extract sections from IA response
-    const gargMatch=texto.match(/PRINCIPAL GARGALO[:\s]*([\s\S]*?)(?=\d\.|AÇÃO|$)/i);
-    const devMatch=texto.match(/DESENVOLVIMENTO[:\s]*([\s\S]*?)(?=\d\.|MENSAGEM|$)/i);
-    const acaoMatch=texto.match(/AÇÃO IMEDIATA[:\s]*([\s\S]*?)(?=\d\.|DESENVOLVIMENTO|$)/i);
-    if(gargEl&&gargMatch) gargEl.value=gargMatch[1].trim().slice(0,300);
-    if(devEl&&devMatch) devEl.value=devMatch[1].trim().slice(0,300);
-    if(planoEl&&acaoMatch) planoEl.value=acaoMatch[1].trim().slice(0,300);
-    toast('✓ Campos preenchidos pela IA!');
-  },200);
+Responda em formato JSON exato (sem markdown):
+{
+  "gargalo_principal": "frase curta e direta sobre o maior gargalo",
+  "sugestao_desenvolvimento": "ação concreta para desenvolvimento pessoal esta semana",
+  "plano_acao": "3 ações específicas numeradas para a próxima semana",
+  "insight": "insight mais importante sobre a performance desta semana"
+}`;
+
+  try{
+    const resp=await chamarGemini(prompt);
+    let json;
+    try{json=JSON.parse(resp.replace(/```json|```/g,'').trim());}
+    catch(e){
+      // Try extracting JSON from response
+      const m=resp.match(/\{[\s\S]*\}/);
+      if(m) json=JSON.parse(m[0]);
+      else throw new Error('Resposta inválida da IA');
+    }
+    
+    if(sugEl){
+      sugEl.innerHTML=[
+        {icon:'🎯',txt:'<strong>Gargalo principal:</strong> '+json.gargalo_principal},
+        {icon:'📈',txt:'<strong>Desenvolvimento:</strong> '+json.sugestao_desenvolvimento},
+        {icon:'✅',txt:'<strong>Plano de ação:</strong><br>'+json.plano_acao},
+        {icon:'💡',txt:'<strong>Insight:</strong> '+json.insight}
+      ].map(s=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:16px;flex-shrink:0">'+s.icon+'</span><span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span></div>').join('');
+    }
+
+    // Pre-fill form fields
+    if(json.gargalo_principal){
+      const g=document.getElementById('f-di-gargalos');
+      const p=document.getElementById('f-di-plano');
+      const d=document.getElementById('f-di-desenvolvimento');
+      // Store for when user opens modal
+      window._iaDiarioSugestao={gargalos:json.gargalo_principal,plano:json.plano_acao,desenvolvimento:json.sugestao_desenvolvimento};
+    }
+    toast('✓ IA analisou '+vend+'!');
+  }catch(e){
+    if(sugEl) sugEl.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px 0">✗ Erro da IA: '+e.message+'. Verifique a API key em Cadastros.</div>';
+    toast('✗ Erro: '+e.message);
+  }
 }
 
 // ── IA no Funil ───────────────────────────────────────────────────────────────
-function iaFecharFunil(){
-  const el=document.getElementById('ia-funil-overlay');
-  if(el) el.remove();
-}
-
-function copiarIaFunil(){
-  const txt=document.getElementById('ia-funil-content')?.innerText||'';
-  navigator.clipboard.writeText(txt).then(()=>toast('✓ Análise copiada!'));
-}
-
-function iaAnalisarFunil(){
-  const key=getGeminiKey();
-  if(!key){toast('⚠️ Configure a API key do Gemini em Cadastros → IA.');return;}
-  const vFil=document.getElementById('funil-vend-fil')?.value||'';
-  const periodo=document.getElementById('funil-periodo')?.value||'semana';
+async function iaAnalisarFunil(){
   const CAMPOS=['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'];
   const LABELS=['Anúncios','Números','Retornos','Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
-  const now=new Date();now.setHours(0,0,0,0);
-  let rows=DB.funil.filter(r=>!vFil||r.vend===vFil);
-  if(periodo==='semana'){const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));rows=rows.filter(r=>new Date(r.sem+'T12:00:00')>=seg);}
-  else if(periodo==='mes'){const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');rows=rows.filter(r=>r.sem?.startsWith(mes));}
+  const vFil=document.getElementById('funil-vend-fil')?.value||'';
+  const periodo=document.getElementById('funil-periodo')?.value||'semana';
+  const rows=DB.funil.filter(r=>!vFil||r.vend===vFil);
   const tots={};CAMPOS.forEach(c=>{tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0);});
-  const txDA=tots.discadas>0?Math.round(tots.atendidas/tots.discadas*100):0;
-  const txAG=tots.atendidas>0?Math.round(tots.agendamentos/tots.atendidas*100):0;
-  const txVF=tots.visitas>0?Math.round(tots.fechamentos/tots.visitas*100):0;
-  const semanas=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
+  
+  const alertEl=document.getElementById('funil-alertas');
+  if(alertEl) alertEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(99,102,241,.07);border-radius:10px;margin-bottom:4px"><div class="spinner"></div><span style="font-size:12px;color:var(--text3)">IA interpretando os números...</span></div>';
 
-  const funilLines=CAMPOS.map((c,i)=>'- '+LABELS[i]+': '+tots[c]).join('\n');
-  const prompt='Você é especialista em gestão de equipes de vendas de consórcio. Analise o funil de vendas abaixo e forneça insights práticos.\n\n'+
-    'FILTRO: '+(vFil||'Toda a equipe')+' | '+(periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos os registros')+' | '+semanas.length+' semana(s)\n\n'+
-    'FUNIL COMPLETO:\n'+funilLines+'\n\n'+
-    'TAXAS DE CONVERSÃO:\n'+
-    '- Discada→Atendida: '+txDA+'%\n'+
-    '- Atendida→Agendamento: '+txAG+'%\n'+
-    '- Visita→Fechamento: '+txVF+'%\n\n'+
-    'Forneça análise prática em 3 partes:\n'+
-    '1. DIAGNÓSTICO GERAL (o que os números dizem sobre a equipe)\n'+
-    '2. GARGALO PRINCIPAL (onde está perdendo mais oportunidades e por quê)\n'+
-    '3. 3 AÇÕES PRIORITÁRIAS (o que fazer agora para melhorar os resultados)\n\n'+
-    'Seja específico com os números. Máximo 250 palavras.';
+  const vends=vendedores();
+  const vendStats=vends.map(v=>{
+    const vr=rows.filter(r=>r.vend===v);
+    const d=vr.reduce((s,r)=>s+(r.discadas||0),0);
+    const a=vr.reduce((s,r)=>s+(r.atendidas||0),0);
+    const f=vr.reduce((s,r)=>s+(r.fechamentos||0),0);
+    return v+': disc='+d+' atend='+a+' fech='+f+' (conv disc→fech: '+(d>0?Math.round(f/d*100):0)+'%)';
+  }).join(' | ');
 
-  // Show result in a toast-like overlay
-  const overlay=document.createElement('div');
-  overlay.id='ia-funil-overlay';
-  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-  overlay.innerHTML='<div style="background:var(--bg);border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
-      '<div style="font-size:15px;font-weight:700;color:var(--text)">✨ Análise IA do Funil</div>'+
-      '<button onclick="iaFecharFunil()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)">✕</button>'+
-    '</div>'+
-    '<div id="ia-funil-content"><div style="display:flex;align-items:center;gap:10px;color:var(--text3)"><span style="font-size:20px">✨</span> Analisando funil...</div></div>'+
-  '</div>';
-  document.body.appendChild(overlay);
+  const prompt=`Você é especialista em análise de funil de vendas de consórcio. Analise os dados e dê um resumo executivo em português direto.
 
-  chamarGemini(prompt,(resp)=>{
-    const el=document.getElementById('ia-funil-content');
-    if(el) el.innerHTML='<div style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap">'+resp+'</div>'+
-      '<div style="margin-top:14px"><button class="btn btn-g" onclick="copiarIaFunil()">📋 Copiar análise</button></div>';
-  },(err)=>{
-    const el=document.getElementById('ia-funil-content');
-    if(el) el.innerHTML='<div style="color:var(--red);font-size:13px">✗ Erro: '+err+'</div>';
-  });
+PERÍODO: ${periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos os registros'}${vFil?' | Vendedor: '+vFil:' | Toda a equipe'}
+
+TOTAIS DO FUNIL:
+${CAMPOS.map((c,i)=>LABELS[i]+': '+tots[c]).join(' | ')}
+
+TAXAS DE CONVERSÃO:
+- Discadas→Atendidas: ${tots.discadas>0?Math.round(tots.atendidas/tots.discadas*100):0}%
+- Atendidas→Agendamentos: ${tots.atendidas>0?Math.round(tots.agendamentos/tots.atendidas*100):0}%
+- Agendamentos→Visitas: ${tots.agendamentos>0?Math.round(tots.visitas/tots.agendamentos*100):0}%
+- Visitas→Fechamentos: ${tots.visitas>0?Math.round(tots.fechamentos/tots.visitas*100):0}%
+
+POR VENDEDOR: ${vendStats}
+
+Escreva uma análise em 3-4 frases curtas e diretas:
+1. O que está indo bem
+2. O maior gargalo do funil
+3. Ação prioritária para esta semana
+Seja específico com os números. Use linguagem de gestão comercial.`;
+
+  try{
+    const resp=await chamarGemini(prompt);
+    if(alertEl){
+      alertEl.innerHTML='<div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:12px 16px;margin-bottom:4px">'+
+        '<div style="font-size:11px;font-weight:700;color:#6366f1;margin-bottom:6px">🤖 Análise da IA</div>'+
+        '<div style="font-size:13px;color:var(--text);line-height:1.7">'+resp.replace(/\n/g,'<br>')+'</div>'+
+        '<button onclick="renderFunil()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;margin-top:6px">✕ Fechar</button>'+
+      '</div>';
+    }
+    toast('✓ Análise pronta!');
+  }catch(e){
+    if(alertEl) alertEl.innerHTML='';
+    toast('✗ Erro: '+e.message);
+  }
 }
 
 // ── Chat IA ───────────────────────────────────────────────────────────────────
-const _iaChatHistory=[];
+const _chatHistory=[];
 
-function enviarChatIA(){
+async function enviarChatIA(){
   const input=document.getElementById('ia-chat-input');
   const msg=(input?.value||'').trim();
   if(!msg) return;
@@ -4221,477 +4206,37 @@ function enviarChatIA(){
   perguntarIA(msg);
 }
 
-function perguntarIA(msg){
-  const key=getGeminiKey();
-  if(!key){
-    adicionarMsgChat('sistema','⚠️ Configure a API key do Gemini em Cadastros → 🤖 IA para usar o assistente.');
-    return;
+async function perguntarIA(msg){
+  const msgsEl=document.getElementById('ia-chat-msgs');
+  if(!msgsEl) return;
+
+  // Add user message
+  msgsEl.innerHTML+='<div style="display:flex;justify-content:flex-end"><div style="background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:8px 14px;font-size:13px;max-width:80%;line-height:1.5">'+msg+'</div></div>';
+  
+  // Loading
+  const loadId='ia-load-'+Date.now();
+  msgsEl.innerHTML+='<div id="'+loadId+'" style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4285f4,#a855f7);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:2px 12px 12px 12px;padding:8px 14px;font-size:13px"><div class="spinner" style="width:16px;height:16px"></div></div></div>';
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+
+  _chatHistory.push({role:'user',content:msg});
+
+  const context=`Você é um assistente especializado em vendas de consórcio imobiliário e veicular, e em gestão de equipes comerciais. 
+Contexto da equipe: ${vendedores().join(', ')} são os vendedores ativos.
+Responda de forma prática, direta e acionável. Use emojis moderadamente. Máximo 3 parágrafos.`;
+
+  const prompt=context+'\n\nHistórico:\n'+_chatHistory.slice(-6).map(m=>m.role==='user'?'Usuário: '+m.content:'IA: '+m.content).join('\n')+'\nUsuário: '+msg;
+
+  try{
+    const resp=await chamarGemini(prompt);
+    _chatHistory.push({role:'assistant',content:resp});
+    
+    const loadEl=document.getElementById(loadId);
+    if(loadEl) loadEl.outerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4285f4,#a855f7);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:2px 12px 12px 12px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">'+resp.replace(/\n/g,'<br>')+'</div></div>';
+  }catch(e){
+    const loadEl=document.getElementById(loadId);
+    if(loadEl) loadEl.outerHTML='<div style="font-size:12px;color:var(--red);padding:8px 0">✗ Erro: '+e.message+'</div>';
   }
-  adicionarMsgChat('user',msg);
-  adicionarMsgChat('ia','...',true);
-
-  const systemCtx='Você é um assistente especializado em vendas de consórcio e gestão de equipes comerciais.\n'+
-    'Contexto da empresa: Laranja Mecânica, empresa de consórcio de imóveis e veículos.\n'+
-    'Equipe atual: '+vendedores().join(', ')+'.\n'+
-    'Seja prático, direto e use linguagem brasileira informal mas profissional.\n'+
-    'Máximo 200 palavras por resposta.';
-
-  const fullPrompt=systemCtx+'\nPergunta: '+msg;
-
-
-
-  chamarGemini(fullPrompt,(resp)=>{
-    // Remove loading message
-    const msgs=document.getElementById('ia-chat-msgs');
-    if(msgs){const loading=msgs.querySelector('.ia-loading');if(loading)loading.remove();}
-    adicionarMsgChat('ia',resp);
-    _iaChatHistory.push({role:'user',msg},{role:'ia',msg:resp});
-  },(err)=>{
-    const msgs=document.getElementById('ia-chat-msgs');
-    if(msgs){const loading=msgs.querySelector('.ia-loading');if(loading)loading.remove();}
-    adicionarMsgChat('ia','✗ Erro: '+err);
-  });
-}
-
-function adicionarMsgChat(role,msg,loading=false){
-  const msgs=document.getElementById('ia-chat-msgs');
-  if(!msgs) return;
-  const isUser=role==='user';
-  const div=document.createElement('div');
-  div.className=loading?'ia-loading':'';
-  div.style.cssText='display:flex;gap:8px;align-items:flex-start;'+(isUser?'flex-direction:row-reverse':'');
-  div.innerHTML='<div style="font-size:18px;flex-shrink:0">'+(isUser?'👤':'🤖')+'</div>'+
-    '<div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.7;'+
-      (isUser?'background:var(--accent);color:#fff':'background:var(--bg3);color:var(--text)')+
-    '">'+msg+'</div>';
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-}
-
-
-function renderFunil(){
-  const CAMPOS=['anuncios', 'numeros', 'retornos', 'discadas', 'atendidas', 'agendamentos', 'visitas', 'fechamentos'];
-  const LABELS=['Anúncios', 'Números', 'Retornos', 'Discadas', 'Atendidas', 'Agendamentos', 'Visitas', 'Fechamentos'];
-  const ICONS=['📣', '📞', '🔄', '📱', '✅', '📅', '🤝', '🏆'];
-  const CORES=['var(--blue)','var(--accent)','var(--purple)','var(--yellow)','var(--green)','var(--accent)','var(--blue)','var(--green)'];
-
-  // Populate selectors
-  const vendFil=document.getElementById('funil-vend-fil');
-  if(vendFil){const cur=vendFil.value;vendFil.innerHTML='<option value="">Toda a equipe</option>'+vendedores().map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');vendFil.value=cur;}
-  const semSel=document.getElementById('funil-semana-sel');
-  if(semSel){const cur=semSel.value;const sems=[...new Set(DB.funil.map(r=>r.sem).filter(Boolean))].sort().reverse();semSel.innerHTML='<option value="">Ver semana específica...</option>'+sems.map(s=>{const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);return`<option value="${s}"${s===cur?' selected':''}>${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} a ${fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</option>`;}).join('');semSel.value=cur;}
-
-  const vFil=vendFil?.value||'';
-  const periodo=document.getElementById('funil-periodo')?.value||'semana';
-  const busca=(document.getElementById('funil-busca')?.value||'').toLowerCase();
-  const semEspec=semSel?.value||'';
-  const now=new Date();now.setHours(0,0,0,0);
-
-  // Filter
-  let rows=DB.funil.filter(r=>{
-    if(vFil&&r.vend!==vFil&&r.vend!=='Equipe') return false;
-    if(busca){const d=r.sem?new Date(r.sem+'T12:00:00').toLocaleDateString('pt-BR'):r.sem||'';if(!d.includes(busca)&&!(r.vend||'').toLowerCase().includes(busca))return false;}
-    return true;
-  });
-  if(semEspec){rows=rows.filter(r=>r.sem===semEspec);}
-  else if(periodo==='semana'){const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));const dom=new Date(seg);dom.setDate(seg.getDate()+6);rows=rows.filter(r=>{const d=new Date(r.sem+'T12:00:00');return d>=seg&&d<=dom;});}
-  else if(periodo==='mes'){
-    const mesSel=document.getElementById('funil-mes-sel');
-    const mesVal=mesSel?.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
-    rows=rows.filter(r=>r.sem?.startsWith(mesVal));
-    // Populate mes-sel options
-    if(mesSel){
-      const allMeses=[...new Set(DB.funil.map(r=>r.sem?.slice(0,7)).filter(Boolean))].sort().reverse();
-      const curM=mesSel.value||mesVal;
-      mesSel.innerHTML=allMeses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===curM?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`;}).join('');
-      if(!mesSel.value&&allMeses[0]) mesSel.value=allMeses[0];
-    }
-  }
-
-  const elLbl=document.getElementById('funil-periodo-label');
-  if(elLbl) elLbl.textContent=semEspec?'Semana específica':periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos'+(vFil?' · '+vFil:'');
-
-  // Totals
-  const tots={};CAMPOS.forEach(c=>{tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0);});
-  const metaGeral=DB.metaFunil||{};
-  const metaVend=DB.metaFunilVend||{};
-
-  // Histórico geral (sem filtro de período) para métricas
-  const allRows=DB.funil.filter(r=>!vFil||r.vend===vFil||r.vend==='Equipe');
-  const allTots={};CAMPOS.forEach(c=>{allTots[c]=allRows.reduce((s,r)=>s+(r[c]||0),0);});
-
-  // ── ALERTAS ──────────────────────────────────────────────────────────────
-  const alertEl=document.getElementById('funil-alertas');
-  if(alertEl&&DB.funil.length>=2){
-    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
-    const alertas=[];
-    if(semanas.length>=2){
-      const s1=semanas[0],s2=semanas[1];
-      const t1={},t2={};
-      CAMPOS.forEach(c=>{
-        t1[c]=allRows.filter(r=>r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);
-        t2[c]=allRows.filter(r=>r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);
-      });
-      ['agendamentos','fechamentos','atendidas'].forEach(c=>{
-        if(t2[c]>0){const diff=Math.round((t1[c]-t2[c])/t2[c]*100);
-          if(diff<=-20) alertas.push({cor:'var(--red)',bg:'rgba(239,68,68,.07)',icon:'📉',txt:`<strong>${LABELS[CAMPOS.indexOf(c)]}</strong> caiu ${Math.abs(diff)}% vs semana anterior`});
-          else if(diff>=20) alertas.push({cor:'var(--green)',bg:'rgba(48,209,88,.07)',icon:'📈',txt:`<strong>${LABELS[CAMPOS.indexOf(c)]}</strong> subiu ${diff}% vs semana anterior`});
-        }
-      });
-    }
-    // Ritmo para meta
-    if(metaGeral.fechamentos>0&&tots.fechamentos>=0){
-      const pct=Math.round(tots.fechamentos/metaGeral.fechamentos*100);
-      if(pct>=100) alertas.push({cor:'var(--green)',bg:'rgba(48,209,88,.07)',icon:'🏆',txt:`Meta de fechamentos batida! (${tots.fechamentos}/${metaGeral.fechamentos})`});
-      else if(pct>=70) alertas.push({cor:'var(--yellow)',bg:'rgba(255,214,10,.07)',icon:'⚡',txt:`${pct}% da meta de fechamentos — faltam ${metaGeral.fechamentos-tots.fechamentos}`});
-    }
-    alertEl.innerHTML=alertas.length?'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">'+
-      alertas.map(a=>'<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:'+a.bg+';border-radius:10px">'+
-        '<span style="font-size:15px">'+a.icon+'</span><span style="font-size:12px;color:var(--text)">'+a.txt+'</span></div>').join('')+'</div>':'';
-  }
-
-  // ── KPIs ─────────────────────────────────────────────────────────────────
-  const kpiEl=document.getElementById('funil-kpis');
-  if(kpiEl){
-    const kpis=[{c:'anuncios',icon:'📣',cor:'var(--blue)'},{c:'atendidas',icon:'✅',cor:'var(--green)'},{c:'agendamentos',icon:'📅',cor:'var(--accent)'},{c:'fechamentos',icon:'🏆',cor:'var(--yellow)'}];
-    kpiEl.innerHTML=kpis.map(k=>{
-      const m=metaGeral[k.c]||0;const v=tots[k.c];const pct=m>0?Math.min(Math.round(v/m*100),999):null;const falta=m>0?Math.max(m-v,0):null;
-      const cor2=pct===null?k.cor:pct>=100?'var(--green)':pct>=70?'var(--yellow)':k.cor;
-      return'<div class="kpi"><div class="kpi-label">'+k.icon+' '+LABELS[CAMPOS.indexOf(k.c)]+'</div>'+
-        '<div class="kpi-val" style="color:'+cor2+'">'+v+'</div>'+
-        (pct!==null?'<div style="font-size:10px;margin-top:4px;color:'+cor2+';font-family:DM Mono,monospace">'+pct+'%'+(falta>0?' · faltam '+falta:'')+'</div>':'')+
-      '</div>';
-    }).join('');
-  }
-
-  // ── FUNIL VISUAL (triângulo) ──────────────────────────────────────────────
-  const visualEl=document.getElementById('funil-visual');
-  if(visualEl){
-    const etapas=CAMPOS.map((c,i)=>({c,label:LABELS[i],icon:ICONS[i],v:tots[c]}));
-    const max=Math.max(...etapas.map(e=>e.v),1);
-    visualEl.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+
-      etapas.map((e,i)=>{
-        const w=Math.max(Math.round(e.v/max*100),e.v>0?8:2);
-        const tx=i<etapas.length-1&&etapas[i+1].v>0&&e.v>0?Math.round(etapas[i+1].v/e.v*100):null;
-        const cor=CORES[i];
-        return'<div style="display:flex;align-items:center;gap:8px">'+
-          '<div style="width:88px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">'+e.icon+' '+e.label+'</div>'+
-          '<div style="flex:1;display:flex;justify-content:center">'+
-            '<div style="width:'+w+'%;background:'+cor+';border-radius:6px;height:24px;display:flex;align-items:center;justify-content:center;min-width:30px;transition:width .8s">'+
-              '<span style="font-size:11px;color:#fff;font-weight:700;white-space:nowrap;padding:0 6px">'+e.v+'</span>'+
-            '</div>'+
-          '</div>'+
-          (tx!==null?'<div style="width:36px;font-size:10px;color:var(--text3);flex-shrink:0">'+tx+'%↓</div>':'<div style="width:36px"></div>')+
-        '</div>';
-      }).join('')+'</div>';
-  }
-
-  // ── EVOLUÇÃO SEMANAL ──────────────────────────────────────────────────────
-  const evolEl=document.getElementById('funil-evolucao');
-  const evolCampo=document.getElementById('funil-evol-campo')?.value||'fechamentos';
-  if(evolEl){
-    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().slice(-10);
-    if(semanas.length<2){evolEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para ver a evolução.</div>';return;}
-    const vals=semanas.map(s=>{
-      const d=new Date(s+'T12:00:00');
-      return{label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v:allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[evolCampo]||0),0)};
-    });
-    const mxV=Math.max(...vals.map(v=>v.v),1);
-    const meta=metaGeral[evolCampo]||0;
-    const h=100,bW=44,gap=10,padL=10;
-    const svgW=padL*2+vals.length*(bW+gap);
-    const metaY=meta>0?Math.round((1-meta/mxV)*h):null;
-    let svg='<svg viewBox="0 0 '+svgW+' '+(h+32)+'" style="width:100%;height:'+(h+32)+'px">';
-    svg+=vals.map((d,i)=>{
-      const bh=Math.max(Math.round((d.v/mxV)*h),d.v>0?4:0);
-      const x=padL+i*(bW+gap);
-      const isCur=i===vals.length-1;
-      const cor=isCur?'var(--accent)':'var(--blue)';
-      const numTxt=d.v>0?'<text x="'+(x+bW/2)+'" y="'+(h-bh-6)+'" text-anchor="middle" font-size="11" fill="var(--text)" font-family="DM Mono">'+d.v+'</text>':'';
-      const lblTxt='<text x="'+(x+bW/2)+'" y="'+(h+18)+'" text-anchor="middle" font-size="10" fill="'+(isCur?'var(--accent)':'var(--text3)')+'" font-family="DM Mono">'+d.label+'</text>';
-      return '<rect x="'+x+'" y="'+(h-bh)+'" width="'+bW+'" height="'+bh+'" rx="5" fill="'+cor+'" opacity="'+(isCur?'1':'.7')+'"/>'+numTxt+lblTxt;
-    }).join('');
-    svg+='</svg>';
-    evolEl.innerHTML='<div style="overflow-x:auto">'+svg+'</div>';
-  }
-  const convEl=document.getElementById('funil-conversao');
-  if(convEl){
-    // Historical averages per week
-    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))];
-    const avgTots={};CAMPOS.forEach(c=>{avgTots[c]=semanas.length>0?Math.round(allRows.reduce((s,r)=>s+(r[c]||0),0)/semanas.length):0;});
-    convEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-      CAMPOS.slice(0,-1).map((c,i)=>{
-        const next=CAMPOS[i+1];
-        const curTx=tots[c]>0?Math.round(tots[next]/tots[c]*100):0;
-        const avgTx=avgTots[c]>0?Math.round(avgTots[next]/avgTots[c]*100):0;
-        const diff=curTx-avgTx;
-        const cor=diff>=0?'var(--green)':'var(--red)';
-        return'<div style="background:var(--bg3);border-radius:10px;padding:12px 14px">'+
-          '<div style="font-size:11px;color:var(--text3);margin-bottom:4px">'+ICONS[i]+' '+LABELS[i]+' → '+ICONS[i+1]+' '+LABELS[i+1]+'</div>'+
-          '<div style="display:flex;align-items:baseline;gap:8px">'+
-            '<span style="font-size:20px;font-weight:700;color:var(--text)">'+curTx+'%</span>'+
-            (avgTx>0?'<span style="font-size:11px;color:'+cor+'">'+(diff>=0?'+':'')+diff+'% vs média</span>':'')+
-          '</div>'+
-          (avgTx>0?'<div style="font-size:10px;color:var(--text3);margin-top:2px">Média histórica: '+avgTx+'%</div>':'')+
-        '</div>';
-      }).join('')+'</div>';
-  }
-
-  // ── METAS VS REALIZADO ────────────────────────────────────────────────────
-  const metaEl=document.getElementById('funil-metas');
-  const projEl=document.getElementById('funil-projecao');
-  if(metaEl){
-    const hasAny=CAMPOS.some(c=>metaGeral[c]>0)||Object.keys(metaVend).length>0;
-    if(!hasAny){metaEl.innerHTML='<div style="font-size:12px;color:var(--text3)">Clique em <strong>🎯 Metas</strong> para configurar.</div>';if(projEl)projEl.textContent='';}
-    else{
-      // Multiplier based on dia/semana toggle and number of weeks in filter
-      const mTipo2=_metaTipoAtual||'semana';
-      const semsNoFiltro2=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
-      const numSems=semsNoFiltro2.length||1;
-      // meta por semana × número de semanas no filtro; ou meta por dia × dias úteis
-      const getMetaVal=(metaObj,c)=>{
-        if(!metaObj) return 0;
-        const semanas=metaObj.semanas||1;
-        if(metaObj.semsex){
-          const vSS=metaObj.semsex[c]||0;
-          const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);
-          return (vSS*5+vSab*1)*semanas;
-        }
-        return (metaObj[c]||0)*semanas;
-      };
-      // Also get just-one-week meta for "Por semana" toggle
-      const getMetaSem=(metaObj,c)=>{
-        if(!metaObj) return 0;
-        if(metaObj.semsex){
-          const vSS=metaObj.semsex[c]||0;
-          const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);
-          return vSS*5+vSab*1;
-        }
-        return metaObj[c]||0;
-      };
-      const renderBars=(meta,tots2,corBase,label,metaObj)=>{
-        let h='';
-        if(label) h+='<div style="font-size:11px;font-weight:700;color:'+corBase+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+label+'</div>';
-        h+=CAMPOS.map((c,i)=>{
-          const m=getMetaVal(meta,c);if(!m)return'';
-          const v=tots2[c]||0;const pct=Math.min(Math.round(v/m*100),100);const falta=Math.max(m-v,0);
-          const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':corBase;
-          const pctRest=falta>0?Math.round(falta/m*100):0;
-          return'<div style="margin-bottom:12px">'+
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
-              '<span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span>'+
-              '<div style="text-align:right">'+
-                '<span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
-                (falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+' ('+pctRest+'%)</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+
-                (metaObj?.semsex?(()=>{const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);const sem=metaObj.semanas||1;const perSem=vSS*5+vSab;return'<br><span style="font-size:9px;color:var(--text3)">'+vSS+'/dia×5 + '+vSab+'/sáb = '+perSem+'/sem × '+sem+' = '+perSem*sem+'</span>';})():'')+
-              '</div>'+
-            '</div>'+
-            '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
-              '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div>'+
-            '</div></div>';
-        }).join('');
-        return h;
-      };
-      let html=renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe',metaGeral);
-      Object.entries(metaVend).forEach(([vend,meta])=>{
-        const metaHasData=CAMPOS.some(c=>(meta.semsex?.[c]||meta[c]||0)>0||(meta.sab?.[c]||0)>0);if(!metaHasData)return;
-        const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});
-        html+=renderBars(meta,vTots,'var(--blue)','👤 '+vend,meta);
-      });
-      metaEl.innerHTML=html;
-      // Projeção
-      if(projEl&&metaGeral.fechamentos>0&&rows.length>0){
-        const semanas2=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
-        const ritmo=semanas2.length>0?tots.fechamentos/semanas2.length:0;
-        const metaF=metaGeral.fechamentos;
-        const proj=Math.round(ritmo*4);
-        projEl.textContent=proj>0?'Projeção 4 sem.: '+proj+' fechamentos'+(proj>=metaF?' ✓':' (meta: '+metaF+')'):'';
-      }
-    }
-  }
-
-  // ── RANKING POR VENDEDOR — organizado por semana ─────────────────────────
-  const rankEl=document.getElementById('funil-ranking');
-  const rankCard=document.getElementById('funil-ranking-card');
-  if(rankEl){
-    const vends=vendedores();
-    if(vends.length<2){if(rankCard)rankCard.style.display='none';}
-    else{
-      if(rankCard)rankCard.style.display='';
-      // Get all semanas from allRows
-      const rankSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
-      // Group by month
-      const rankByMes={};
-      rankSems.forEach(s=>{
-        const mes=s.slice(0,7);
-        if(!rankByMes[mes]) rankByMes[mes]=[];
-        rankByMes[mes].push(s);
-      });
-
-      const renderRankSem=(semRows,label)=>{
-        const dados=vends.map(v=>{
-          const vR=semRows.filter(r=>r.vend===v);
-          const d=vR.reduce((s,r)=>s+(r.discadas||0),0);
-          const a=vR.reduce((s,r)=>s+(r.atendidas||0),0);
-          const ag=vR.reduce((s,r)=>s+(r.agendamentos||0),0);
-          const f=vR.reduce((s,r)=>s+(r.fechamentos||0),0);
-          const txDA=d>0?Math.round(a/d*100):0;
-          const txAF=a>0?Math.round(f/a*100):0;
-          return{v,d,a,ag,f,txDA,txAF};
-        }).filter(x=>x.d>0||x.f>0).sort((a,b)=>b.f-a.f||b.txAF-a.txAF);
-        if(!dados.length) return'';
-        return dados.map((d,i)=>
-          '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">'+
-            '<div style="font-size:16px;width:24px;text-align:center">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div>'+
-            '<div style="flex:1;min-width:80px">'+
-              '<div style="font-size:13px;font-weight:600">'+d.v+'</div>'+
-              '<div style="font-size:10px;color:var(--text3);font-family:DM Mono">Disc→Atend: '+d.txDA+'% · Atend→Fech: '+d.txAF+'%</div>'+
-            '</div>'+
-            '<div style="display:flex;gap:12px;font-size:12px;font-family:DM Mono">'+
-              '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">AGEND</div><div style="font-weight:700">'+d.ag+'</div></div>'+
-              '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">FECH</div><div style="font-weight:700;color:var(--green)">'+d.f+'</div></div>'+
-            '</div>'+
-          '</div>'
-        ).join('');
-      };
-
-      // Build output grouped by month → week
-      let html=Object.entries(rankByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{
-        const mesDate=new Date(mes+'-01T12:00:00');
-        const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-        const mesId='rank-mes-'+mes.replace('-','');
-        const semsHtml=sems.map(s=>{
-          const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
-          const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-          const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
-          const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
-          const semRows=allRows.filter(r=>r.sem===s);
-          const semId='rank-sem-'+s;
-          const rankHtml=renderRankSem(semRows,semLabel);
-          if(!rankHtml) return'';
-          return'<div style="margin-bottom:8px">'+
-            '<div style="font-size:11px;font-weight:600;color:var(--accent);padding:6px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+semId+'">'+
-              '<span id="'+semId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+
-            '</div>'+
-            '<div id="'+semId+'"'+(isNow?'':' style="display:none"')+'>'+rankHtml+'</div>'+
-          '</div>';
-        }).join('');
-        if(!semsHtml.trim()) return'';
-        return'<div style="margin-bottom:16px">'+
-          '<div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'">'+
-            '<span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+
-          '</div>'+
-          '<div id="'+mesId+'">'+semsHtml+'</div>'+
-        '</div>';
-      }).join('');
-      rankEl.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados suficientes.</div>';
-    }
-  }
-
-  // ── HEATMAP SEMANAL — organizado por mês ────────────────────────────────────
-  const heatEl=document.getElementById('funil-heatmap');
-  const heatCampo=document.getElementById('funil-heat-campo')?.value||'fechamentos';
-  if(heatEl){
-    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
-    if(!semanas.length){heatEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';}
-    else{
-      // Group by month
-      const byMesHeat={};
-      semanas.forEach(s=>{
-        const mes=s.slice(0,7);
-        if(!byMesHeat[mes]) byMesHeat[mes]=[];
-        byMesHeat[mes].push(s);
-      });
-      const mx=Math.max(...semanas.map(s=>allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0)),1);
-      const now2=new Date();now2.setHours(0,0,0,0);const dow2=now2.getDay();const seg2=new Date(now2);seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
-      heatEl.innerHTML=Object.entries(byMesHeat).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{
-        const mesDate=new Date(mes+'-01T12:00:00');
-        const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-        const mesTot=sems.reduce((s,sem)=>s+allRows.filter(r=>r.sem===sem).reduce((ss,r)=>ss+(r[heatCampo]||0),0),0);
-        const cells=sems.map(s=>{
-          const d=new Date(s+'T12:00:00');
-          const fim=new Date(d);fim.setDate(d.getDate()+5);
-          const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
-          const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0);
-          const intensity=v/mx;
-          const bg=v===0?'var(--bg3)':`rgba(249,115,22,${0.1+intensity*0.85})`;
-          const txt=v===0?'var(--text3)':intensity>0.5?'#fff':'var(--text)';
-          const isNow=new Date(s+'T12:00:00')>=seg2&&new Date(s+'T12:00:00')<=new Date(seg2.getTime()+6*864e5);
-          return'<div title="'+label+': '+v+' '+LABELS[CAMPOS.indexOf(heatCampo)]+'" style="width:72px;height:72px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isNow?'2px solid var(--accent)':'1px solid var(--border)')+';cursor:default;flex-shrink:0">'+
-            '<div style="font-size:18px;font-weight:800;color:'+txt+'">'+v+'</div>'+
-            '<div style="font-size:9px;color:'+txt+';opacity:.85;font-family:DM Mono;text-align:center;line-height:1.2">'+d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+'</div>'+
-          '</div>';
-        }).join('');
-        return'<div style="margin-bottom:16px">'+
-          '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:capitalize;margin-bottom:8px;display:flex;align-items:center;gap:8px">'+
-            mesLabel+'<span style="font-size:10px;color:var(--text3);font-family:DM Mono">total: '+mesTot+'</span>'+
-          '</div>'+
-          '<div style="display:flex;gap:8px;flex-wrap:wrap">'+cells+'</div>'+
-        '</div>';
-      }).join('');
-    }
-  }
-
-  // ── HISTÓRICO AGRUPADO POR SEMANA ─────────────────────────────────────────
-  const tbody=document.querySelector('#tbl-funil tbody');
-  if(tbody){
-    const filtered=DB.funil.filter(r=>{
-      if(vFil&&r.vend!==vFil&&r.vend!=='Equipe')return false;
-      if(busca){const d=r.sem?new Date(r.sem+'T12:00:00').toLocaleDateString('pt-BR'):r.sem||'';if(!d.includes(busca)&&!(r.vend||'').toLowerCase().includes(busca))return false;}
-      return true;
-    }).slice().sort((a,b)=>(b.sem||'').localeCompare(a.sem||''));
-    const byWeek={};filtered.forEach(r=>{if(!byWeek[r.sem])byWeek[r.sem]=[];byWeek[r.sem].push(r);});
-    // Filter out weeks where all values are 0
-    Object.keys(byWeek).forEach(sem=>{
-      const hasData=byWeek[sem].some(r=>CAMPOS.some(c=>r[c]>0));
-      if(!hasData) delete byWeek[sem];
-    });
-    if(!Object.keys(byWeek).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';return;}
-    // Group weeks by month
-    const byMonth={};
-    Object.entries(byWeek).forEach(([sem,recs])=>{
-      const mes=sem.slice(0,7);
-      if(!byMonth[mes]) byMonth[mes]=[];
-      byMonth[mes].push([sem,recs]);
-    });
-
-    tbody.innerHTML=Object.entries(byMonth).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{
-      const mesDate=new Date(mes+'-01T12:00:00');
-      const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-      const mesId='funil-mes-'+mes.replace('-','');
-      const mesTots={};CAMPOS.forEach(c=>{mesTots[c]=semanas.reduce((s,[,recs])=>s+recs.reduce((ss,r)=>ss+(r[c]||0),0),0);});
-      let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'">'
-        +'<td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px;color:var(--text)">'
-          +'<span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1)+'</td>'
-        +CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700;color:var(--text2)">'+mesTots[c]+'</td>').join('')
-        +'<td></td></tr>';
-      h+='<tr id="'+mesId+'"><td colspan="11" style="padding:0"><table style="width:100%">';
-      semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{
-        const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
-        const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-        const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
-        const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
-        const wTots={};CAMPOS.forEach(c=>{wTots[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});
-        const grpId='funil-grp-'+mes+wi;
-        h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+grpId+'">'
-          +'<td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)">'
-            +'<span id="'+grpId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>'
-          +CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')
-          +'<td></td></tr>';
-        h+='<tr id="'+grpId+'"'+(isNow?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';
-        recs.forEach(r=>{
-          const idx=DB.funil.indexOf(r);
-          h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'
-            +CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')
-            +'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> '
-            +'<button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';
-        });
-        h+='</table></td></tr>';
-      });
-      h+='</table></td></tr>';
-      return h;
-    }).join('');
-  }
+  msgsEl.scrollTop=msgsEl.scrollHeight;
 }
 
 
@@ -6397,6 +5942,14 @@ function editCad(tipo, i){
 let modalEditIdx=null;
 
 function renderCad(){
+  // Pre-fill Gemini key if set
+  setTimeout(()=>{
+    const keyEl=document.getElementById('cfg-gemini-key');
+    if(keyEl&&!keyEl.value){
+      const k=getGeminiKey();
+      if(k) keyEl.value=k;
+    }
+  },100);
   loadSupabaseConfigUI();
   updateAutoSaveUI();
   updateUltimaSync();
@@ -7201,7 +6754,21 @@ function openModal(type='ades'){
     <div class="fg full"><label class="flabel">✅ Plano de ação (tarefas com prazo)</label><textarea class="finput" id="f-di-plano" rows="3" placeholder="Ex: Rafael vai fazer 10 ligações extras até sexta..." style="resize:vertical;font-family:inherit"></textarea></div>
     <div class="fg full"><label class="flabel">🌟 Destaque da semana</label><input class="finput" id="f-di-destaque" placeholder="Melhor momento ou conquista..."></div>
     <div id="f-di-aviso" style="display:none;background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--green)" class="fg full">✅ Registro existente carregado — edite e salve para atualizar.</div>`;
-    setTimeout(()=>{setMotivacao(3);},30);
+    setTimeout(()=>{
+      setMotivacao(3);
+      // Pre-fill with IA suggestions if available
+      if(window._iaDiarioSugestao){
+        const s=window._iaDiarioSugestao;
+        const g=document.getElementById('f-di-gargalos');
+        const p=document.getElementById('f-di-plano');
+        const d=document.getElementById('f-di-desenvolvimento');
+        if(g&&!g.value) g.value=s.gargalos||'';
+        if(p&&!p.value) p.value=s.plano||'';
+        if(d&&!d.value) d.value=s.desenvolvimento||'';
+        window._iaDiarioSugestao=null;
+        toast('💡 Sugestões da IA preenchidas!');
+      }
+    },30);
   } else if(type==='diario-gestao'){
     title='👔 Reunião com a Gestão';sub='Registro do que foi discutido com a liderança';
     const now2=new Date();
