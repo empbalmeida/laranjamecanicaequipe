@@ -9704,11 +9704,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
     else if(window.innerWidth<900) el.style.gridTemplateColumns='1fr 1fr';
     else el.style.gridTemplateColumns='repeat(3,1fr)';
   });
-})();
-
-</script>
-</body>
-</html  // ── TAXAS DE CONVERSÃO ────────────────────────────────────────────────────────
+// ── TAXAS DE CONVERSÃO ────────────────────────────────────────────────────────
   const convEl=document.getElementById('funil-conversao');
   if(convEl){
     const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))];
@@ -9891,4 +9887,8 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
     }
   }
 
->
+})();
+
+</script>
+</body>
+</html>
