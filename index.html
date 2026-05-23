@@ -4040,12 +4040,12 @@ async function testarGemini(){
 
 async function chamarGemini(prompt){
   const key=getGeminiKey();
-  const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
+  const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='+key,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
   });
-  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  if(!resp.ok){const errTxt=await resp.text().catch(()=>'');throw new Error('HTTP '+resp.status+' '+errTxt.slice(0,100));}
   const data=await resp.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
@@ -9702,4 +9702,187 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 </script>
 </body>
-</html>
+</html  // ── TAXAS DE CONVERSÃO ────────────────────────────────────────────────────────
+  const convEl=document.getElementById('funil-conversao');
+  if(convEl){
+    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))];
+    const avgTots={};CAMPOS.forEach(c=>{avgTots[c]=semanas.length>0?Math.round(allRows.reduce((s,r)=>s+(r[c]||0),0)/semanas.length):0;});
+    convEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      CAMPOS.slice(0,-1).map((c,i)=>{
+        const next=CAMPOS[i+1];
+        const curTx=tots[c]>0?Math.round(tots[next]/tots[c]*100):0;
+        const avgTx=avgTots[c]>0?Math.round(avgTots[next]/avgTots[c]*100):0;
+        const diff=curTx-avgTx;const cor=diff>=0?'var(--green)':'var(--red)';
+        return'<div style="background:var(--bg3);border-radius:10px;padding:12px 14px">'+
+          '<div style="font-size:11px;color:var(--text3);margin-bottom:4px">'+ICONS[i]+' '+LABELS[i]+' → '+ICONS[i+1]+' '+LABELS[i+1]+'</div>'+
+          '<div style="display:flex;align-items:baseline;gap:8px">'+
+            '<span style="font-size:20px;font-weight:700;color:var(--text)">'+curTx+'%</span>'+
+            (avgTx>0?'<span style="font-size:11px;color:'+cor+'">'+(diff>=0?'+':'')+diff+'% vs média</span>':'')+
+          '</div>'+
+          (avgTx>0?'<div style="font-size:10px;color:var(--text3);margin-top:2px">Média histórica: '+avgTx+'%</div>':'')+
+        '</div>';
+      }).join('')+'</div>';
+  }
+
+  // ── METAS VS REALIZADO ────────────────────────────────────────────────────────
+  const metaEl2=document.getElementById('funil-metas');
+  const projEl=document.getElementById('funil-projecao');
+  if(metaEl2){
+    const metaGeral=DB.metaFunil||{};
+    const metaVendObj=DB.metaFunilVend||{};
+    const semsNoFiltro2=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
+    const numSems=semsNoFiltro2.length||1;
+    const getMetaVal=(metaObj,c)=>{
+      if(!metaObj) return 0;
+      const semanas=metaObj.semanas||1;
+      if(metaObj.semsex){
+        const vSS=metaObj.semsex[c]||0;
+        const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);
+        return (vSS*5+vSab*1)*semanas;
+      }
+      return (metaObj[c]||0)*semanas;
+    };
+    const renderBars=(meta,tots2,corBase,label,metaObj)=>{
+      const hasAny=CAMPOS.some(c=>getMetaVal(meta,c)>0);
+      if(!hasAny) return label?'<div style="font-size:11px;font-weight:700;color:'+corBase+';margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">'+label+'</div><div style="font-size:11px;color:var(--text3);margin-bottom:12px">Sem meta definida. Clique em 🎯 Metas para configurar.</div>':'';
+      let h='';
+      if(label) h+='<div style="font-size:11px;font-weight:700;color:'+corBase+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+label+'</div>';
+      h+=CAMPOS.map((c,i)=>{
+        const m=getMetaVal(meta,c);if(!m)return'';
+        const v=tots2[c]||0;const pct=Math.min(Math.round(v/m*100),100);const falta=Math.max(m-v,0);
+        const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':corBase;
+        const pctRest=falta>0?Math.round(falta/m*100):0;
+        const formulaLabel=(()=>{if(!metaObj?.semsex)return'';const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);const sem=metaObj.semanas||1;const perSem=vSS*5+vSab;return'<br><span style="font-size:9px;color:var(--text3)">'+vSS+'/dia×5 + '+vSab+'/sáb = '+perSem+'/sem × '+sem+' = '+perSem*sem+'</span>';})();
+        return'<div style="margin-bottom:12px">'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
+            '<span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span>'+
+            '<div style="text-align:right">'+
+              '<span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+
+              (falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+' ('+pctRest+'%)</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+
+              formulaLabel+
+            '</div>'+
+          '</div>'+
+          '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
+            '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div>'+
+          '</div></div>';
+      }).join('');
+      return h;
+    };
+    let htmlMeta=renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe',metaGeral);
+    Object.entries(metaVendObj).forEach(([vend,meta])=>{
+      const hasAny=CAMPOS.some(c=>getMetaVal(meta,c)>0);
+      if(!hasAny) return;
+      const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});
+      htmlMeta+=renderBars(meta,vTots,'var(--blue)','👤 '+vend,meta);
+    });
+    if(!htmlMeta) htmlMeta='<div style="font-size:12px;color:var(--text3)">Clique em <strong>🎯 Metas</strong> para configurar.</div>';
+    metaEl2.innerHTML=htmlMeta;
+    if(projEl&&metaGeral.semanas&&metaGeral.semsex?.fechamentos>0){
+      const semsVis=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
+      const ritmo=semsVis.length>0?tots.fechamentos/semsVis.length:0;
+      const proj=Math.round(ritmo*4);
+      projEl.textContent=proj>0?'Projeção 4sem: '+proj+' fechamentos':'';
+    }
+  }
+
+  // ── RANKING POR VENDEDOR — por mês e semana ─────────────────────────────────
+  const rankEl=document.getElementById('funil-ranking');
+  const rankCard=document.getElementById('funil-ranking-card');
+  if(rankEl){
+    const vends=vendedores();
+    if(vends.length<2){if(rankCard)rankCard.style.display='none';}
+    else{
+      if(rankCard)rankCard.style.display='';
+      const rankSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
+      const rankByMes={};
+      rankSems.forEach(s=>{const mes=s.slice(0,7);if(!rankByMes[mes])rankByMes[mes]=[];rankByMes[mes].push(s);});
+      const renderRankSem=(semRows)=>{
+        const dados=vends.map(v=>{
+          const vR=semRows.filter(r=>r.vend===v);
+          const d=vR.reduce((s,r)=>s+(r.discadas||0),0);
+          const a=vR.reduce((s,r)=>s+(r.atendidas||0),0);
+          const ag=vR.reduce((s,r)=>s+(r.agendamentos||0),0);
+          const f=vR.reduce((s,r)=>s+(r.fechamentos||0),0);
+          const txDA=d>0?Math.round(a/d*100):0;const txAF=a>0?Math.round(f/a*100):0;
+          return{v,d,a,ag,f,txDA,txAF};
+        }).filter(x=>x.d>0||x.f>0).sort((a,b)=>b.f-a.f||b.txAF-a.txAF);
+        if(!dados.length) return'';
+        return dados.map((d,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">'+
+          '<div style="font-size:16px;width:24px;text-align:center">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div>'+
+          '<div style="flex:1;min-width:80px"><div style="font-size:13px;font-weight:600">'+d.v+'</div>'+
+          '<div style="font-size:10px;color:var(--text3);font-family:DM Mono">Disc→Atend: '+d.txDA+'% · Atend→Fech: '+d.txAF+'%</div></div>'+
+          '<div style="display:flex;gap:12px;font-size:12px;font-family:DM Mono">'+
+            '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">AGEND</div><div style="font-weight:700">'+d.ag+'</div></div>'+
+            '<div style="text-align:center"><div style="color:var(--text3);font-size:9px">FECH</div><div style="font-weight:700;color:var(--green)">'+d.f+'</div></div>'+
+          '</div></div>'
+        ).join('');
+      };
+      let html=Object.entries(rankByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{
+        const mesDate=new Date(mes+'-01T12:00:00');
+        const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+        const mesId='rank-mes-'+mes.replace('-','');
+        const semsHtml=sems.map(s=>{
+          const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);
+          const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+          const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));
+          const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);
+          const semId='rank-sem-'+s;
+          const rankHtml=renderRankSem(allRows.filter(r=>r.sem===s));
+          if(!rankHtml) return'';
+          return'<div style="margin-bottom:6px">'+
+            '<div style="font-size:11px;font-weight:600;color:var(--accent);padding:5px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+semId+'">'+
+              '<span id="'+semId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+
+            '</div>'+
+            '<div id="'+semId+'"'+(isNow?'':' style="display:none"')+'>'+rankHtml+'</div>'+
+          '</div>';
+        }).join('');
+        if(!semsHtml.trim()) return'';
+        return'<div style="margin-bottom:16px">'+
+          '<div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'">'+
+            '<span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+
+          '</div>'+
+          '<div id="'+mesId+'">'+semsHtml+'</div>'+
+        '</div>';
+      }).join('');
+      rankEl.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados.</div>';
+    }
+  }
+
+  // ── HEATMAP SEMANAL — por mês ─────────────────────────────────────────────
+  const heatEl=document.getElementById('funil-heatmap');
+  const heatCampo=document.getElementById('funil-heat-campo')?.value||'fechamentos';
+  if(heatEl){
+    const heatSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
+    if(!heatSems.length){heatEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';}
+    else{
+      const heatByMes={};
+      heatSems.forEach(s=>{const mes=s.slice(0,7);if(!heatByMes[mes])heatByMes[mes]=[];heatByMes[mes].push(s);});
+      const mx=Math.max(...heatSems.map(s=>allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0)),1);
+      const now2=new Date();now2.setHours(0,0,0,0);const dow2=now2.getDay();const seg2=new Date(now2);seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+      heatEl.innerHTML=Object.entries(heatByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{
+        const mesDate=new Date(mes+'-01T12:00:00');
+        const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+        const mesTot=sems.reduce((s,sem)=>s+allRows.filter(r=>r.sem===sem).reduce((ss,r)=>ss+(r[heatCampo]||0),0),0);
+        const cells=sems.map(s=>{
+          const d=new Date(s+'T12:00:00');
+          const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+          const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0);
+          const intensity=v/mx;
+          const bg=v===0?'var(--bg3)':`rgba(249,115,22,${0.1+intensity*0.85})`;
+          const txt=v===0?'var(--text3)':intensity>0.5?'#fff':'var(--text)';
+          const isNow=new Date(s+'T12:00:00')>=seg2&&new Date(s+'T12:00:00')<=new Date(seg2.getTime()+6*864e5);
+          return'<div title="'+label+': '+v+'" style="width:72px;height:72px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isNow?'2px solid var(--accent)':'1px solid var(--border)')+';flex-shrink:0">'+
+            '<div style="font-size:18px;font-weight:800;color:'+txt+'">'+v+'</div>'+
+            '<div style="font-size:9px;color:'+txt+';font-family:DM Mono">'+label+'</div>'+
+          '</div>';
+        }).join('');
+        return'<div style="margin-bottom:16px">'+
+          '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:capitalize;margin-bottom:8px;display:flex;align-items:center;gap:8px">'+
+            mesLabel+'<span style="font-size:10px;color:var(--text3);font-family:DM Mono">total: '+mesTot+'</span></div>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">'+cells+'</div>'+
+        '</div>';
+      }).join('');
+    }
+  }
+
+>
