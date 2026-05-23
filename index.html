@@ -664,6 +664,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   <button class="mob-nav-link" onclick="nav('vendas-mensais');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Vendas Mensais
   </button>
+  <button class="mob-nav-link" onclick="nav('ia');closeMobDrawer()">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Assistente IA
+  </button>
   <button class="mob-nav-link" onclick="nav('diario');closeMobDrawer()">
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Diário da Equipe
   </button>
@@ -724,6 +727,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
     <div class="sidebar-sep"></div>
     <div class="sidebar-section">Vendas</div>
+    <button class="sidebar-link" id="sl-ia" onclick="nav('ia')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" opacity=".3"/></svg>Assistente IA
+    </button>
     <button class="sidebar-link" id="sl-diario" onclick="nav('diario')">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Diário da Equipe
     </button>
@@ -1452,6 +1458,59 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ASSISTENTE IA -->
+  <div class="page" id="page-ia">
+    <div class="section-sm">
+      <div class="sh">
+        <div class="sh-title">🤖 Assistente IA</div>
+        <div class="sh-sub">Especialista em vendas e gestão de consórcio — powered by Groq/Llama</div>
+      </div>
+
+      <!-- Chat principal -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">💬 Chat</div>
+          <div style="display:flex;gap:6px">
+            <span id="ia-status" style="font-size:10px;color:var(--text3);padding:3px 8px;background:var(--bg3);border-radius:6px">🟢 Online</span>
+            <button class="btn btn-g" style="font-size:11px;padding:3px 8px" onclick="limparChatIA()">🗑 Limpar</button>
+          </div>
+        </div>
+        <div style="padding:0 20px 16px">
+          <!-- Mensagens -->
+          <div id="ia-chat-msgs" style="min-height:200px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:12px">
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+              <div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">
+                Olá! Sou seu assistente especializado em <strong>vendas de consórcio</strong> e <strong>gestão de equipes</strong>. Posso te ajudar com scripts, objeções, técnicas de fechamento, motivação de equipe e muito mais. Como posso ajudar?
+              </div>
+            </div>
+          </div>
+          <!-- Input -->
+          <div style="display:flex;gap:8px">
+            <input class="finput" id="ia-chat-input" placeholder="Digite sua pergunta..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarChatIA();}">
+            <button class="btn btn-o" onclick="enviarChatIA()" style="white-space:nowrap;padding:10px 20px">✨ Enviar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Perguntas rápidas -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">⚡ Perguntas Rápidas</div></div>
+        <div style="padding:14px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como abordar um cliente que está em dúvida sobre o consórcio?')">💬 Como abordar cliente em dúvida</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Quais as melhores técnicas de fechamento para consórcio imobiliário?')">🏆 Técnicas de fechamento</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como contornar a objeção de que o cliente prefere financiamento ao consórcio?')">🛡 Objeção: financiamento vs consórcio</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como fazer uma abordagem pelo WhatsApp para venda de consórcio? Me dê um script completo.')">📱 Script WhatsApp completo</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como motivar um vendedor que está com resultado abaixo do esperado sem ser agressivo?')">🔥 Motivar vendedor com resultado baixo</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como explicar de forma simples e convincente o que é consórcio para alguém que nunca ouviu falar?')">📚 Explicar consórcio do zero</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Quais perguntas devo fazer ao cliente para entender se ele tem perfil para o consórcio?')">🔍 Perguntas de qualificação</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como conduzir uma reunião de feedback individual com um vendedor da minha equipe?')">👔 Feedback individual</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -2826,7 +2885,7 @@ function stats(){
 }
 
 // ═══════════════════════════════ NAVIGATE ════════════════════════════════════
-const TITLES={dashboard:'Dashboard',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
+const TITLES={dashboard:'Dashboard',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
@@ -2956,6 +3015,7 @@ function render(p){
   else if(p==='comunicacao')renderComunicacao();
   else if(p==='presenca')renderPresenca();
   else if(p==='funil')renderFunil();
+  else if(p==='ia')renderIA();
   else if(p==='diario')renderDiario();
   else if(p==='portal')renderPortal();
   else if(p==='cadastro')renderCad();
@@ -3731,7 +3791,9 @@ function renderDiario(){
   if(sSel){
     const cur=sSel.value||defaultSem;
     sSel.innerHTML=allSems.map(s=>`<option value="${s}"${s===cur?' selected':''}>${fmtSemLabel(s)}${s===semAtual?' (atual)':''}</option>`).join('');
-    if(!sSel.value) sSel.value=defaultSem;
+    // Restore selected value after rebuilding options
+    if(cur&&[...sSel.options].some(o=>o.value===cur)) sSel.value=cur;
+    else if(!sSel.value) sSel.value=defaultSem;
   }
   const sem=sSel?.value||defaultSem;
 
@@ -3756,6 +3818,19 @@ function renderDiario(){
     semEl.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+chips+'</div>';
   }
 
+  // Meta SEMANAL = semsex*5 + sab*1 (calculada antes para ser acessível em todo renderDiario)
+  const _mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
+  const metaVend={};
+  ['discadas','atendidas','agendamentos','visitas','fechamentos','anuncios','numeros','retornos'].forEach(c=>{
+    if(_mv.semsex){
+      const vSS=_mv.semsex[c]||0;
+      const vSab=_mv.sabIgual?vSS:(_mv.sab?.[c]||0);
+      metaVend[c]=vSS*5+vSab*1;
+    } else {
+      metaVend[c]=_mv[c]||0;
+    }
+  });
+
   // Métricas
   const metEl=document.getElementById('diario-metricas');
   const metLbl=document.getElementById('diario-metrica-label');
@@ -3766,18 +3841,6 @@ function renderDiario(){
     const campos=['discadas','atendidas','agendamentos','visitas','fechamentos'];
     const labels=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
     const icons=['📱','✅','📅','🤝','🏆'];
-    // Meta SEMANAL = semsex*5 + sab*1
-    const _mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
-    const metaVend={};
-    ['discadas','atendidas','agendamentos','visitas','fechamentos','anuncios','numeros','retornos'].forEach(c=>{
-      if(_mv.semsex){
-        const vSS=_mv.semsex[c]||0;
-        const vSab=_mv.sabIgual?vSS:(_mv.sab?.[c]||0);
-        metaVend[c]=vSS*5+vSab*1;
-      } else {
-        metaVend[c]=_mv[c]||0;
-      }
-    });
     const volVendas=vendaRows.reduce((s,r)=>s+(r.valor_liq||0),0);
     let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
     campos.forEach((c,i)=>{
@@ -4200,6 +4263,19 @@ Seja específico com os números. Use linguagem de gestão comercial.`;
 // ── Chat IA ───────────────────────────────────────────────────────────────────
 const _chatHistory=[];
 
+
+function renderIA(){
+  const statusEl=document.getElementById('ia-status');
+  const hasKey=!!getGeminiKey();
+  if(statusEl) statusEl.innerHTML=hasKey?'🟢 Online':'🔴 Configure a API key em Cadastros';
+}
+
+function limparChatIA(){
+  _chatHistory.length=0;
+  const msgsEl=document.getElementById('ia-chat-msgs');
+  if(msgsEl) msgsEl.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">Olá! Como posso ajudar?</div></div>';
+}
+
 async function enviarChatIA(){
   const input=document.getElementById('ia-chat-input');
   const msg=(input?.value||'').trim();
@@ -4239,6 +4315,156 @@ Responda de forma prática, direta e acionável. Use emojis moderadamente. Máxi
     if(loadEl) loadEl.outerHTML='<div style="font-size:12px;color:var(--red);padding:8px 0">✗ Erro: '+e.message+'</div>';
   }
   msgsEl.scrollTop=msgsEl.scrollHeight;
+}
+
+
+function renderFunil(){
+  const CAMPOS=['anuncios', 'numeros', 'retornos', 'discadas', 'atendidas', 'agendamentos', 'visitas', 'fechamentos'];
+  const LABELS=['Anúncios', 'Números', 'Retornos', 'Discadas', 'Atendidas', 'Agendamentos', 'Visitas', 'Fechamentos'];
+  const ICONS=['📣', '📞', '🔄', '📱', '✅', '📅', '🤝', '🏆'];
+
+  // Populate selectors
+  const vendFil=document.getElementById('funil-vend-fil');
+  if(vendFil){const cur=vendFil.value;vendFil.innerHTML='<option value="">Toda a equipe</option>'+vendedores().map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');vendFil.value=cur;}
+  const semSel=document.getElementById('funil-semana-sel');
+  if(semSel){const cur=semSel.value;const sems=[...new Set(DB.funil.map(r=>r.sem).filter(Boolean))].sort().reverse();semSel.innerHTML='<option value="">Ver semana específica...</option>'+sems.map(s=>{const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);return`<option value="${s}"${s===cur?' selected':''}>${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} a ${fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</option>`;}).join('');semSel.value=cur;}
+
+  // Month selector
+  const mesSel=document.getElementById('funil-mes-sel');
+  const vFil=vendFil?.value||'';
+  const periodo=document.getElementById('funil-periodo')?.value||'semana';
+  const busca=(document.getElementById('funil-busca')?.value||'').toLowerCase();
+  const semEspec=semSel?.value||'';
+  const now=new Date();now.setHours(0,0,0,0);
+
+  // Filter rows
+  let rows=DB.funil.filter(r=>{
+    if(vFil&&r.vend!==vFil&&r.vend!=='Equipe') return false;
+    if(busca){const d=r.sem?new Date(r.sem+'T12:00:00').toLocaleDateString('pt-BR'):r.sem||'';if(!d.includes(busca)&&!(r.vend||'').toLowerCase().includes(busca))return false;}
+    return true;
+  });
+  if(semEspec){rows=rows.filter(r=>r.sem===semEspec);}
+  else if(periodo==='semana'){const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));const dom=new Date(seg);dom.setDate(seg.getDate()+6);rows=rows.filter(r=>{const d=new Date(r.sem+'T12:00:00');return d>=seg&&d<=dom;});}
+  else if(periodo==='mes'){
+    const allMeses=[...new Set(DB.funil.map(r=>r.sem?.slice(0,7)).filter(Boolean))].sort().reverse();
+    if(mesSel){const curM=mesSel.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));mesSel.innerHTML=allMeses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===curM?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`;}).join('');if(!mesSel.value&&allMeses[0])mesSel.value=allMeses[0];mesSel.style.display='';}
+    const mesVal=mesSel?.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+    rows=rows.filter(r=>r.sem?.startsWith(mesVal));
+  } else if(mesSel) mesSel.style.display='none';
+
+  const elLbl=document.getElementById('funil-periodo-label');
+  if(elLbl) elLbl.textContent=semEspec?'Semana específica':periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos'+(vFil?' · '+vFil:'');
+
+  // All rows (no period filter) for historical analysis
+  const allRows=DB.funil.filter(r=>!vFil||r.vend===vFil||r.vend==='Equipe');
+
+  // Totals
+  const tots={};CAMPOS.forEach(c=>{tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0);});
+
+  // ── ALERTAS ──────────────────────────────────────────────────────────────
+  const alertEl=document.getElementById('funil-alertas');
+  if(alertEl&&DB.funil.length>=2){
+    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
+    const alertas=[];
+    if(semanas.length>=2){
+      const s1=semanas[0],s2=semanas[1];
+      const t1={},t2={};
+      CAMPOS.forEach(c=>{t1[c]=allRows.filter(r=>r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);t2[c]=allRows.filter(r=>r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);});
+      ['agendamentos','fechamentos','atendidas'].forEach(c=>{if(t2[c]>0){const diff=Math.round((t1[c]-t2[c])/t2[c]*100);if(diff<=-20)alertas.push({cor:'var(--red)',bg:'rgba(239,68,68,.07)',icon:'📉',txt:`<strong>${LABELS[CAMPOS.indexOf(c)]}</strong> caiu ${Math.abs(diff)}% vs semana anterior`});else if(diff>=20)alertas.push({cor:'var(--green)',bg:'rgba(48,209,88,.07)',icon:'📈',txt:`<strong>${LABELS[CAMPOS.indexOf(c)]}</strong> subiu ${diff}% vs semana anterior`});}});
+    }
+    alertEl.innerHTML=alertas.length?'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">'+alertas.map(a=>'<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:'+a.bg+';border-radius:10px"><span style="font-size:15px">'+a.icon+'</span><span style="font-size:12px;color:var(--text)">'+a.txt+'</span></div>').join('')+'</div>':'';
+  }
+
+  // ── KPIs ─────────────────────────────────────────────────────────────────
+  const kpiEl=document.getElementById('funil-kpis');
+  if(kpiEl){
+    const metaGeral2=DB.metaFunil||{};
+    const kpis=[{c:'anuncios',icon:'📣',cor:'var(--blue)'},{c:'atendidas',icon:'✅',cor:'var(--green)'},{c:'agendamentos',icon:'📅',cor:'var(--accent)'},{c:'fechamentos',icon:'🏆',cor:'var(--yellow)'}];
+    kpiEl.innerHTML=kpis.map(k=>{const m2=metaGeral2[k.c]||0;const v2=tots[k.c];const pct2=m2>0?Math.min(Math.round(v2/m2*100),999):null;const flt=m2>0?Math.max(m2-v2,0):null;const cor2=pct2===null?k.cor:pct2>=100?'var(--green)':pct2>=70?'var(--yellow)':k.cor;return'<div class="kpi"><div class="kpi-label">'+k.icon+' '+LABELS[CAMPOS.indexOf(k.c)]+'</div><div class="kpi-val" style="color:'+cor2+'">'+v2+'</div>'+(pct2!==null?'<div style="font-size:10px;margin-top:4px;color:'+cor2+';font-family:DM Mono,monospace">'+pct2+'%'+(flt>0?' · faltam '+flt:'')+'</div>':'')+  '</div>';}).join('');
+  }
+
+  // ── FUNIL VISUAL ──────────────────────────────────────────────────────────
+  const visualEl=document.getElementById('funil-visual');
+  if(visualEl){
+    const etapas=CAMPOS.map((c,i)=>({c,label:LABELS[i],icon:ICONS[i],v:tots[c]}));
+    const max=Math.max(...etapas.map(e=>e.v),1);
+    const CORES=['var(--blue)','var(--accent)','var(--purple)','var(--yellow)','var(--green)','var(--accent)','var(--blue)','var(--green)'];
+    visualEl.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+etapas.map((e,i)=>{const w=Math.max(Math.round(e.v/max*100),e.v>0?8:2);const tx=i<etapas.length-1&&etapas[i+1].v>0&&e.v>0?Math.round(etapas[i+1].v/e.v*100):null;const cor=CORES[i];return'<div style="display:flex;align-items:center;gap:8px"><div style="width:88px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">'+e.icon+' '+e.label+'</div><div style="flex:1;display:flex;justify-content:center"><div style="width:'+w+'%;background:'+cor+';border-radius:6px;height:24px;display:flex;align-items:center;justify-content:center;min-width:30px;transition:width .8s"><span style="font-size:11px;color:#fff;font-weight:700;white-space:nowrap;padding:0 6px">'+e.v+'</span></div></div>'+(tx!==null?'<div style="width:36px;font-size:10px;color:var(--text3);flex-shrink:0">'+tx+'%↓</div>':'<div style="width:36px"></div>')+'</div>';}).join('')+'</div>';
+  }
+
+  // Inline sections (taxas, metas, ranking, heatmap, histórico)
+  renderFunilTaxas(allRows,rows,tots,CAMPOS,LABELS,ICONS);
+  renderFunilMetas(rows,tots,CAMPOS,LABELS,ICONS);
+  renderFunilRanking(allRows,CAMPOS);
+  renderFunilHeatmap(allRows,CAMPOS,LABELS);
+  renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil);
+}
+
+
+function renderFunilTaxas(allRows,rows,tots,CAMPOS,LABELS,ICONS){
+  const convEl=document.getElementById('funil-conversao');
+  if(!convEl) return;
+  const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))];
+  const avgTots={};CAMPOS.forEach(c=>{avgTots[c]=semanas.length>0?Math.round(allRows.reduce((s,r)=>s+(r[c]||0),0)/semanas.length):0;});
+  convEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+CAMPOS.slice(0,-1).map((c,i)=>{const next=CAMPOS[i+1];const curTx=tots[c]>0?Math.round(tots[next]/tots[c]*100):0;const avgTx=avgTots[c]>0?Math.round(avgTots[next]/avgTots[c]*100):0;const diff=curTx-avgTx;const cor=diff>=0?'var(--green)':'var(--red)';return'<div style="background:var(--bg3);border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">'+ICONS[i]+' '+LABELS[i]+' → '+ICONS[i+1]+' '+LABELS[i+1]+'</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:20px;font-weight:700;color:var(--text)">'+curTx+'%</span>'+(avgTx>0?'<span style="font-size:11px;color:'+cor+'">'+(diff>=0?'+':'')+diff+'% vs média</span>':'')+'</div>'+(avgTx>0?'<div style="font-size:10px;color:var(--text3);margin-top:2px">Média histórica: '+avgTx+'%</div>':'')+'</div>';}).join('')+'</div>';
+}
+
+function renderFunilMetas(rows,tots,CAMPOS,LABELS,ICONS){
+  const metaEl2=document.getElementById('funil-metas');
+  const projEl=document.getElementById('funil-projecao');
+  if(!metaEl2) return;
+  const metaGeral=DB.metaFunil||{};
+  const metaVendObj=DB.metaFunilVend||{};
+  const getMetaVal=(metaObj,c)=>{if(!metaObj)return 0;const semanas=metaObj.semanas||1;if(metaObj.semsex){const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);return(vSS*5+vSab*1)*semanas;}return(metaObj[c]||0)*semanas;};
+  const renderBars=(meta,tots2,corBase,label,metaObj)=>{
+    const hasAny=CAMPOS.some(c=>getMetaVal(meta,c)>0);
+    if(!hasAny)return label?'<div style="font-size:11px;font-weight:700;color:'+corBase+';margin-bottom:8px;text-transform:uppercase">'+label+'</div><div style="font-size:11px;color:var(--text3);margin-bottom:12px">Sem meta. Clique em 🎯 Metas.</div>':'';
+    let h='';if(label)h+='<div style="font-size:11px;font-weight:700;color:'+corBase+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+label+'</div>';
+    h+=CAMPOS.map((c,i)=>{const m=getMetaVal(meta,c);if(!m)return'';const v=tots2[c]||0;const pct=Math.min(Math.round(v/m*100),100);const falta=Math.max(m-v,0);const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':corBase;const pctRest=falta>0?Math.round(falta/m*100):0;const fl=(()=>{if(!metaObj?.semsex)return'';const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);const sem=metaObj.semanas||1;const perSem=vSS*5+vSab;return'<br><span style="font-size:9px;color:var(--text3)">'+vSS+'/dia×5 + '+vSab+'/sáb = '+perSem+'/sem × '+sem+' = '+perSem*sem+'</span>';})();return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span><div style="text-align:right"><span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+(falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+'</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+fl+'</div></div><div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div></div></div>';}).join('');return h;
+  };
+  let htmlMeta=renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe',metaGeral);
+  Object.entries(metaVendObj).forEach(([vend,meta])=>{const hasAny=CAMPOS.some(c=>getMetaVal(meta,c)>0);if(!hasAny)return;const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});htmlMeta+=renderBars(meta,vTots,'var(--blue)','👤 '+vend,meta);});
+  if(!htmlMeta)htmlMeta='<div style="font-size:12px;color:var(--text3)">Clique em <strong>🎯 Metas</strong> para configurar.</div>';
+  metaEl2.innerHTML=htmlMeta;
+  if(projEl)projEl.textContent='';
+}
+
+function renderFunilRanking(allRows,CAMPOS){
+  const rankEl=document.getElementById('funil-ranking');
+  const rankCard=document.getElementById('funil-ranking-card');
+  if(!rankEl)return;
+  const vends=vendedores();
+  if(vends.length<2){if(rankCard)rankCard.style.display='none';return;}
+  if(rankCard)rankCard.style.display='';
+  const rankSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
+  const rankByMes={};rankSems.forEach(s=>{const mes=s.slice(0,7);if(!rankByMes[mes])rankByMes[mes]=[];rankByMes[mes].push(s);});
+  const renderRankSem=(semRows)=>{const dados=vends.map(v=>{const vR=semRows.filter(r=>r.vend===v);const d=vR.reduce((s,r)=>s+(r.discadas||0),0);const a=vR.reduce((s,r)=>s+(r.atendidas||0),0);const ag=vR.reduce((s,r)=>s+(r.agendamentos||0),0);const f=vR.reduce((s,r)=>s+(r.fechamentos||0),0);return{v,d,a,ag,f,txDA:d>0?Math.round(a/d*100):0,txAF:a>0?Math.round(f/a*100):0};}).filter(x=>x.d>0||x.f>0).sort((a,b)=>b.f-a.f||b.txAF-a.txAF);if(!dados.length)return'';return dados.map((d,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)"><div style="font-size:16px;width:24px;text-align:center">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600">'+d.v+'</div><div style="font-size:10px;color:var(--text3);font-family:DM Mono">Disc→Atend: '+d.txDA+'% · Atend→Fech: '+d.txAF+'%</div></div><div style="display:flex;gap:12px;font-size:12px;font-family:DM Mono"><div style="text-align:center"><div style="color:var(--text3);font-size:9px">AGEND</div><div style="font-weight:700">'+d.ag+'</div></div><div style="text-align:center"><div style="color:var(--text3);font-size:9px">FECH</div><div style="font-weight:700;color:var(--green)">'+d.f+'</div></div></div></div>').join('');};
+  let html=Object.entries(rankByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{const mesDate=new Date(mes+'-01T12:00:00');const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mesId='rank-mes-'+mes.replace('-','');const semsHtml=sems.map(s=>{const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);const semId='rank-sem-'+s;const rankHtml=renderRankSem(allRows.filter(r=>r.sem===s));if(!rankHtml)return'';return'<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:600;color:var(--accent);padding:5px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+semId+'"><span id="'+semId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</div><div id="'+semId+'"'+(isNow?'':' style="display:none"')+'>'+rankHtml+'</div></div>';}).join('');if(!semsHtml.trim())return'';return'<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'"><span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+'</div><div id="'+mesId+'">'+semsHtml+'</div></div>';}).join('');
+  rankEl.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados.</div>';
+}
+
+function renderFunilHeatmap(allRows,CAMPOS,LABELS){
+  const heatEl=document.getElementById('funil-heatmap');
+  const heatCampo=document.getElementById('funil-heat-campo')?.value||'fechamentos';
+  if(!heatEl)return;
+  const heatSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
+  if(!heatSems.length){heatEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return;}
+  const heatByMes={};heatSems.forEach(s=>{const mes=s.slice(0,7);if(!heatByMes[mes])heatByMes[mes]=[];heatByMes[mes].push(s);});
+  const mx=Math.max(...heatSems.map(s=>allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0)),1);
+  const now2=new Date();now2.setHours(0,0,0,0);const dow2=now2.getDay();const seg2=new Date(now2);seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
+  heatEl.innerHTML=Object.entries(heatByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{const mesDate=new Date(mes+'-01T12:00:00');const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mesTot=sems.reduce((s,sem)=>s+allRows.filter(r=>r.sem===sem).reduce((ss,r)=>ss+(r[heatCampo]||0),0),0);const cells=sems.map(s=>{const d=new Date(s+'T12:00:00');const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0);const intensity=v/mx;const bg=v===0?'var(--bg3)':`rgba(249,115,22,${0.1+intensity*0.85})`;const txt=v===0?'var(--text3)':intensity>0.5?'#fff':'var(--text)';const isNow=new Date(s+'T12:00:00')>=seg2&&new Date(s+'T12:00:00')<=new Date(seg2.getTime()+6*864e5);return'<div title="'+label+': '+v+'" style="width:72px;height:72px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isNow?'2px solid var(--accent)':'1px solid var(--border)')+';flex-shrink:0"><div style="font-size:18px;font-weight:800;color:'+txt+'">'+v+'</div><div style="font-size:9px;color:'+txt+';font-family:DM Mono">'+label+'</div></div>';}).join('');return'<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text);text-transform:capitalize;margin-bottom:8px;display:flex;align-items:center;gap:8px">'+mesLabel+'<span style="font-size:10px;color:var(--text3);font-family:DM Mono">total: '+mesTot+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+cells+'</div></div>';}).join('');
+}
+
+function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){
+  const tbody=document.querySelector('#tbl-funil tbody');
+  if(!tbody)return;
+  const filtered=DB.funil.filter(r=>{if(vFil&&r.vend!==vFil&&r.vend!=='Equipe')return false;if(busca){const d=r.sem?new Date(r.sem+'T12:00:00').toLocaleDateString('pt-BR'):r.sem||'';if(!d.includes(busca)&&!(r.vend||'').toLowerCase().includes(busca))return false;}return true;});
+  const byWeek={};filtered.forEach(r=>{if(!byWeek[r.sem])byWeek[r.sem]=[];byWeek[r.sem].push(r);});
+  // Filter out zero weeks
+  Object.keys(byWeek).forEach(sem=>{const hasData=byWeek[sem].some(r=>CAMPOS.some(c=>r[c]>0));if(!hasData)delete byWeek[sem];});
+  if(!Object.keys(byWeek).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';return;}
+  const byMes2={};Object.entries(byWeek).forEach(([sem,recs])=>{const mes=sem.slice(0,7);if(!byMes2[mes])byMes2[mes]=[];byMes2[mes].push([sem,recs]);});
+  tbody.innerHTML=Object.entries(byMes2).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{const mesDate=new Date(mes+'-01T12:00:00');const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mesId='funil-mes-'+mes.replace('-','');const mesTots={};CAMPOS.forEach(c=>{mesTots[c]=semanas.reduce((s,[,recs])=>s+recs.reduce((ss,r)=>ss+(r[c]||0),0),0);});let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'"><td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px;color:var(--text)"><span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700;color:var(--text2)">'+mesTots[c]+'</td>').join('')+'<td></td></tr><tr id="'+mesId+'"><td colspan="11" style="padding:0"><table style="width:100%">';semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const now3=new Date();now3.setHours(0,0,0,0);const dow3=now3.getDay();const seg3=new Date(now3);seg3.setDate(now3.getDate()-(dow3===0?6:dow3-1));const isNow=d>=seg3&&d<=new Date(seg3.getTime()+6*864e5);const wTots={};CAMPOS.forEach(c=>{wTots[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});const grpId='funil-grp-'+mes+wi;h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+grpId+'"><td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+grpId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')+'<td></td></tr><tr id="'+grpId+'"'+(isNow?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';recs.forEach(r=>{const idx=DB.funil.indexOf(r);h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')+'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';});h+='</table></td></tr>';});h+='</table></td></tr>';return h;}).join('');
 }
 
 
@@ -7039,7 +7265,18 @@ function saveModal(){
     const idx=DB.diario.findIndex(d=>d.vend===vend&&d.sem===sem);
     if(idx>=0){DB.diario[idx]=rec;toast('✓ Registro atualizado!');}
     else{DB.diario.push(rec);toast('✓ Semana registrada!');}
-    setTimeout(()=>{if(activePage==='diario')renderDiario();},50);
+    setTimeout(()=>{
+      if(activePage==='diario'){
+        // Set selectors to just-saved values
+        const vSel=document.getElementById('diario-vend');
+        const sSel=document.getElementById('diario-semana');
+        if(vSel) vSel.value=vend;
+        if(sSel) sSel.value=sem;
+        renderDiario();
+        // Force correct sem after render
+        setTimeout(()=>{if(sSel)sSel.value=sem;},80);
+      }
+    },50);
   } else if(modalType==='diario-gestao'){
     const rec={data:g('f-dg-data'),destaque:g('f-dg-destaque'),desafio:g('f-dg-desafio'),pontos:g('f-dg-pontos'),decisoes:g('f-dg-decisoes'),proximos:g('f-dg-proximos'),ts:Date.now()};
     if(!DB.diarioGestao) DB.diarioGestao=[];
