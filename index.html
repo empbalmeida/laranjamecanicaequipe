@@ -2351,14 +2351,14 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
       <!-- Gemini IA Config -->
       <div class="card" style="margin-bottom:14px">
-        <div class="card-hd"><div class="card-title">🤖 Inteligência Artificial (Gemini)</div></div>
+        <div class="card-hd"><div class="card-title">🤖 Inteligência Artificial (Groq/Llama)</div></div>
         <div style="padding:16px 20px">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">IA gratuita integrada ao sistema. Obtendo sua chave em <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent)">aistudio.google.com</a> → Get API Key → Create API Key.</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">IA gratuita integrada ao sistema. Usando <strong>Groq (Llama 3)</strong> — rápido e gratuito. Obtenha sua chave em <a href="https://console.groq.com" target="_blank" style="color:var(--accent)">console.groq.com</a> → API Keys → Create API Key.</div>
           <div class="fgrid" style="gap:10px">
             <div class="fg full">
               <label class="flabel">API Key do Google Gemini</label>
               <div style="display:flex;gap:8px">
-                <input class="finput" id="cfg-gemini-key" type="password" placeholder="AIzaSy..." style="flex:1;font-size:12px">
+                <input class="finput" id="cfg-gemini-key" type="password" placeholder="gsk_..." style="flex:1;font-size:12px">
                 <button class="btn btn-o" style="font-size:12px" onclick="salvarGeminiKey()">✓ Salvar</button>
                 <button class="btn btn-g" style="font-size:12px" onclick="testarGemini()">🔌 Testar</button>
               </div>
@@ -4014,12 +4014,12 @@ function gerarPDFDiario(){
 // ══════════════════════════ INTELIGÊNCIA ARTIFICIAL ══════════════════════════
 
 function getGeminiKey(){
-  return localStorage.getItem('lm_gemini_key')||'AIzaSyC_ZSR3Cv0Kl9xBWUQw3gLajMAS3jA3tOY';
+  return localStorage.getItem('lm_gemini_key')||'';
 }
 
 function salvarGeminiKey(){
   const key=(document.getElementById('cfg-gemini-key')?.value||'').trim();
-  if(!key){toast('⚠️ Cole a API key do Gemini');return;}
+  if(!key){toast('⚠️ Cole a API key');return;}
   localStorage.setItem('lm_gemini_key',key);
   toast('✓ API key salva!');
   document.getElementById('gemini-key-status').innerHTML='<span style="color:var(--green)">✓ Chave salva</span>';
@@ -4030,7 +4030,7 @@ async function testarGemini(){
   if(statusEl) statusEl.innerHTML='<span style="color:var(--text3)">Testando...</span>';
   try{
     const r=await chamarGemini('Responda apenas: OK');
-    if(statusEl) statusEl.innerHTML='<span style="color:var(--green)">✓ Gemini conectado!</span>';
+    if(statusEl) statusEl.innerHTML='<span style="color:var(--green)">✓ IA conectada! (Groq/Llama)</span>';
     toast('✓ IA funcionando!');
   }catch(e){
     if(statusEl) statusEl.innerHTML='<span style="color:var(--red)">✗ Erro: '+e.message+'</span>';
@@ -4040,14 +4040,20 @@ async function testarGemini(){
 
 async function chamarGemini(prompt){
   const key=getGeminiKey();
-  const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='+key,{
+  if(!key){throw new Error('Configure a API key em Cadastros → Inteligência Artificial');}
+  const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({
+      model:'llama-3.1-8b-instant',
+      messages:[{role:'user',content:prompt}],
+      max_tokens:1024,
+      temperature:0.7
+    })
   });
-  if(!resp.ok){const errTxt=await resp.text().catch(()=>'');throw new Error('HTTP '+resp.status+' '+errTxt.slice(0,100));}
+  if(!resp.ok){const errTxt=await resp.text().catch(()=>'');throw new Error('HTTP '+resp.status+' '+errTxt.slice(0,150));}
   const data=await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  return data.choices?.[0]?.message?.content||'';
 }
 
 // ── IA no Diário ──────────────────────────────────────────────────────────────
