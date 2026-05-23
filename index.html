@@ -1023,6 +1023,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-g" onclick="gerarPDFDiario()">📄 PDF Reunião</button>
           <button class="btn btn-g" onclick="openModal('diario-gestao')">👔 Reunião c/ Gestão</button>
+          <button class="btn btn-g" onclick="iaAnalisarDiario()" style="background:linear-gradient(135deg,#4285f4,#a855f7);color:#fff;border:none">✨ Analisar com IA</button>
           <button class="btn btn-o" onclick="openModal('diario-reg')">+ Registrar Semana</button>
         </div>
       </div>
@@ -1114,6 +1115,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div class="sh-sub">Acompanhe anúncios, ligações, retornos, agendamentos e fechamentos</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-g" onclick="iaAnalisarFunil()" style="background:linear-gradient(135deg,#4285f4,#a855f7);color:#fff;border:none">✨ Analisar com IA</button>
           <button class="btn btn-g" onclick="gerarRelatorioFunil()">📄 PDF</button>
           <button class="btn btn-g" onclick="copiarSemanaAnterior()">📋 Copiar semana ant.</button>
           <button class="btn btn-g" onclick="openModal('meta-funil')">🎯 Metas</button>
@@ -1424,6 +1426,29 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div class="tbl-wrap"><table id="tbl-indicacoes"><thead><tr>
           <th>Data</th><th>Indicado por</th><th>Cliente</th><th>Vendedor</th><th>Convertido?</th><th>Obs.</th><th></th>
         </tr></thead><tbody></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- Chat IA -->
+    <div class="section-sm" style="padding-top:0">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">🤖 Assistente IA — Vendas & Gestão</div>
+          <span style="font-size:10px;color:var(--text3)">Powered by Gemini</span>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="ia-chat-msgs" style="min-height:120px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px">
+            <input class="finput" id="ia-chat-input" placeholder="Pergunte sobre abordagem, objeções, gestão de equipe..." style="flex:1" onkeydown="if(event.key==='Enter')enviarChatIA()">
+            <button class="btn btn-o" onclick="enviarChatIA()" style="white-space:nowrap">✨ Enviar</button>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px" id="ia-sugestoes-rapidas">
+            <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Como abordar um cliente que está em dúvida sobre o consórcio?')">💬 Objeção consórcio</button>
+            <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Como motivar minha equipe de vendas que está com resultado abaixo?')">🔥 Motivar equipe</button>
+            <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Quais as melhores técnicas de fechamento para consórcio?')">🏆 Técnicas fechamento</button>
+            <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="perguntarIA('Como fazer uma abordagem inicial pelo WhatsApp para venda de consórcio?')">📱 Script WhatsApp</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2321,6 +2346,26 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div id="cfg-sb-msg" style="font-size:12px;margin-top:10px;min-height:16px;font-family:'DM Mono',monospace"></div>
         </div>
       </div>
+
+      <!-- Gemini IA Config -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd"><div class="card-title">🤖 Inteligência Artificial (Gemini)</div></div>
+        <div style="padding:16px 20px">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">IA gratuita integrada ao sistema. Obtendo sua chave em <a href="https://aistudio.google.com" target="_blank" style="color:var(--accent)">aistudio.google.com</a> → Get API Key → Create API Key.</div>
+          <div class="fgrid" style="gap:10px">
+            <div class="fg full">
+              <label class="flabel">API Key do Google Gemini</label>
+              <div style="display:flex;gap:8px">
+                <input class="finput" id="cfg-gemini-key" type="password" placeholder="AIzaSy..." style="flex:1;font-size:12px">
+                <button class="btn btn-o" style="font-size:12px" onclick="salvarGeminiKey()">✓ Salvar</button>
+                <button class="btn btn-g" style="font-size:12px" onclick="testarGemini()">🔌 Testar</button>
+              </div>
+            </div>
+          </div>
+          <div id="gemini-key-status" style="font-size:12px;margin-top:8px;min-height:16px;font-family:DM Mono,monospace"></div>
+        </div>
+      </div>
+
 
       <div class="grid2" style="margin-bottom:14px">
         <div class="card"><div class="card-hd"><div class="card-title">Vendedores</div><button class="btn btn-g" style="font-size:12px;padding:5px 12px" onclick="openModal('vend')">+ Novo</button></div>
@@ -3679,8 +3724,14 @@ function renderDiario(){
   const allSems=[...new Set(DB.diario.filter(d=>d.vend===vend).map(d=>d.sem))].sort().reverse();
   const semAtual=getSemAtual();
   if(!allSems.includes(semAtual)) allSems.unshift(semAtual);
-  if(sSel){const cur=sSel.value||semAtual;sSel.innerHTML=allSems.map(s=>`<option value="${s}"${s===cur?' selected':''}>${fmtSemLabel(s)}${s===semAtual?' (atual)':''}</option>`).join('');if(!sSel.value)sSel.value=semAtual;}
-  const sem=sSel?.value||semAtual;
+  // Default to most recent record, or current week
+  const defaultSem=allSems.length>0?allSems[0]:semAtual;
+  if(sSel){
+    const cur=sSel.value||defaultSem;
+    sSel.innerHTML=allSems.map(s=>`<option value="${s}"${s===cur?' selected':''}>${fmtSemLabel(s)}${s===semAtual?' (atual)':''}</option>`).join('');
+    if(!sSel.value) sSel.value=defaultSem;
+  }
+  const sem=sSel?.value||defaultSem;
 
   // Semáforo
   const semEl=document.getElementById('diario-semaforo');
@@ -3846,10 +3897,10 @@ function renderDiario(){
 
   // Plano e compromissos
   const planoEl=document.getElementById('diario-plano');
-  if(planoEl) planoEl.innerHTML=existing?.plano?'<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+existing.plano+'</div>':'<div style="color:var(--text3);font-size:12px">Sem plano registrado.</div>';
+  if(planoEl) planoEl.innerHTML=existing?.plano?'<div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+existing.plano+'</div>':'<div style="color:var(--text3);font-size:12px;padding:8px 0">Sem plano registrado para esta semana. <button class="btn btn-g" style="font-size:11px" onclick="editarDiarioAtual()">+ Adicionar</button></div>';
   const compEl=document.getElementById('diario-compromissos');
   if(compEl){const semAnterior=allSems[allSems.indexOf(sem)+1]||null;const regAnt=semAnterior?DB.diario.find(d=>d.vend===vend&&d.sem===semAnterior):null;
-    compEl.innerHTML=regAnt?.metas?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Combinado em '+fmtSemLabel(semAnterior)+':</div><div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+regAnt.metas+'</div>':'<div style="color:var(--text3);font-size:12px">Sem compromissos da semana anterior.</div>';
+    compEl.innerHTML=regAnt?.metas?'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">Combinado em '+fmtSemLabel(semAnterior)+':</div><div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">'+regAnt.metas+'</div>':'<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum compromisso registrado na semana anterior.</div>';
   }
 
   // Evolução pessoal
@@ -3857,7 +3908,7 @@ function renderDiario(){
   const evolCampo=document.getElementById('diario-evol-campo')?.value||'motivacao';
   if(evolEl){
     const regsVend=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>a.sem.localeCompare(b.sem)).slice(-10);
-    if(regsVend.length<2){evolEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para ver a evolução.</div>';return;}
+    if(regsVend.length<2){evolEl.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">📝 Registre pelo menos 2 semanas para ver a evolução da motivação e métricas.</div>';}
     const vals=regsVend.map(r=>{
       let v=0;if(evolCampo==='motivacao')v=r.motivacao||0;else{const fr=DB.funil.filter(f=>f.vend===vend&&f.sem===r.sem);v=fr.reduce((s,f)=>s+(f[evolCampo]||0),0);}
       const d=new Date(r.sem+'T12:00:00');return{label:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),v};
@@ -3879,7 +3930,7 @@ function renderDiario(){
   const padEl=document.getElementById('diario-padroes');
   if(padEl){
     const regsP=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem)).slice(0,6);
-    if(regsP.length<2){padEl.innerHTML='<div style="color:var(--text3);font-size:12px">Registre pelo menos 2 semanas para identificar padrões.</div>';}
+    if(regsP.length<2){padEl.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">📝 Registre pelo menos 2 semanas para identificar padrões automáticos.</div>';}
     else{
       const padroes=[];
       const mots=regsP.map(r=>r.motivacao||3);const avgMot=mots.reduce((a,b)=>a+b,0)/mots.length;
@@ -3897,7 +3948,7 @@ function renderDiario(){
   const histEl=document.getElementById('diario-historico');
   if(histEl){
     const regsH=DB.diario.filter(d=>d.vend===vend).sort((a,b)=>b.sem.localeCompare(a.sem));
-    if(!regsH.length){histEl.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum registro ainda.</div>';return;}
+    if(!regsH.length){histEl.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">Nenhum registro ainda. Use <strong>+ Registrar Semana</strong> para começar.</div>';return;}
     const motEmojis=['','😞','😐','🙂','😊','🔥'];
     histEl.innerHTML=regsH.map(r=>'<div style="padding:12px 0;border-bottom:1px solid var(--border)">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
@@ -3955,6 +4006,266 @@ function gerarPDFDiario(){
     (reg?.destaque?'<div class="sec"><h2>🌟 Destaque</h2><div class="box">'+reg.destaque+'</div></div>':'')+
     '<div class="footer">Laranja Mecânica 🍊 · '+dataHoje+'</div></body></html>';
   const w=window.open('','_blank');if(!w){toast('Permita popups.');return;}w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
+}
+
+
+// ══════════════════════════ INTELIGÊNCIA ARTIFICIAL ══════════════════════════
+
+function getGeminiKey(){
+  return localStorage.getItem('lm_gemini_key')||'';
+}
+
+function salvarGeminiKey(){
+  const key=(document.getElementById('cfg-gemini-key')?.value||'').trim();
+  if(!key){toast('⚠️ Cole a API key antes de salvar.');return;}
+  localStorage.setItem('lm_gemini_key',key);
+  const el=document.getElementById('gemini-key-status');
+  if(el){el.textContent='✓ Chave salva!';el.style.color='var(--green)';}
+  toast('✓ API key do Gemini salva!');
+}
+
+function testarGemini(){
+  const key=getGeminiKey();
+  if(!key){toast('⚠️ Configure a API key do Gemini em Cadastros.');return;}
+  const el=document.getElementById('gemini-key-status');
+  if(el){el.textContent='Testando...';el.style.color='var(--text3)';}
+  chamarGemini('Responda apenas: OK',(resp)=>{
+    if(el){el.textContent='✓ Conexão OK! IA pronta para usar.';el.style.color='var(--green)';}
+    toast('✓ Gemini conectado!');
+  },(err)=>{
+    if(el){el.textContent='✗ Erro: '+err;el.style.color='var(--red)';}
+    toast('✗ Erro na conexão. Verifique a key.');
+  });
+}
+
+async function chamarGemini(prompt, onSuccess, onError){
+  const key=getGeminiKey();
+  if(!key){
+    if(onError) onError('API key não configurada. Vá em Cadastros → IA.');
+    return;
+  }
+  try{
+    const resp=await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],
+         generationConfig:{temperature:0.7,maxOutputTokens:1024}})}
+    );
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    if(onSuccess) onSuccess(text.trim());
+  }catch(e){
+    if(onError) onError(e.message);
+  }
+}
+
+// ── IA no Diário ─────────────────────────────────────────────────────────────
+function iaAnalisarDiario(){
+  const key=getGeminiKey();
+  if(!key){toast('⚠️ Configure a API key do Gemini em Cadastros → IA.');return;}
+  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
+  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
+  const funilRows=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
+  const discadas=funilRows.reduce((s,r)=>s+(r.discadas||0),0);
+  const atendidas=funilRows.reduce((s,r)=>s+(r.atendidas||0),0);
+  const agendamentos=funilRows.reduce((s,r)=>s+(r.agendamentos||0),0);
+  const visitas=funilRows.reduce((s,r)=>s+(r.visitas||0),0);
+  const fechamentos=funilRows.reduce((s,r)=>s+(r.fechamentos||0),0);
+  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+  const _mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
+  const metaSem={};
+  ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+    if(_mv.semsex){const vSS=_mv.semsex[c]||0;const vSab=_mv.sabIgual?vSS:(_mv.sab?.[c]||0);metaSem[c]=vSS*5+vSab;}
+    else metaSem[c]=_mv[c]||0;
+  });
+
+  const txDA=discadas>0?Math.round(atendidas/discadas*100):0;
+  const txAV=atendidas>0?Math.round(visitas/atendidas*100):0;
+  const txVF=visitas>0?Math.round(fechamentos/visitas*100):0;
+
+  const prompt='Você é especialista em gestão de equipes de vendas de consórcio. Analise os dados abaixo e forneça um diagnóstico prático e direto para a supervisora da equipe.\n\n'+
+    'VENDEDOR: '+vend+'\nSEMANA: '+fmtSemLabel(sem)+'\n\n'+
+    'MÉTRICAS DA SEMANA:\n'+
+    '- Discadas: '+discadas+' (meta: '+(metaSem.discadas||'não definida')+')\n'+
+    '- Atendidas: '+atendidas+' (meta: '+(metaSem.atendidas||'não definida')+')\n'+
+    '- Agendamentos: '+agendamentos+' (meta: '+(metaSem.agendamentos||'não definida')+')\n'+
+    '- Visitas: '+visitas+' (meta: '+(metaSem.visitas||'não definida')+')\n'+
+    '- Fechamentos: '+fechamentos+' (meta: '+(metaSem.fechamentos||'não definida')+')\n\n'+
+    'TAXAS DE CONVERSÃO:\n'+
+    '- Discada→Atendida: '+txDA+'%\n'+
+    '- Atendida→Visita: '+txAV+'%\n'+
+    '- Visita→Fechamento: '+txVF+'%\n\n'+
+    (existing?.gargalos?'GARGALOS ANOTADOS: '+existing.gargalos+'\n':'')+
+    (existing?.desenvolvimento?'DESENVOLVIMENTO: '+existing.desenvolvimento+'\n':'')+
+    '\nPor favor, forneça em formato simples e prático:\n'+
+    '1. DIAGNÓSTICO (2-3 frases sobre o desempenho geral)\n'+
+    '2. PRINCIPAL GARGALO (identifique onde está perdendo mais)\n'+
+    '3. AÇÃO IMEDIATA (1 ação concreta para esta semana)\n'+
+    '4. DESENVOLVIMENTO (1 ponto de melhoria para próxima semana)\n'+
+    '5. MENSAGEM MOTIVACIONAL (1 frase curta para o vendedor)\n\n'+
+    'Seja direto, prático e específico. Use os números reais.';
+
+    // Show loading in modal
+  openModal('ia-diario-result');
+  const el=document.getElementById('ia-diario-content');
+  if(el) el.innerHTML='<div style="display:flex;align-items:center;gap:10px;color:var(--text3)"><span style="font-size:20px">✨</span> Analisando dados de '+vend+'...</div>';
+
+  chamarGemini(prompt,(resp)=>{
+    if(el) el.innerHTML='<div style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap">'+resp+'</div>'+
+      '<div style="margin-top:16px;display:flex;gap:8px">'+
+        '<button class="btn btn-o" onclick="iaPreencherDiario(this.previousElementSibling.previousElementSibling||this.parentElement.previousElementSibling)">📝 Usar no registro</button>'+
+        '<button class="btn btn-g" onclick="copiarIaDiario()">📋 Copiar</button>'+
+      '</div>';
+  },(err)=>{
+    if(el) el.innerHTML='<div style="color:var(--red);font-size:13px">✗ Erro: '+err+'</div>';
+  });
+}
+
+function copiarIaDiario(){
+  const txt=document.getElementById('ia-diario-content')?.innerText||'';
+  navigator.clipboard.writeText(txt).then(()=>toast('✓ Análise copiada!'));
+}
+
+function iaPreencherDiario(contentEl){
+  const texto=document.getElementById('ia-diario-content')?.innerText||'';
+  editarDiarioAtual();
+  setTimeout(()=>{
+    const gargEl=document.getElementById('f-di-gargalos');
+    const devEl=document.getElementById('f-di-desenvolvimento');
+    const planoEl=document.getElementById('f-di-plano');
+    // Extract sections from IA response
+    const gargMatch=texto.match(/PRINCIPAL GARGALO[:\s]*([\s\S]*?)(?=\d\.|AÇÃO|$)/i);
+    const devMatch=texto.match(/DESENVOLVIMENTO[:\s]*([\s\S]*?)(?=\d\.|MENSAGEM|$)/i);
+    const acaoMatch=texto.match(/AÇÃO IMEDIATA[:\s]*([\s\S]*?)(?=\d\.|DESENVOLVIMENTO|$)/i);
+    if(gargEl&&gargMatch) gargEl.value=gargMatch[1].trim().slice(0,300);
+    if(devEl&&devMatch) devEl.value=devMatch[1].trim().slice(0,300);
+    if(planoEl&&acaoMatch) planoEl.value=acaoMatch[1].trim().slice(0,300);
+    toast('✓ Campos preenchidos pela IA!');
+  },200);
+}
+
+// ── IA no Funil ───────────────────────────────────────────────────────────────
+function iaFecharFunil(){
+  const el=document.getElementById('ia-funil-overlay');
+  if(el) el.remove();
+}
+
+function copiarIaFunil(){
+  const txt=document.getElementById('ia-funil-content')?.innerText||'';
+  navigator.clipboard.writeText(txt).then(()=>toast('✓ Análise copiada!'));
+}
+
+function iaAnalisarFunil(){
+  const key=getGeminiKey();
+  if(!key){toast('⚠️ Configure a API key do Gemini em Cadastros → IA.');return;}
+  const vFil=document.getElementById('funil-vend-fil')?.value||'';
+  const periodo=document.getElementById('funil-periodo')?.value||'semana';
+  const CAMPOS=['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const LABELS=['Anúncios','Números','Retornos','Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+  const now=new Date();now.setHours(0,0,0,0);
+  let rows=DB.funil.filter(r=>!vFil||r.vend===vFil);
+  if(periodo==='semana'){const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));rows=rows.filter(r=>new Date(r.sem+'T12:00:00')>=seg);}
+  else if(periodo==='mes'){const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');rows=rows.filter(r=>r.sem?.startsWith(mes));}
+  const tots={};CAMPOS.forEach(c=>{tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0);});
+  const txDA=tots.discadas>0?Math.round(tots.atendidas/tots.discadas*100):0;
+  const txAG=tots.atendidas>0?Math.round(tots.agendamentos/tots.atendidas*100):0;
+  const txVF=tots.visitas>0?Math.round(tots.fechamentos/tots.visitas*100):0;
+  const semanas=[...new Set(rows.map(r=>r.sem).filter(Boolean))];
+
+  const funilLines=CAMPOS.map((c,i)=>'- '+LABELS[i]+': '+tots[c]).join('\n');
+  const prompt='Você é especialista em gestão de equipes de vendas de consórcio. Analise o funil de vendas abaixo e forneça insights práticos.\n\n'+
+    'FILTRO: '+(vFil||'Toda a equipe')+' | '+(periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos os registros')+' | '+semanas.length+' semana(s)\n\n'+
+    'FUNIL COMPLETO:\n'+funilLines+'\n\n'+
+    'TAXAS DE CONVERSÃO:\n'+
+    '- Discada→Atendida: '+txDA+'%\n'+
+    '- Atendida→Agendamento: '+txAG+'%\n'+
+    '- Visita→Fechamento: '+txVF+'%\n\n'+
+    'Forneça análise prática em 3 partes:\n'+
+    '1. DIAGNÓSTICO GERAL (o que os números dizem sobre a equipe)\n'+
+    '2. GARGALO PRINCIPAL (onde está perdendo mais oportunidades e por quê)\n'+
+    '3. 3 AÇÕES PRIORITÁRIAS (o que fazer agora para melhorar os resultados)\n\n'+
+    'Seja específico com os números. Máximo 250 palavras.';
+
+  // Show result in a toast-like overlay
+  const overlay=document.createElement('div');
+  overlay.id='ia-funil-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML='<div style="background:var(--bg);border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'+
+      '<div style="font-size:15px;font-weight:700;color:var(--text)">✨ Análise IA do Funil</div>'+
+      '<button onclick="iaFecharFunil()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)">✕</button>'+
+    '</div>'+
+    '<div id="ia-funil-content"><div style="display:flex;align-items:center;gap:10px;color:var(--text3)"><span style="font-size:20px">✨</span> Analisando funil...</div></div>'+
+  '</div>';
+  document.body.appendChild(overlay);
+
+  chamarGemini(prompt,(resp)=>{
+    const el=document.getElementById('ia-funil-content');
+    if(el) el.innerHTML='<div style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap">'+resp+'</div>'+
+      '<div style="margin-top:14px"><button class="btn btn-g" onclick="copiarIaFunil()">📋 Copiar análise</button></div>';
+  },(err)=>{
+    const el=document.getElementById('ia-funil-content');
+    if(el) el.innerHTML='<div style="color:var(--red);font-size:13px">✗ Erro: '+err+'</div>';
+  });
+}
+
+// ── Chat IA ───────────────────────────────────────────────────────────────────
+const _iaChatHistory=[];
+
+function enviarChatIA(){
+  const input=document.getElementById('ia-chat-input');
+  const msg=(input?.value||'').trim();
+  if(!msg) return;
+  input.value='';
+  perguntarIA(msg);
+}
+
+function perguntarIA(msg){
+  const key=getGeminiKey();
+  if(!key){
+    adicionarMsgChat('sistema','⚠️ Configure a API key do Gemini em Cadastros → 🤖 IA para usar o assistente.');
+    return;
+  }
+  adicionarMsgChat('user',msg);
+  adicionarMsgChat('ia','...',true);
+
+  const systemCtx='Você é um assistente especializado em vendas de consórcio e gestão de equipes comerciais.\n'+
+    'Contexto da empresa: Laranja Mecânica, empresa de consórcio de imóveis e veículos.\n'+
+    'Equipe atual: '+vendedores().join(', ')+'.\n'+
+    'Seja prático, direto e use linguagem brasileira informal mas profissional.\n'+
+    'Máximo 200 palavras por resposta.';
+
+  const fullPrompt=systemCtx+'\nPergunta: '+msg;
+
+
+
+  chamarGemini(fullPrompt,(resp)=>{
+    // Remove loading message
+    const msgs=document.getElementById('ia-chat-msgs');
+    if(msgs){const loading=msgs.querySelector('.ia-loading');if(loading)loading.remove();}
+    adicionarMsgChat('ia',resp);
+    _iaChatHistory.push({role:'user',msg},{role:'ia',msg:resp});
+  },(err)=>{
+    const msgs=document.getElementById('ia-chat-msgs');
+    if(msgs){const loading=msgs.querySelector('.ia-loading');if(loading)loading.remove();}
+    adicionarMsgChat('ia','✗ Erro: '+err);
+  });
+}
+
+function adicionarMsgChat(role,msg,loading=false){
+  const msgs=document.getElementById('ia-chat-msgs');
+  if(!msgs) return;
+  const isUser=role==='user';
+  const div=document.createElement('div');
+  div.className=loading?'ia-loading':'';
+  div.style.cssText='display:flex;gap:8px;align-items:flex-start;'+(isUser?'flex-direction:row-reverse':'');
+  div.innerHTML='<div style="font-size:18px;flex-shrink:0">'+(isUser?'👤':'🤖')+'</div>'+
+    '<div style="max-width:85%;padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.7;'+
+      (isUser?'background:var(--accent);color:#fff':'background:var(--bg3);color:var(--text)')+
+    '">'+msg+'</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
 }
 
 
@@ -6863,6 +7174,10 @@ function openModal(type='ades'){
       <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Use {nome}, {grupo}, {valor}, {data} como variáveis</div>
       <textarea class="finput" id="f-tmpl-texto" rows="5" placeholder="Olá {nome}! Passando para lembrar..." style="resize:vertical;font-family:inherit"></textarea>
     </div>`;
+  } else if(type==='ia-diario-result'){
+    title='✨ Análise IA — '+( document.getElementById('diario-vend')?.value||'Vendedor');
+    sub='Gerado pelo Gemini com base nas métricas da semana';
+    form=`<div id="ia-diario-content" style="min-height:120px"><div style="display:flex;align-items:center;gap:10px;color:var(--text3)"><span>✨</span> Analisando...</div></div>`;
   } else if(type==='diario-reg'){
     title='📓 Registrar Semana';sub='Acompanhamento individual do vendedor';
     const vOpts11=vendedores().map(v=>`<option value="${v}">${v}</option>`).join('');
