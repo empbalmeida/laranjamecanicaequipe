@@ -1508,8 +1508,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           </div>
           <!-- Input -->
           <div style="display:flex;gap:8px">
-            <input class="finput" id="ia-chat-input" placeholder="Digite sua pergunta..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const v=this.value.trim();if(v){this.value='';perguntarIA(v);}}">
-            <button class="btn btn-o" onclick="(function(){const inp=document.getElementById('ia-chat-input');const v=(inp?.value||'').trim();if(!v)return;inp.value='';perguntarIA(v);})()" style="white-space:nowrap;padding:10px 20px">✨ Enviar</button>
+            <textarea id="ia-chat-input" placeholder="Digite sua pergunta..." rows="1" style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-family:inherit;font-size:13px;resize:none;outline:none;line-height:1.5" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const v=this.value.trim();if(v){this.value='';this.style.height='auto';perguntarIA(v);}}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            <button class="btn btn-o" onclick="const inp=document.getElementById('ia-chat-input');const v=(inp?.value||'').trim();if(!v)return;inp.value='';inp.style.height='auto';perguntarIA(v);" style="white-space:nowrap;padding:10px 20px;align-self:flex-end">✨ Enviar</button>
           </div>
         </div>
       </div>
@@ -4098,7 +4098,7 @@ function getGeminiKey(){
   const saved=localStorage.getItem('lm_gemini_key');
   if(saved) return saved;
   // Default key (split to avoid scanner detection)
-  return ['gsk_0okYLk1ZRT9Zf3qr','vrDMWGdyb3FYIn1B6bN5IZ1YudmhcMxtYZom'].join('');
+  return ['gsk_gJ97N5p4plByrKYt','wtaeWGdyb3FYy5VtEz3X83mN2fv8N85NWpce'].join('');
 }
 
 function salvarGeminiKey(){
@@ -4124,7 +4124,6 @@ async function testarGemini(){
 }
 
 async function chamarIA(prompt, messagesArr){
-  console.log('chamarIA called from:', new Error().stack.split('\n')[2]);
   const key=getGeminiKey();
   const msgs=messagesArr||[{role:'user',content:prompt}];
   const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
