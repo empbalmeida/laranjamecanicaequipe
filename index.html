@@ -2,6 +2,9 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Laranja Mecânica</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1505,8 +1508,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           </div>
           <!-- Input -->
           <div style="display:flex;gap:8px">
-            <input class="finput" id="ia-chat-input" placeholder="Digite sua pergunta..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarChatIA();}">
-            <button class="btn btn-o" onclick="enviarChatIA()" style="white-space:nowrap;padding:10px 20px">✨ Enviar</button>
+            <input class="finput" id="ia-chat-input" placeholder="Digite sua pergunta..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const v=this.value.trim();if(v){this.value='';perguntarIA(v);}}">
+            <button class="btn btn-o" onclick="(function(){const inp=document.getElementById('ia-chat-input');const v=(inp?.value||'').trim();if(!v)return;inp.value='';perguntarIA(v);})()" style="white-space:nowrap;padding:10px 20px">✨ Enviar</button>
           </div>
         </div>
       </div>
@@ -2528,7 +2531,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 <div class="toast" id="toast"></div>
 
 <script>
-
+// v1779655531
 // ═══════════════════════════════ DATA ════════════════════════════════════════
 let DB = {
   vendedores:[
