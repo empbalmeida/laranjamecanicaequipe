@@ -4205,54 +4205,6 @@ function limparChatIA(){
   if(msgsEl) msgsEl.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">Olá! Como posso ajudar?</div></div>';
 }
 
-async function enviarChatIA(){
-  const input=document.getElementById('ia-chat-input');
-  const msg=(input?.value||'').trim();
-  if(!msg) return;
-  input.value='';
-  await perguntarIA(msg);
-}
-
-async function perguntarIA(msg){
-  // Navigate to IA page if not there
-  if(activePage!=='ia'){ nav('ia'); await new Promise(r=>setTimeout(r,100)); }
-  const msgsEl=document.getElementById('ia-chat-msgs');
-  if(!msgsEl) return;
-  // Check API key
-  if(!getGeminiKey()){
-    msgsEl.innerHTML+='<div style="color:var(--red);font-size:12px;padding:8px 0">⚠️ Configure a API key em Cadastros → Inteligência Artificial</div>';
-    return;
-  }
-  // Add user message
-  msgsEl.innerHTML+='<div style="display:flex;justify-content:flex-end"><div style="background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:8px 14px;font-size:13px;max-width:80%;line-height:1.5">'+msg+'</div></div>';
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-  
-  // Loading
-  const loadId='ia-load-'+Date.now();
-  msgsEl.innerHTML+='<div id="'+loadId+'" style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4285f4,#a855f7);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:2px 12px 12px 12px;padding:8px 14px;font-size:13px"><div class="spinner" style="width:16px;height:16px"></div></div></div>';
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-
-  _chatHistory.push({role:'user',content:msg});
-
-  const context='Você é um assistente inteligente e prestativo. Responda em português, de forma clara, direta e útil. Use emojis moderadamente quando fizer sentido.';
-
-  // Build messages array with history for Groq
-  const messages=[{role:'system',content:context}];
-  _chatHistory.slice(-10).forEach(m=>messages.push({role:m.role==='user'?'user':'assistant',content:m.content}));
-  messages.push({role:'user',content:msg});
-
-  try{
-    const resp=await chamarGemini(null, messages);
-    _chatHistory.push({role:'assistant',content:resp});
-    
-    const loadEl=document.getElementById(loadId);
-    if(loadEl) loadEl.outerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4285f4,#a855f7);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:2px 12px 12px 12px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">'+resp.replace(/\n/g,'<br>')+'</div></div>';
-  }catch(e){
-    const loadEl=document.getElementById(loadId);
-    if(loadEl) loadEl.outerHTML='<div style="font-size:12px;color:var(--red);padding:8px 0">✗ Erro: '+e.message+'</div>';
-  }
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-}
 
 
 function renderFunil(){
