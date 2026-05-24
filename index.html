@@ -1484,51 +1484,41 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     <div class="section-sm">
       <div class="sh">
         <div class="sh-title">🤖 Assistente IA</div>
-        <div class="sh-sub">Especialista em vendas e gestão de consórcio — powered by Groq/Llama</div>
+        <div class="sh-sub">Powered by Groq/Llama — responde qualquer pergunta</div>
       </div>
-
-      <!-- Chat principal -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-hd">
           <div class="card-title">💬 Chat</div>
-          <div style="display:flex;gap:6px">
-            <span id="ia-status" style="font-size:10px;color:var(--text3);padding:3px 8px;background:var(--bg3);border-radius:6px">🟢 Online</span>
-            <button class="btn btn-g" style="font-size:11px;padding:3px 8px" onclick="limparChatIA()">🗑 Limpar</button>
-          </div>
+          <button class="btn btn-g" style="font-size:11px" onclick="limparChatIA()">🗑 Limpar</button>
         </div>
-        <div style="padding:0 20px 16px">
-          <!-- Mensagens -->
-          <div id="ia-chat-msgs" style="min-height:200px;max-height:480px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:12px">
-            <div style="display:flex;gap:8px;align-items:flex-start">
+        <div style="padding:0 20px 20px">
+          <div id="ia-msgs" style="min-height:180px;max-height:460px;overflow-y:auto;padding:16px 0;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--border);margin-bottom:14px">
+            <div style="display:flex;gap:10px">
               <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
-              <div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">
-                Olá! Sou seu assistente especializado em <strong>vendas de consórcio</strong> e <strong>gestão de equipes</strong>. Posso te ajudar com scripts, objeções, técnicas de fechamento, motivação de equipe e muito mais. Como posso ajudar?
-              </div>
+              <div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;line-height:1.6;color:var(--text)">Olá! Como posso ajudar?</div>
             </div>
           </div>
-          <!-- Input -->
-          <div style="display:flex;gap:8px">
-            <textarea id="ia-chat-input" placeholder="Digite sua pergunta..." rows="1" style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-family:inherit;font-size:13px;resize:none;outline:none;line-height:1.5" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();const v=this.value.trim();if(v){this.value='';this.style.height='auto';perguntarIA(v);}}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-            <button class="btn btn-o" onclick="const inp=document.getElementById('ia-chat-input');const v=(inp?.value||'').trim();if(!v)return;inp.value='';inp.style.height='auto';perguntarIA(v);" style="white-space:nowrap;padding:10px 20px;align-self:flex-end">✨ Enviar</button>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <div style="flex:1;position:relative">
+              <div id="ia-input" contenteditable="true" data-placeholder="Digite sua pergunta..." style="min-height:40px;max-height:120px;overflow-y:auto;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--bg3);color:var(--text);font-size:13px;line-height:1.5;outline:none;word-break:break-word" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_iaEnviar();}"></div>
+            </div>
+            <button class="btn btn-o" onclick="_iaEnviar()" style="padding:10px 20px;white-space:nowrap;flex-shrink:0">✨ Enviar</button>
           </div>
         </div>
       </div>
-
-      <!-- Perguntas rápidas -->
-      <div class="card" style="margin-bottom:16px">
+      <div class="card">
         <div class="card-hd"><div class="card-title">⚡ Perguntas Rápidas</div></div>
         <div style="padding:14px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como abordar um cliente que está em dúvida sobre o consórcio?')">💬 Como abordar cliente em dúvida</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Quais as melhores técnicas de fechamento para consórcio imobiliário?')">🏆 Técnicas de fechamento</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como contornar a objeção de que o cliente prefere financiamento ao consórcio?')">🛡 Objeção: financiamento vs consórcio</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como fazer uma abordagem pelo WhatsApp para venda de consórcio? Me dê um script completo.')">📱 Script WhatsApp completo</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como motivar um vendedor que está com resultado abaixo do esperado sem ser agressivo?')">🔥 Motivar vendedor com resultado baixo</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como explicar de forma simples e convincente o que é consórcio para alguém que nunca ouviu falar?')">📚 Explicar consórcio do zero</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Quais perguntas devo fazer ao cliente para entender se ele tem perfil para o consórcio?')">🔍 Perguntas de qualificação</button>
-          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="perguntarIA('Como conduzir uma reunião de feedback individual com um vendedor da minha equipe?')">👔 Feedback individual</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Como abordar um cliente que está em dúvida sobre consórcio?')">💬 Abordar cliente em dúvida</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Quais as melhores técnicas de fechamento para consórcio?')">🏆 Técnicas de fechamento</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Como contornar objeção: prefiro financiamento ao consórcio?')">🛡 Objeção: financiamento</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Me dá um script completo de abordagem pelo WhatsApp para consórcio.')">📱 Script WhatsApp</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Como motivar vendedor com resultado abaixo sem ser agressivo?')">🔥 Motivar vendedor</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Quais perguntas fazer ao cliente para qualificá-lo para o consórcio?')">🔍 Qualificar cliente</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Como conduzir uma reunião de feedback individual com vendedor?')">👔 Feedback individual</button>
+          <button class="btn btn-g" style="text-align:left;padding:10px 14px;height:auto;white-space:normal;line-height:1.4" onclick="_iaPerguntar('Como explicar consórcio de forma simples para quem nunca ouviu falar?')">📚 Explicar consórcio</button>
         </div>
       </div>
-
     </div>
   </div>
 
@@ -4095,767 +4085,131 @@ function gerarPDFDiario(){
 // ══════════════════════════ INTELIGÊNCIA ARTIFICIAL ══════════════════════════
 
 function getGeminiKey(){
-  const saved=localStorage.getItem('lm_gemini_key');
-  if(saved) return saved;
-  // Default key (split to avoid scanner detection)
-  return ['gsk_gJ97N5p4plByrKYt','wtaeWGdyb3FYy5VtEz3X83mN2fv8N85NWpce'].join('');
+  return localStorage.getItem('lm_gemini_key')||'';
 }
-
 function salvarGeminiKey(){
-  const key=(document.getElementById('cfg-gemini-key')?.value||'').trim();
-  if(!key){toast('⚠️ Cole a API key');return;}
-  localStorage.setItem('lm_gemini_key',key);
+  const k=(document.getElementById('cfg-gemini-key')?.value||'').trim();
+  if(!k){toast('Cole a API key');return;}
+  localStorage.setItem('lm_gemini_key',k);
   toast('✓ Chave salva!');
   const el=document.getElementById('gemini-key-status');
-  if(el) el.innerHTML='<span style="color:var(--green)">✓ Chave salva</span>';
+  if(el)el.innerHTML='<span style="color:var(--green)">✓ Salva</span>';
 }
-
 async function testarGemini(){
   const el=document.getElementById('gemini-key-status');
-  if(el) el.innerHTML='<span style="color:var(--text3)">Testando...</span>';
+  if(el)el.innerHTML='<span style="color:var(--text3)">Testando...</span>';
   try{
-    const r=await chamarIA('Responda apenas: OK');
-    if(el) el.innerHTML='<span style="color:var(--green)">✓ IA conectada!</span>';
-    toast('✓ IA funcionando: '+r.slice(0,20));
+    await _iaCall('OK');
+    if(el)el.innerHTML='<span style="color:var(--green)">✓ IA conectada!</span>';
+    toast('✓ IA funcionando!');
   }catch(e){
-    if(el) el.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';
+    if(el)el.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';
     toast('✗ '+e.message);
   }
 }
 
-async function chamarIA(prompt, messagesArr){
+// Função base de chamada à API
+async function _iaCall(userMsg, history){
   const key=getGeminiKey();
-  const msgs=messagesArr||[{role:'user',content:prompt}];
-  const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+  if(!key){throw new Error('Configure a chave em Cadastros → Inteligência Artificial');}
+  const msgs=[{role:'system',content:'Você é um assistente inteligente. Responda em português de forma clara e direta.'}];
+  if(history)history.forEach(h=>msgs.push(h));
+  msgs.push({role:'user',content:userMsg});
+  const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body:JSON.stringify({model:'llama-3.1-8b-instant',messages:msgs,max_tokens:1024,temperature:0.7})
+    body:JSON.stringify({model:'llama-3.1-8b-instant',messages:msgs,max_tokens:1024})
   });
-  if(!resp.ok){
-    const txt=await resp.text().catch(()=>'');
-    throw new Error('HTTP '+resp.status+': '+txt.slice(0,150));
-  }
-  const data=await resp.json();
-  return data.choices?.[0]?.message?.content||'';
+  if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+' '+t.slice(0,100));}
+  const d=await r.json();
+  return d.choices[0].message.content;
 }
 
-// Keep chamarGemini as alias
-async function chamarGemini(prompt, msgs){
-  return chamarIA(prompt, msgs);
-}
+// Histórico do chat
+const _iaHist=[];
 
-const _chatHistory=[];
-
-async function enviarChatIA(){
-  const input=document.getElementById('ia-chat-input');
-  const msg=(input?.value||'').trim();
-  if(!msg) return;
-  input.value='';
-  await perguntarIA(msg);
-}
-
-async function perguntarIA(msg){
-  if(typeof activePage!=='undefined'&&activePage!=='ia'){ nav('ia'); await new Promise(r=>setTimeout(r,80)); }
-  const msgsEl=document.getElementById('ia-chat-msgs');
-  if(!msgsEl) return;
-
-  // Add user bubble
-  const userDiv=document.createElement('div');
-  userDiv.style.cssText='display:flex;justify-content:flex-end;margin-bottom:4px';
-  userDiv.innerHTML='<div style="background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.5">'+msg+'</div>';
-  msgsEl.appendChild(userDiv);
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-
-  // Loading bubble
-  const loadDiv=document.createElement('div');
-  loadDiv.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:4px';
-  loadDiv.innerHTML='<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 12px 12px 12px;padding:10px 14px"><div class="spinner"></div></div>';
-  msgsEl.appendChild(loadDiv);
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-
-  _chatHistory.push({role:'user',content:msg});
-
-  try{
-    const sysMsg={role:'system',content:'Você é um assistente inteligente e prestativo. Responda em português, de forma clara e útil.'};
-    const msgs=[sysMsg,..._chatHistory.slice(-10).map(m=>({'role':m.role==='user'?'user':'assistant','content':m.content}))];
-    const resp=await chamarIA(null, msgs);
-    _chatHistory.push({role:'assistant',content:resp});
-
-    // Replace loading with response
-    const respDiv=document.createElement('div');
-    respDiv.style.cssText='display:flex;gap:8px;align-items:flex-start;margin-bottom:4px';
-    respDiv.innerHTML='<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 12px 12px 12px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">'+resp.replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</div>';
-    loadDiv.replaceWith(respDiv);
-  }catch(e){
-    const errDiv=document.createElement('div');
-    errDiv.style.cssText='font-size:12px;color:var(--red);padding:6px 0';
-    errDiv.textContent='✗ Erro: '+e.message;
-    loadDiv.replaceWith(errDiv);
-  }
-  msgsEl.scrollTop=msgsEl.scrollHeight;
-}
-
-
-function renderIA(){
-  const statusEl=document.getElementById('ia-status');
-  const hasKey=!!getGeminiKey();
-  if(statusEl) statusEl.innerHTML=hasKey?'🟢 Online':'🔴 Configure a API key em Cadastros';
-}
+function renderIA(){}
 
 function limparChatIA(){
-  _chatHistory.length=0;
-  const msgsEl=document.getElementById('ia-chat-msgs');
-  if(msgsEl) msgsEl.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">Olá! Como posso ajudar?</div></div>';
+  _iaHist.length=0;
+  const el=document.getElementById('ia-msgs');
+  if(el)el.innerHTML='<div style="display:flex;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;line-height:1.6;color:var(--text)">Olá! Como posso ajudar?</div></div>';
 }
 
+function _iaAddMsg(role, text){
+  const el=document.getElementById('ia-msgs');
+  if(!el)return;
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;gap:10px'+(role==='user'?';justify-content:flex-end':'');
+  if(role==='user'){
+    div.innerHTML='<div style="background:var(--accent);color:#fff;border-radius:14px 14px 2px 14px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.5">'+text+'</div>';
+  }else{
+    div.innerHTML='<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 14px 14px 14px;padding:12px 16px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">'+text.replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</div>';
+  }
+  el.appendChild(div);
+  el.scrollTop=el.scrollHeight;
+  return div;
+}
 
+async function _iaPerguntar(msg){
+  if(activePage!=='ia')nav('ia');
+  await new Promise(r=>setTimeout(r,50));
+  const el=document.getElementById('ia-msgs');
+  if(!el)return;
+  _iaAddMsg('user',msg);
+  const loadDiv=_iaAddMsg('bot','<div class="spinner" style="width:16px;height:16px"></div>');
+  _iaHist.push({role:'user',content:msg});
+  try{
+    const resp=await _iaCall(msg,_iaHist.slice(-10,-1));
+    _iaHist.push({role:'assistant',content:resp});
+    if(loadDiv){
+      const bubble=loadDiv.querySelector('div:last-child');
+      if(bubble)bubble.innerHTML=resp.replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    }
+  }catch(e){
+    if(loadDiv){
+      const bubble=loadDiv.querySelector('div:last-child');
+      if(bubble){bubble.style.color='var(--red)';bubble.textContent='✗ '+e.message;}
+    }
+  }
+  if(el)el.scrollTop=el.scrollHeight;
+}
 
-function renderFunil(){
-  const CAMPOS=['anuncios', 'numeros', 'retornos', 'discadas', 'atendidas', 'agendamentos', 'visitas', 'fechamentos'];
-  const LABELS=['Anúncios', 'Números', 'Retornos', 'Discadas', 'Atendidas', 'Agendamentos', 'Visitas', 'Fechamentos'];
-  const ICONS=['📣', '📞', '🔄', '📱', '✅', '📅', '🤝', '🏆'];
+function _iaEnviar(){
+  const inp=document.getElementById('ia-input');
+  if(!inp)return;
+  const msg=(inp.textContent||inp.innerText||'').trim();
+  if(!msg)return;
+  inp.textContent='';
+  _iaPerguntar(msg);
+}
 
-  // Populate selectors
-  const vendFil=document.getElementById('funil-vend-fil');
-  if(vendFil){const cur=vendFil.value;vendFil.innerHTML='<option value="">Toda a equipe</option>'+vendedores().map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');vendFil.value=cur;}
-  const semSel=document.getElementById('funil-semana-sel');
-  if(semSel){const cur=semSel.value;const sems=[...new Set(DB.funil.map(r=>r.sem).filter(Boolean))].sort().reverse();semSel.innerHTML='<option value="">Ver semana específica...</option>'+sems.map(s=>{const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);return`<option value="${s}"${s===cur?' selected':''}>${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})} a ${fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}</option>`;}).join('');semSel.value=cur;}
-
-  // Month selector
-  const mesSel=document.getElementById('funil-mes-sel');
-  const vFil=vendFil?.value||'';
-  const periodo=document.getElementById('funil-periodo')?.value||'semana';
-  const busca=(document.getElementById('funil-busca')?.value||'').toLowerCase();
-  const semEspec=semSel?.value||'';
-  const now=new Date();now.setHours(0,0,0,0);
-
-  // Filter rows
-  let rows=DB.funil.filter(r=>{
-    if(vFil&&r.vend!==vFil&&r.vend!=='Equipe') return false;
-    if(busca){const d=r.sem?new Date(r.sem+'T12:00:00').toLocaleDateString('pt-BR'):r.sem||'';if(!d.includes(busca)&&!(r.vend||'').toLowerCase().includes(busca))return false;}
-    return true;
-  });
-  if(semEspec){rows=rows.filter(r=>r.sem===semEspec);}
-  else if(periodo==='semana'){const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));const dom=new Date(seg);dom.setDate(seg.getDate()+6);rows=rows.filter(r=>{const d=new Date(r.sem+'T12:00:00');return d>=seg&&d<=dom;});}
-  else if(periodo==='mes'){
-    const allMeses=[...new Set(DB.funil.map(r=>r.sem?.slice(0,7)).filter(Boolean))].sort().reverse();
-    if(mesSel){const curM=mesSel.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));mesSel.innerHTML=allMeses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===curM?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`;}).join('');if(!mesSel.value&&allMeses[0])mesSel.value=allMeses[0];mesSel.style.display='';}
-    const mesVal=mesSel?.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
-    rows=rows.filter(r=>r.sem?.startsWith(mesVal));
-  } else if(mesSel) mesSel.style.display='none';
-
-  const elLbl=document.getElementById('funil-periodo-label');
-  if(elLbl) elLbl.textContent=semEspec?'Semana específica':periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos'+(vFil?' · '+vFil:'');
-
-  // All rows (no period filter) for historical analysis
-  const allRows=DB.funil.filter(r=>!vFil||r.vend===vFil||r.vend==='Equipe');
-
-  // Totals
-  const tots={};CAMPOS.forEach(c=>{tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0);});
-
-  // ── ALERTAS ──────────────────────────────────────────────────────────────
+// Aliases para compatibilidade
+async function chamarGemini(p,m){return _iaCall(p,m);}
+async function chamarIA(p,m){return _iaCall(p,m);}
+async function perguntarIA(m){return _iaPerguntar(m);}
+async function enviarChatIA(){return _iaEnviar();}
+async function iaAnalisarDiario(){
+  const vend=document.getElementById('diario-vend')?.value||'';
+  const sem=document.getElementById('diario-semana')?.value||'';
+  const t={};['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{t[c]=DB.funil.filter(r=>r.vend===vend&&r.sem===sem).reduce((s,r)=>s+(r[c]||0),0);});
+  const prompt=`Analise o vendedor ${vend} na semana ${sem}: Discadas=${t.discadas}, Atendidas=${t.atendidas}, Agendamentos=${t.agendamentos}, Visitas=${t.visitas}, Fechamentos=${t.fechamentos}. Dê 3 sugestões práticas em português.`;
+  const sugEl=document.getElementById('diario-sugestoes');
+  if(sugEl)sugEl.innerHTML='<div class="spinner"></div>';
+  try{const r=await _iaCall(prompt);if(sugEl)sugEl.innerHTML='<div style="font-size:12px;line-height:1.6;color:var(--text)">'+r.replace(/\n/g,'<br>')+'</div>';}
+  catch(e){if(sugEl)sugEl.innerHTML='<div style="color:var(--red);font-size:12px">✗ '+e.message+'</div>';}
+}
+async function iaAnalisarFunil(){
   const alertEl=document.getElementById('funil-alertas');
-  if(alertEl&&DB.funil.length>=2){
-    const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
-    const alertas=[];
-    if(semanas.length>=2){
-      const s1=semanas[0],s2=semanas[1];
-      const t1={},t2={};
-      CAMPOS.forEach(c=>{t1[c]=allRows.filter(r=>r.sem===s1).reduce((s,r)=>s+(r[c]||0),0);t2[c]=allRows.filter(r=>r.sem===s2).reduce((s,r)=>s+(r[c]||0),0);});
-      ['agendamentos','fechamentos','atendidas'].forEach(c=>{if(t2[c]>0){const diff=Math.round((t1[c]-t2[c])/t2[c]*100);if(diff<=-20)alertas.push({cor:'var(--red)',bg:'rgba(239,68,68,.07)',icon:'📉',txt:`<strong>${LABELS[CAMPOS.indexOf(c)]}</strong> caiu ${Math.abs(diff)}% vs semana anterior`});else if(diff>=20)alertas.push({cor:'var(--green)',bg:'rgba(48,209,88,.07)',icon:'📈',txt:`<strong>${LABELS[CAMPOS.indexOf(c)]}</strong> subiu ${diff}% vs semana anterior`});}});
-    }
-    alertEl.innerHTML=alertas.length?'<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:4px">'+alertas.map(a=>'<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:'+a.bg+';border-radius:10px"><span style="font-size:15px">'+a.icon+'</span><span style="font-size:12px;color:var(--text)">'+a.txt+'</span></div>').join('')+'</div>':'';
-  }
-
-  // ── KPIs ─────────────────────────────────────────────────────────────────
-  const kpiEl=document.getElementById('funil-kpis');
-  if(kpiEl){
-    const metaGeral2=DB.metaFunil||{};
-    const kpis=[{c:'anuncios',icon:'📣',cor:'var(--blue)'},{c:'atendidas',icon:'✅',cor:'var(--green)'},{c:'agendamentos',icon:'📅',cor:'var(--accent)'},{c:'fechamentos',icon:'🏆',cor:'var(--yellow)'}];
-    kpiEl.innerHTML=kpis.map(k=>{const m2=metaGeral2[k.c]||0;const v2=tots[k.c];const pct2=m2>0?Math.min(Math.round(v2/m2*100),999):null;const flt=m2>0?Math.max(m2-v2,0):null;const cor2=pct2===null?k.cor:pct2>=100?'var(--green)':pct2>=70?'var(--yellow)':k.cor;return'<div class="kpi"><div class="kpi-label">'+k.icon+' '+LABELS[CAMPOS.indexOf(k.c)]+'</div><div class="kpi-val" style="color:'+cor2+'">'+v2+'</div>'+(pct2!==null?'<div style="font-size:10px;margin-top:4px;color:'+cor2+';font-family:DM Mono,monospace">'+pct2+'%'+(flt>0?' · faltam '+flt:'')+'</div>':'')+  '</div>';}).join('');
-  }
-
-  // ── FUNIL VISUAL ──────────────────────────────────────────────────────────
-  const visualEl=document.getElementById('funil-visual');
-  if(visualEl){
-    const etapas=CAMPOS.map((c,i)=>({c,label:LABELS[i],icon:ICONS[i],v:tots[c]}));
-    const max=Math.max(...etapas.map(e=>e.v),1);
-    const CORES=['var(--blue)','var(--accent)','var(--purple)','var(--yellow)','var(--green)','var(--accent)','var(--blue)','var(--green)'];
-    visualEl.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+etapas.map((e,i)=>{const w=Math.max(Math.round(e.v/max*100),e.v>0?8:2);const tx=i<etapas.length-1&&etapas[i+1].v>0&&e.v>0?Math.round(etapas[i+1].v/e.v*100):null;const cor=CORES[i];return'<div style="display:flex;align-items:center;gap:8px"><div style="width:88px;font-size:11px;color:var(--text2);text-align:right;flex-shrink:0">'+e.icon+' '+e.label+'</div><div style="flex:1;display:flex;justify-content:center"><div style="width:'+w+'%;background:'+cor+';border-radius:6px;height:24px;display:flex;align-items:center;justify-content:center;min-width:30px;transition:width .8s"><span style="font-size:11px;color:#fff;font-weight:700;white-space:nowrap;padding:0 6px">'+e.v+'</span></div></div>'+(tx!==null?'<div style="width:36px;font-size:10px;color:var(--text3);flex-shrink:0">'+tx+'%↓</div>':'<div style="width:36px"></div>')+'</div>';}).join('')+'</div>';
-  }
-
-  // Inline sections (taxas, metas, ranking, heatmap, histórico)
-  renderFunilTaxas(allRows,rows,tots,CAMPOS,LABELS,ICONS);
-  renderFunilMetas(rows,tots,CAMPOS,LABELS,ICONS);
-  renderFunilRanking(allRows,CAMPOS);
-  renderFunilHeatmap(allRows,CAMPOS,LABELS);
-  renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil);
+  if(alertEl)alertEl.innerHTML='<div style="padding:10px;font-size:12px;color:var(--text3)"><div class="spinner" style="width:16px;height:16px;display:inline-block;margin-right:8px"></div>Analisando...</div>';
+  const tots={};['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{tots[c]=DB.funil.reduce((s,r)=>s+(r[c]||0),0);});
+  const prompt=`Analise este funil de vendas de consórcio: Discadas=${tots.discadas}, Atendidas=${tots.atendidas}, Agendamentos=${tots.agendamentos}, Visitas=${tots.visitas}, Fechamentos=${tots.fechamentos}. Dê um resumo executivo com o principal gargalo e ação prioritária.`;
+  try{
+    const r=await _iaCall(prompt);
+    if(alertEl)alertEl.innerHTML='<div style="background:rgba(99,102,241,.07);border-radius:10px;padding:12px 16px;margin-bottom:4px"><div style="font-size:11px;font-weight:700;color:#6366f1;margin-bottom:6px">🤖 Análise IA</div><div style="font-size:13px;color:var(--text);line-height:1.7">'+r.replace(/\n/g,'<br>')+'</div><button onclick="renderFunil()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;margin-top:6px">✕ Fechar</button></div>';
+  }catch(e){if(alertEl)alertEl.innerHTML='';toast('✗ '+e.message);}
 }
 
-
-function renderFunilTaxas(allRows,rows,tots,CAMPOS,LABELS,ICONS){
-  const convEl=document.getElementById('funil-conversao');
-  if(!convEl) return;
-  const semanas=[...new Set(allRows.map(r=>r.sem).filter(Boolean))];
-  const avgTots={};CAMPOS.forEach(c=>{avgTots[c]=semanas.length>0?Math.round(allRows.reduce((s,r)=>s+(r[c]||0),0)/semanas.length):0;});
-  convEl.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+CAMPOS.slice(0,-1).map((c,i)=>{const next=CAMPOS[i+1];const curTx=tots[c]>0?Math.round(tots[next]/tots[c]*100):0;const avgTx=avgTots[c]>0?Math.round(avgTots[next]/avgTots[c]*100):0;const diff=curTx-avgTx;const cor=diff>=0?'var(--green)':'var(--red)';return'<div style="background:var(--bg3);border-radius:10px;padding:12px 14px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">'+ICONS[i]+' '+LABELS[i]+' → '+ICONS[i+1]+' '+LABELS[i+1]+'</div><div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:20px;font-weight:700;color:var(--text)">'+curTx+'%</span>'+(avgTx>0?'<span style="font-size:11px;color:'+cor+'">'+(diff>=0?'+':'')+diff+'% vs média</span>':'')+'</div>'+(avgTx>0?'<div style="font-size:10px;color:var(--text3);margin-top:2px">Média histórica: '+avgTx+'%</div>':'')+'</div>';}).join('')+'</div>';
-}
-
-function renderFunilMetas(rows,tots,CAMPOS,LABELS,ICONS){
-  const metaEl2=document.getElementById('funil-metas');
-  const projEl=document.getElementById('funil-projecao');
-  if(!metaEl2) return;
-  const metaGeral=DB.metaFunil||{};
-  const metaVendObj=DB.metaFunilVend||{};
-  const getMetaVal=(metaObj,c)=>{if(!metaObj)return 0;const semanas=metaObj.semanas||1;if(metaObj.semsex){const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);return(vSS*5+vSab*1)*semanas;}return(metaObj[c]||0)*semanas;};
-  const renderBars=(meta,tots2,corBase,label,metaObj)=>{
-    const hasAny=CAMPOS.some(c=>getMetaVal(meta,c)>0);
-    if(!hasAny)return label?'<div style="font-size:11px;font-weight:700;color:'+corBase+';margin-bottom:8px;text-transform:uppercase">'+label+'</div><div style="font-size:11px;color:var(--text3);margin-bottom:12px">Sem meta. Clique em 🎯 Metas.</div>':'';
-    let h='';if(label)h+='<div style="font-size:11px;font-weight:700;color:'+corBase+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">'+label+'</div>';
-    h+=CAMPOS.map((c,i)=>{const m=getMetaVal(meta,c);if(!m)return'';const v=tots2[c]||0;const pct=Math.min(Math.round(v/m*100),100);const falta=Math.max(m-v,0);const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':corBase;const pctRest=falta>0?Math.round(falta/m*100):0;const fl=(()=>{if(!metaObj?.semsex)return'';const vSS=metaObj.semsex[c]||0;const vSab=metaObj.sabIgual?vSS:(metaObj.sab?.[c]||0);const sem=metaObj.semanas||1;const perSem=vSS*5+vSab;return'<br><span style="font-size:9px;color:var(--text3)">'+vSS+'/dia×5 + '+vSab+'/sáb = '+perSem+'/sem × '+sem+' = '+perSem*sem+'</span>';})();return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span><div style="text-align:right"><span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono,monospace">'+v+' / '+m+' ('+pct+'%)</span>'+(falta>0?'<br><span style="font-size:10px;color:var(--text3)">faltam '+falta+'</span>':'<br><span style="font-size:10px;color:var(--green)">✓ meta batida!</span>')+fl+'</div></div><div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div></div></div>';}).join('');return h;
-  };
-  let htmlMeta=renderBars(metaGeral,tots,'var(--accent)','🏆 Meta Geral da Equipe',metaGeral);
-  Object.entries(metaVendObj).forEach(([vend,meta])=>{const hasAny=CAMPOS.some(c=>getMetaVal(meta,c)>0);if(!hasAny)return;const vTots={};CAMPOS.forEach(c=>{vTots[c]=rows.filter(r=>r.vend===vend).reduce((s,r)=>s+(r[c]||0),0);});htmlMeta+=renderBars(meta,vTots,'var(--blue)','👤 '+vend,meta);});
-  if(!htmlMeta)htmlMeta='<div style="font-size:12px;color:var(--text3)">Clique em <strong>🎯 Metas</strong> para configurar.</div>';
-  metaEl2.innerHTML=htmlMeta;
-  if(projEl)projEl.textContent='';
-}
-
-function renderFunilRanking(allRows,CAMPOS){
-  const rankEl=document.getElementById('funil-ranking');
-  const rankCard=document.getElementById('funil-ranking-card');
-  if(!rankEl)return;
-  const vends=vendedores();
-  if(vends.length<2){if(rankCard)rankCard.style.display='none';return;}
-  if(rankCard)rankCard.style.display='';
-  const rankDe=document.getElementById('funil-rank-de')?.value||'discadas';
-  const rankPara=document.getElementById('funil-rank-para')?.value||'fechamentos';
-  const rankLabels={'fechamentos':'Fech','agendamentos':'Agend','visitas':'Visitas','atendidas':'Atend','discadas':'Disc'};
-  const rankSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
-  const rankByMes={};rankSems.forEach(s=>{const mes=s.slice(0,7);if(!rankByMes[mes])rankByMes[mes]=[];rankByMes[mes].push(s);});
-  const renderRankSem=(semRows)=>{
-    const dados=vends.map(v=>{
-      const vR=semRows.filter(r=>r.vend===v);
-      const valDe=vR.reduce((s,r)=>s+(r[rankDe]||0),0);
-      const valPara=vR.reduce((s,r)=>s+(r[rankPara]||0),0);
-      const tx=valDe>0?Math.round(valPara/valDe*100):0;
-      return{v,valDe,valPara,tx};
-    }).filter(x=>x.valDe>0||x.valPara>0).sort((a,b)=>b.tx-a.tx||b.valPara-a.valPara);
-    if(!dados.length)return'';
-    return dados.map((d,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">'+
-      '<div style="font-size:16px;width:24px;text-align:center">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div>'+
-      '<div style="flex:1">'+
-        '<div style="font-size:13px;font-weight:600">'+d.v+'</div>'+
-        '<div style="font-size:10px;color:var(--text3);font-family:DM Mono">'+rankLabels[rankDe]+': '+d.valDe+' → '+rankLabels[rankPara]+': '+d.valPara+'</div>'+
-      '</div>'+
-      '<div style="text-align:right;font-family:DM Mono">'+
-        '<div style="font-size:20px;font-weight:800;color:'+(d.tx>=30?'var(--green)':d.tx>=15?'var(--yellow)':'var(--accent)')+'">'+d.tx+'%</div>'+
-        '<div style="font-size:9px;color:var(--text3)">conversão</div>'+
-      '</div>'+
-    '</div>').join('');
-  };
-  let html=Object.entries(rankByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{const mesDate=new Date(mes+'-01T12:00:00');const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mesId='rank-mes-'+mes.replace('-','');const semsHtml=sems.map(s=>{const d=new Date(s+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));const isNow=d>=seg&&d<=new Date(seg.getTime()+6*864e5);const semId='rank-sem-'+s;const rankHtml=renderRankSem(allRows.filter(r=>r.sem===s));if(!rankHtml)return'';return'<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:600;color:var(--accent);padding:5px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+semId+'"><span id="'+semId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</div><div id="'+semId+'"'+(isNow?'':' style="display:none"')+'>'+rankHtml+'</div></div>';}).join('');if(!semsHtml.trim())return'';return'<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'"><span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+'</div><div id="'+mesId+'">'+semsHtml+'</div></div>';}).join('');
-  rankEl.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados.</div>';
-}
-
-function renderFunilHeatmap(allRows,CAMPOS,LABELS){
-  const heatEl=document.getElementById('funil-heatmap');
-  const heatCampo=document.getElementById('funil-heat-campo')?.value||'fechamentos';
-  if(!heatEl)return;
-  const heatSems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
-  if(!heatSems.length){heatEl.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados ainda.</div>';return;}
-  const heatByMes={};heatSems.forEach(s=>{const mes=s.slice(0,7);if(!heatByMes[mes])heatByMes[mes]=[];heatByMes[mes].push(s);});
-  const mx=Math.max(...heatSems.map(s=>allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0)),1);
-  const now2=new Date();now2.setHours(0,0,0,0);const dow2=now2.getDay();const seg2=new Date(now2);seg2.setDate(now2.getDate()-(dow2===0?6:dow2-1));
-  heatEl.innerHTML=Object.entries(heatByMes).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,sems])=>{const mesDate=new Date(mes+'-01T12:00:00');const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mesTot=sems.reduce((s,sem)=>s+allRows.filter(r=>r.sem===sem).reduce((ss,r)=>ss+(r[heatCampo]||0),0),0);const cells=sems.map(s=>{const d=new Date(s+'T12:00:00');const label=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[heatCampo]||0),0);const intensity=v/mx;const bg=v===0?'var(--bg3)':`rgba(249,115,22,${0.1+intensity*0.85})`;const txt=v===0?'var(--text3)':intensity>0.5?'#fff':'var(--text)';const isNow=new Date(s+'T12:00:00')>=seg2&&new Date(s+'T12:00:00')<=new Date(seg2.getTime()+6*864e5);return'<div title="'+label+': '+v+'" style="width:72px;height:72px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isNow?'2px solid var(--accent)':'1px solid var(--border)')+';flex-shrink:0"><div style="font-size:18px;font-weight:800;color:'+txt+'">'+v+'</div><div style="font-size:9px;color:'+txt+';font-family:DM Mono">'+label+'</div></div>';}).join('');return'<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--text);text-transform:capitalize;margin-bottom:8px;display:flex;align-items:center;gap:8px">'+mesLabel+'<span style="font-size:10px;color:var(--text3);font-family:DM Mono">total: '+mesTot+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+cells+'</div></div>';}).join('');
-}
-
-function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){
-  const tbody=document.querySelector('#tbl-funil tbody');
-  if(!tbody)return;
-  const filtered=DB.funil.filter(r=>{if(vFil&&r.vend!==vFil&&r.vend!=='Equipe')return false;if(busca){const d=r.sem?new Date(r.sem+'T12:00:00').toLocaleDateString('pt-BR'):r.sem||'';if(!d.includes(busca)&&!(r.vend||'').toLowerCase().includes(busca))return false;}return true;});
-  const byWeek={};filtered.forEach(r=>{if(!byWeek[r.sem])byWeek[r.sem]=[];byWeek[r.sem].push(r);});
-  // Filter out zero weeks
-  Object.keys(byWeek).forEach(sem=>{const hasData=byWeek[sem].some(r=>CAMPOS.some(c=>r[c]>0));if(!hasData)delete byWeek[sem];});
-  if(!Object.keys(byWeek).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro. Clique em + Registrar Semana.</td></tr>';return;}
-  const byMes2={};Object.entries(byWeek).forEach(([sem,recs])=>{const mes=sem.slice(0,7);if(!byMes2[mes])byMes2[mes]=[];byMes2[mes].push([sem,recs]);});
-  tbody.innerHTML=Object.entries(byMes2).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{const mesDate=new Date(mes+'-01T12:00:00');const mesLabel=mesDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mesId='funil-mes-'+mes.replace('-','');const mesTots={};CAMPOS.forEach(c=>{mesTots[c]=semanas.reduce((s,[,recs])=>s+recs.reduce((ss,r)=>ss+(r[c]||0),0),0);});let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mesId+'"><td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px;color:var(--text)"><span id="'+mesId+'-ico">▾</span> 📆 '+mesLabel+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700;color:var(--text2)">'+mesTots[c]+'</td>').join('')+'<td></td></tr><tr id="'+mesId+'"><td colspan="11" style="padding:0"><table style="width:100%">';semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{const d=new Date(sem+'T12:00:00');const fim=new Date(d);fim.setDate(d.getDate()+5);const semLabel=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const now3=new Date();now3.setHours(0,0,0,0);const dow3=now3.getDay();const seg3=new Date(now3);seg3.setDate(now3.getDate()-(dow3===0?6:dow3-1));const isNow=d>=seg3&&d<=new Date(seg3.getTime()+6*864e5);const wTots={};CAMPOS.forEach(c=>{wTots[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});const grpId='funil-grp-'+mes+wi;h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+grpId+'"><td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+grpId+'-ico">'+(isNow?'▾':'▸')+'</span> 📅 '+semLabel+(isNow?' <span class="badge-novo">Atual</span>':'')+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wTots[c]+'</td>').join('')+'<td></td></tr><tr id="'+grpId+'"'+(isNow?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';recs.forEach(r=>{const idx=DB.funil.indexOf(r);h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')+'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" data-sem="'+r.sem+'" data-vend="'+r.vend+'" onclick="editFunilBtn(this)">✏</button> <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';});h+='</table></td></tr>';});h+='</table></td></tr>';return h;}).join('');
-}
-
-
-function renderFunilSemana(){
-  const semSel=document.getElementById('funil-semana-sel');
-  const periodSel=document.getElementById('funil-periodo');
-  const chosen=semSel?.value||'';
-  if(chosen&&periodSel) periodSel.value='todos';
-  renderFunil();
-  if(chosen&&semSel) semSel.value=chosen;
-}
-
-function funil_onPeriodo(){
-  const p=document.getElementById('funil-periodo')?.value;
-  const mesSel=document.getElementById('funil-mes-sel');
-  if(mesSel) mesSel.style.display=p==='mes'?'':'none';
-  renderFunil();
-}
-
-function funil_onDataCal(val){
-  if(!val) return;
-  const d=new Date(val+'T12:00:00');
-  const dow=d.getDay();
-  const seg=new Date(d);seg.setDate(d.getDate()-(dow===0?6:dow-1));
-  const key=seg.toISOString().slice(0,10);
-  // Set semana-sel to this week
-  const semSel=document.getElementById('funil-semana-sel');
-  if(semSel){
-    let found=false;
-    for(const opt of semSel.options){if(opt.value===key){semSel.value=key;found=true;break;}}
-    if(!found){
-      const fim=new Date(seg);fim.setDate(seg.getDate()+5);
-      const label=seg.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-      const opt=document.createElement('option');opt.value=key;opt.text=label;opt.selected=true;
-      semSel.appendChild(opt);semSel.value=key;
-    }
-    // Also set periodo to todos
-    const periodSel=document.getElementById('funil-periodo');
-    if(periodSel) periodSel.value='todos';
-  }
-  renderFunil();
-}
-
-
-function toggleFunilGrp(id){
-  const tbody=document.getElementById(id);
-  const ico=document.getElementById(id+'-ico');
-  if(!tbody) return;
-  const hidden=tbody.style.display==='none';
-  tbody.style.display=hidden?'':'none';
-  if(ico) ico.textContent=hidden?'▾':'▸';
-}
-
-function delFunil(i){
-  if(!confirm('Excluir este registro?')) return;
-  DB.funil.splice(i,1);
-  saveData();
-  renderFunil();
-  toast('✓ Registro excluído');
-}
-
-function renderDashMeta(){
-  const el=document.getElementById('dash-meta-body');
-  if(!el) return;
-  const ok=r=>r.status!=='Cancelado';
-  const now=new Date();
-  const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  const vends=vendedores();
-  const metasDoMes=DB.metas.filter(m=>m.mes===mes);
-
-  if(!metasDoMes.length){
-    el.innerHTML=
-      '<div style="font-size:12px;color:var(--text3);margin-bottom:10px">Nenhuma meta definida para este mês.</div>'+
-      '<button class="btn btn-o" style="font-size:12px;padding:5px 14px" onclick="nav(\'metas\')">+ Definir Metas</button>';
-    return;
-  }
-
-  // Show per-vendedor progress bars
-  let html='';
-  let totalVol=0, totalMeta=0;
-
-  metasDoMes.forEach(m=>{
-    const vol=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)&&r.vendedor===m.vendedor).reduce((s,r)=>s+r.valor_liq,0)+
-              DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes)&&r.vendedor===m.vendedor).reduce((s,r)=>s+r.valor_liq,0);
-    const pct=m.meta_vol>0?Math.min(Math.round(vol/m.meta_vol*100),100):0;
-    const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
-    totalVol+=vol; totalMeta+=m.meta_vol||0;
-
-    html+=
-      '<div style="margin-bottom:12px">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
-          '<span style="font-size:12px;font-weight:600;color:var(--text)">'+m.vendedor+'</span>'+
-          '<span style="font-size:11px;font-family:DM Mono,monospace;color:'+cor+';font-weight:700">'+pct+'%</span>'+
-        '</div>'+
-        '<div style="height:7px;background:var(--bg3);border-radius:999px;overflow:hidden;margin-bottom:3px">'+
-          '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width 1s cubic-bezier(.4,0,.2,1)"></div>'+
-        '</div>'+
-        '<div style="display:flex;justify-content:space-between">'+
-          '<span style="font-size:10px;color:var(--text3)">'+fmtK(vol)+'</span>'+
-          '<span style="font-size:10px;color:var(--text3)">meta: '+fmtK(m.meta_vol)+'</span>'+
-        '</div>'+
-      '</div>';
-  });
-
-  // Total summary
-  const totalPct=totalMeta>0?Math.min(Math.round(totalVol/totalMeta*100),100):0;
-  const totalCor=totalPct>=100?'var(--green)':totalPct>=70?'var(--yellow)':'var(--accent)';
-  html+=
-    '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;display:flex;justify-content:space-between;align-items:center">'+
-      '<span style="font-size:11px;color:var(--text3)">Total do grupo</span>'+
-      '<span style="font-size:13px;font-weight:700;color:'+totalCor+'">'+totalPct+'% · '+fmtK(totalVol)+' / '+fmtK(totalMeta)+'</span>'+
-    '</div>';
-
-  el.innerHTML=html;
-}
-
-function renderDashCountdown(){
-  const el=document.getElementById('dash-countdown-body');
-  if(!el) return;
-  const ok=r=>r.status!=='Cancelado';
-  const now=new Date(); now.setHours(0,0,0,0);
-  const ano=now.getFullYear(); const mes=now.getMonth();
-  const mes0=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-
-  // Dias úteis restantes (seg-sex, sem fim de semana)
-  const ultimoDia=new Date(ano,mes+1,0);
-  let diasUteis=0; let diasUteisTotal=0;
-  for(let d=new Date(ano,mes,1);d<=ultimoDia;d.setDate(d.getDate()+1)){
-    if(d.getDay()!==0&&d.getDay()!==6) diasUteisTotal++;
-    if(d>=now&&d.getDay()!==0&&d.getDay()!==6) diasUteis++;
-  }
-  const diasDecorridos=diasUteisTotal-diasUteis;
-
-  // Volume atual e ritmo
-  const volMes=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes0)).reduce((s,r)=>s+r.valor_liq,0)+
-               DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mes0)).reduce((s,r)=>s+r.valor_liq,0);
-  const ritmoAtual=diasDecorridos>0?volMes/diasDecorridos:0;
-  const projecaoFinal=ritmoAtual*diasUteisTotal;
-  const metaTotal=DB.metas.filter(m=>m.mes===mes0).reduce((s,m)=>s+(m.meta_vol||0),0);
-  const faltaMeta=metaTotal>0?Math.max(metaTotal-volMes,0):0;
-  const ritmoNecessario=diasUteis>0&&faltaMeta>0?faltaMeta/diasUteis:0;
-
-  const diasCor=diasUteis<=5?'var(--red)':diasUteis<=10?'var(--yellow)':'var(--green)';
-
-  el.innerHTML=
-    '<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px">'+
-      '<span style="font-size:32px;font-weight:800;color:'+diasCor+';letter-spacing:-.04em">'+diasUteis+'</span>'+
-      '<span style="font-size:12px;color:var(--text3)">dias úteis restantes</span>'+
-    '</div>'+
-    '<div style="display:flex;flex-direction:column;gap:5px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px">'+
-        '<span style="color:var(--text3)">Ritmo atual</span>'+
-        '<span style="font-family:DM Mono,monospace;color:var(--text2)">'+fmtK(ritmoAtual)+'/dia</span>'+
-      '</div>'+
-      '<div style="display:flex;justify-content:space-between;font-size:12px">'+
-        '<span style="color:var(--text3)">Projeção final</span>'+
-        '<span style="font-family:DM Mono,monospace;color:var(--accent)">'+fmtK(projecaoFinal)+'</span>'+
-      '</div>'+
-      (metaTotal>0&&ritmoNecessario>0?
-        '<div style="display:flex;justify-content:space-between;font-size:12px">'+
-          '<span style="color:var(--text3)">Ritmo p/ bater meta</span>'+
-          '<span style="font-family:DM Mono,monospace;color:'+(ritmoAtual>=ritmoNecessario?'var(--green)':'var(--red)')+'">'+fmtK(ritmoNecessario)+'/dia</span>'+
-        '</div>':'')+'</div>';
-}
-
-function renderVolDestaque(){
-  const el=document.getElementById('vol-destaque');
-  if(!el) return;
-
-  const ok=r=>r.status!=='Cancelado';
-  const now=new Date();
-
-  // ── Hoje ────────────────────────────────────────────────────────────────
-  const hoje=now.toISOString().slice(0,10); // YYYY-MM-DD
-  const aHoje=DB.adesionada.filter(r=>ok(r)&&r.data_contrato===hoje);
-  const lHoje=DB.linear.filter(r=>ok(r)&&r.data_contrato===hoje);
-  const volHoje=aHoje.reduce((s,r)=>s+r.valor_liq,0)+lHoje.reduce((s,r)=>s+r.valor_liq,0);
-  const qtdHoje=aHoje.length+lHoje.length;
-
-  // ── Semana atual (seg a dom) ─────────────────────────────────────────────
-  const dow=now.getDay(); // 0=dom
-  const diffSeg=dow===0?-6:1-dow; // dias até segunda
-  const segAtual=new Date(now); segAtual.setDate(now.getDate()+diffSeg); segAtual.setHours(0,0,0,0);
-  const domAtual=new Date(segAtual); domAtual.setDate(segAtual.getDate()+6); domAtual.setHours(23,59,59,999);
-  const isSemana=r=>{
-    if(!r.data_contrato) return false;
-    const d=new Date(r.data_contrato+'T12:00:00');
-    return d>=segAtual&&d<=domAtual;
-  };
-  const aSem=DB.adesionada.filter(r=>ok(r)&&isSemana(r));
-  const lSem=DB.linear.filter(r=>ok(r)&&isSemana(r));
-  const volSem=aSem.reduce((s,r)=>s+r.valor_liq,0)+lSem.reduce((s,r)=>s+r.valor_liq,0);
-  const qtdSem=aSem.length+lSem.length;
-
-  // ── Mês atual ────────────────────────────────────────────────────────────
-  const mesAtual=hoje.slice(0,7); // YYYY-MM
-  const aMes=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mesAtual));
-  const lMes=DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mesAtual));
-  const volMes=aMes.reduce((s,r)=>s+r.valor_liq,0)+lMes.reduce((s,r)=>s+r.valor_liq,0);
-  const qtdMes=aMes.length+lMes.length;
-
-  // ── Mês anterior para comparação ─────────────────────────────────────────
-  const mesAntDate=new Date(now.getFullYear(),now.getMonth()-1,1);
-  const mesAnt=mesAntDate.getFullYear()+'-'+String(mesAntDate.getMonth()+1).padStart(2,'0');
-  const aMesAnt=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(mesAnt));
-  const lMesAnt=DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(mesAnt));
-  const volMesAnt=aMesAnt.reduce((s,r)=>s+r.valor_liq,0)+lMesAnt.reduce((s,r)=>s+r.valor_liq,0);
-  const diffMes=volMesAnt>0?Math.round((volMes-volMesAnt)/volMesAnt*100):null;
-  const diffStr=diffMes!==null?(diffMes>=0?'+'+diffMes+'%':diffMes+'%'):null;
-  const diffCor=diffMes===null?'var(--text3)':diffMes>=0?'var(--green)':'var(--red)';
-
-  // ── Semana anterior ───────────────────────────────────────────────────────
-  const segAnt=new Date(segAtual); segAnt.setDate(segAtual.getDate()-7);
-  const domAnt=new Date(segAnt); domAnt.setDate(segAnt.getDate()+6); domAnt.setHours(23,59,59,999);
-  const isSemAnt=r=>{
-    if(!r.data_contrato) return false;
-    const d=new Date(r.data_contrato+'T12:00:00');
-    return d>=segAnt&&d<=domAnt;
-  };
-  const aSemAnt=DB.adesionada.filter(r=>ok(r)&&isSemAnt(r));
-  const lSemAnt=DB.linear.filter(r=>ok(r)&&isSemAnt(r));
-  const volSemAnt=aSemAnt.reduce((s,r)=>s+r.valor_liq,0)+lSemAnt.reduce((s,r)=>s+r.valor_liq,0);
-  const diffSemana=volSemAnt>0?Math.round((volSem-volSemAnt)/volSemAnt*100):null;
-  const diffSemStr=diffSemana!==null?(diffSemana>=0?'+'+diffSemana+'%':diffSemana+'%'):null;
-  const diffSemCor=diffSemana===null?'var(--text3)':diffSemana>=0?'var(--green)':'var(--red)';
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  const card=(titulo, icon, vol, qtd, subLabel, subVal, subCor, accentColor)=>`
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 24px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:box-shadow .2s,transform .2s" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-sm)'">
-      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${accentColor};border-radius:20px 20px 0 0"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--text3);font-family:'DM Mono',monospace">${titulo}</div>
-        <div style="font-size:20px;line-height:1">${icon}</div>
-      </div>
-      <div style="font-size:clamp(24px,3.5vw,40px);font-weight:800;letter-spacing:-.04em;color:var(--text);line-height:1;margin-bottom:6px">${vol>0?fmt(vol):'<span style="color:var(--text3)">R$ 0</span>'}</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap;gap:4px">
-        <div style="font-size:12px;color:var(--text3)">${qtd} venda${qtd!==1?'s':''}</div>
-        ${subVal?`<div style="font-size:12px;font-weight:600;color:${subCor};font-family:'DM Mono',monospace">${subVal} <span style="font-weight:400;color:var(--text3);font-size:10px">${subLabel}</span></div>`:''}
-      </div>
-    </div>`;
-
-  el.innerHTML=
-    card('Hoje','📅',volHoje,qtdHoje,'','','var(--text3)','var(--accent)')+
-    card('Esta Semana','📆',volSem,qtdSem,'vs sem. ant.',diffSemStr,diffSemCor,'var(--blue)')+
-    card('Este Mês','🗓',volMes,qtdMes,'vs mês ant.',diffStr,diffCor,'var(--green)');
-
-  // Update responsive on mobile
-  if(window.innerWidth<600) el.style.gridTemplateColumns='1fr';
-  else if(window.innerWidth<900) el.style.gridTemplateColumns='1fr 1fr';
-  else el.style.gridTemplateColumns='repeat(3,1fr)';
-}
-
-function renderDashAlertas(){
-  const el=document.getElementById('dash-alertas');
-  if(!el) return;
-  const hoje=new Date(); hoje.setHours(0,0,0,0);
-  const em7=new Date(hoje); em7.setDate(em7.getDate()+7);
-  const alertas=[];
-  // Assembleias proximas
-  const proxAssem=(DB.contempl||[]).filter(r=>{
-    if(r.resultado!=='Aguardando'||!r.data_assembleia) return false;
-    const d=new Date(r.data_assembleia+'T12:00:00');
-    return d>=hoje&&d<=em7;
-  });
-  if(proxAssem.length) alertas.push({cor:'var(--yellow)',bg:'rgba(255,214,10,.08)',borda:'rgba(255,214,10,.25)',icon:'📅',txt:'<strong>'+proxAssem.length+' assembleia'+(proxAssem.length>1?'s':'')+' nos proximos 7 dias</strong> — '+proxAssem.map(r=>r.cliente||'?').join(', '),action:"nav('contempl')"});
-  // Aniversarios proximos 3 dias
-  const anivs=DB.acessosPortal.filter(r=>{
-    if(!r.aniversario||!r.cliente) return false;
-    const a=new Date(r.aniversario+'T12:00:00');
-    const prox=new Date(hoje.getFullYear(),a.getMonth(),a.getDate());
-    if(prox<hoje) prox.setFullYear(hoje.getFullYear()+1);
-    return Math.round((prox-hoje)/(864e5))<=3;
-  });
-  if(anivs.length) alertas.push({cor:'var(--green)',bg:'rgba(48,209,88,.07)',borda:'rgba(48,209,88,.2)',icon:'🎂',txt:'<strong>Aniversario'+(anivs.length>1?'s':'')+' em breve:</strong> '+anivs.map(r=>r.cliente).join(', '),action:"nav('comunicacao')"});
-  // Vendas pendentes ha mais de 30 dias
-  const stale=[...DB.adesionada,...DB.linear].filter(r=>{
-    if(!r.data_contrato||r.status==='Pago'||r.status==='Cancelado') return false;
-    return Math.round((hoje-new Date(r.data_contrato+'T12:00:00'))/(864e5))>30;
-  });
-  if(stale.length) alertas.push({cor:'var(--accent)',bg:'rgba(249,115,22,.07)',borda:'rgba(249,115,22,.2)',icon:'⚠️',txt:'<strong>'+stale.length+' venda'+(stale.length>1?'s':'')+' pendente'+(stale.length>1?'s':'')+' ha mais de 30 dias</strong>',action:"nav('adesionada')"});
-  // Fila offline
-  if(typeof _offlineQueue!=='undefined'&&_offlineQueue.length>0) alertas.push({cor:'var(--yellow)',bg:'rgba(255,214,10,.07)',borda:'rgba(255,214,10,.2)',icon:'📶',txt:'<strong>'+_offlineQueue.length+' alteracao'+ (_offlineQueue.length>1?'s':'')+' pendente'+ (_offlineQueue.length>1?'s':'')+' para sincronizar</strong>',action:'syncNow()'});
-  if(!alertas.length){el.innerHTML='';return;}
-  el.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'+
-    alertas.map(a=>{
-      const div=document.createElement('div');
-      div.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 14px;background:'+a.bg+';border:1px solid '+a.borda+';border-radius:10px;cursor:pointer;transition:opacity .15s';
-      div.setAttribute('onclick',a.action);
-      div.onmouseover=function(){this.style.opacity='.8';};
-      div.onmouseout=function(){this.style.opacity='1';};
-      div.innerHTML='<span style="font-size:16px">'+a.icon+'</span><span style="font-size:12px;color:var(--text)">'+a.txt+'</span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--text3)" stroke-width="2" style="margin-left:auto;flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>';
-      return div.outerHTML;
-    }).join('')+'</div>';
-}
-
-function renderRanking(){
-  const ok=r=>r.status!=='Cancelado';
-  const vs=vendedores();
-  // Populate month filter
-  const sel=document.getElementById('rank-mes-sel');
-  if(sel){
-    const allM=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
-    const cur=sel.value;
-    sel.innerHTML='<option value="">Todos os meses</option>'+allM.map(m=>`<option value="${m}"${m===cur?' selected':''} >${fmtMonth(m)}</option>`).join('');
-  }
-  const mesFiltro=sel?.value||null;
-  const filtroMes=r=>!mesFiltro||r.data_contrato?.startsWith(mesFiltro);
-  const dados=vs.map(v=>{
-    const a=DB.adesionada.filter(r=>r.vendedor===v&&ok(r)&&filtroMes(r)).reduce((s,r)=>s+r.valor_liq,0);
-    const l=DB.linear.filter(r=>r.vendedor===v&&ok(r)&&filtroMes(r)).reduce((s,r)=>s+r.valor_liq,0);
-    const tot=a+l;
-    const qtd=DB.adesionada.filter(r=>r.vendedor===v&&ok(r)&&filtroMes(r)).length
-             +DB.linear.filter(r=>r.vendedor===v&&ok(r)&&filtroMes(r)).length;
-    const meta=mesFiltro?DB.metas.find(m=>m.vendedor===v&&m.mes===mesFiltro):null;
-    const pct=meta?.meta_vol>0?Math.min(Math.round(tot/meta.meta_vol*100),999):null;
-    return{nome:v,tot,qtd,pct,metaVol:meta?.meta_vol||0};
-  }).sort((a,b)=>b.tot-a.tot);
-  const mx=Math.max(...dados.map(d=>d.tot),1);
-  const medals=['p1','p2','p3'];
-  const podioIcons=['🥇','🥈','🥉'];
-  // Top 3 pódio
-  const top3=dados.slice(0,3);
-  const rest=dados.slice(3);
-  let podioHtml='';
-  if(top3.length>1){
-    // Reorder: 2nd, 1st, 3rd for visual podium
-    const order=top3.length===1?[0]:top3.length===2?[1,0]:[1,0,2];
-    const heights=['60px','80px','48px'];
-    const hts=top3.length===2?['60px','80px']:heights;
-    podioHtml='<div style="display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:20px;padding:0 8px">'+
-      order.map((oi,pi)=>{
-        const d=top3[oi];
-        if(!d) return '';
-        const isFirst=oi===0;
-        const bg=isFirst?'rgba(249,115,22,.12)':'var(--bg3)';
-        const border=isFirst?'1.5px solid rgba(249,115,22,.3)':'1px solid var(--border)';
-        return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">'+
-          '<div style="font-size:'+(isFirst?'22':'16')+'px">'+podioIcons[oi]+'</div>'+
-          '<div style="font-size:12px;font-weight:600;color:var(--text);text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+d.nome.split(' ')[0]+'</div>'+
-          '<div style="font-size:11px;color:var(--accent);font-family:DM Mono,monospace;font-weight:600">'+fmtK(d.tot)+'</div>'+
-          '<div style="width:100%;background:'+bg+';border:'+border+';border-radius:10px 10px 0 0;height:'+hts[pi]+';display:flex;align-items:center;justify-content:center">'+
-            '<div style="font-size:18px;font-weight:700;color:var(--text2)">'+(oi+1)+'</div>'+
-          '</div>'+
-        '</div>';
-      }).join('')+
-    '</div>';
-  }
-  const listHtml=(rest.length?rest:dados).map((d,i)=>{
-    const realIdx=top3.length>1?i+3:i;
-    const metaTag=d.pct!==null?'<span style="font-size:10px;padding:2px 7px;border-radius:5px;font-family:DM Mono,monospace;background:'+(d.pct>=100?'rgba(48,209,88,.15)':d.pct>=70?'rgba(255,214,10,.15)':'rgba(249,115,22,.15)')+';color:'+(d.pct>=100?'var(--green)':d.pct>=70?'var(--yellow)':'var(--accent)')+'">Meta '+d.pct+'%</span>':'';
-    return '<div class="rank-row">'+
-      '<div class="rank-pos '+(medals[realIdx]||'')+'">'+(realIdx+1)+'</div>'+
-      '<div class="rank-name">'+d.nome+'<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">'+d.qtd+' venda'+(d.qtd!==1?'s':'')+'</div></div>'+
-      '<div class="rank-bar"><div class="rank-bar-fill" style="width:'+(d.tot/mx*100).toFixed(1)+'%"></div></div>'+
-      '<div style="text-align:right">'+metaTag+'<div class="rank-val">'+fmtK(d.tot)+'</div></div>'+
-    '</div>';
-  }).join('');
-  document.getElementById('ranking-vend').innerHTML=podioHtml+listHtml;
-}
-
-function renderDashRecv(){
-  const prox=DB.recebimentos.filter(r=>r.total>0);
-  document.getElementById('dash-recv').innerHTML=prox.length
-    ? prox.map(r=>`<div class="recv-bar"><div class="recv-month">${r.mes}</div><div class="recv-track"><div class="recv-fill" style="width:${(r.total/Math.max(...prox.map(x=>x.total)))*100}%"></div></div><div class="recv-val">${fmt(r.total)}</div></div>`).join('')
-    : '<div style="padding:12px;color:var(--text3);font-size:12px">Sem recebimentos programados.</div>';
-}
-
-let _evolTipo='bar';
-function setEvolTipo(t){
-  _evolTipo=t;
-  const btnBar=document.getElementById('evol-btn-bar');
-  const btnLine=document.getElementById('evol-btn-line');
-  if(btnBar){ btnBar.style.background=t==='bar'?'var(--accent)':'var(--bg3)'; btnBar.style.color=t==='bar'?'#fff':'var(--text2)'; }
-  if(btnLine){ btnLine.style.background=t==='line'?'var(--accent)':'var(--bg3)'; btnLine.style.color=t==='line'?'#fff':'var(--text2)'; }
-  renderEvolucao();
-}
-
-function renderEvolucao(serie){
-  const serieEl=document.getElementById('evol-serie');
-  const tipo=serie||serieEl?.value||'total';
-  if(serieEl&&serie) serieEl.value=serie;
-  const months=getMonths().slice().reverse();
-  const ok=r=>r.status!=='Cancelado';
-  const vals=months.map(m=>{
-    const a=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(m)).reduce((s,r)=>s+r.valor_liq,0);
-    const l=DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(m)).reduce((s,r)=>s+r.valor_liq,0);
-    return{m:fmtMonth(m),raw:m,v:tipo==='ades'?a:tipo==='linear'?l:a+l};
-  });
-  const el=document.getElementById('evolucao-chart');
-  if(!vals.length||!el){if(el)el.innerHTML='<div style="padding:20px;color:var(--text3);font-size:12px">Sem dados mensais.</div>';return;}
-  const mx=Math.max(...vals.map(x=>x.v),1);
-  const col=tipo==='ades'?'var(--accent)':tipo==='linear'?'var(--purple)':'var(--green)';
-  const h=130, barW=52, gap=20, padL=14, padR=14, padT=28, padB=28;
-  const svgW=padL+vals.length*(barW+gap)+padR;
-
-  if(_evolTipo==='bar'){
-    const bars=vals.map((d,i)=>{
-      const bh=Math.max(Math.round((d.v/mx)*(h-padT)),d.v>0?3:0);
-      const x=padL+i*(barW+gap);
-      const fmtV=d.v>=1e6?(d.v/1e6).toFixed(1)+'M':d.v>=1e3?Math.round(d.v/1e3)+'K':'';
-      const isCurrentMonth=d.raw===getMonthKey(new Date());
-      return'<g>'+
-        '<rect x="'+x+'" y="'+(h-bh)+'" width="'+barW+'" height="'+bh+'" rx="6" fill="'+col+'" opacity="'+(isCurrentMonth?'1':'.7')+'"/>'+
-        (isCurrentMonth?'<rect x="'+x+'" y="'+(h-bh)+'" width="'+barW+'" height="3" rx="2" fill="#fff" opacity=".3"/>':'')+
-        (d.v>0?'<text x="'+(x+barW/2)+'" y="'+(h-bh-6)+'" text-anchor="middle" font-size="10" fill="var(--text)" font-family="DM Mono,monospace">'+fmtV+'</text>':'')+
-        '<text x="'+(x+barW/2)+'" y="'+(h+padB-6)+'" text-anchor="middle" font-size="10" fill="'+(isCurrentMonth?col:'var(--text3)')+'" font-family="DM Mono,monospace" font-weight="'+(isCurrentMonth?'700':'400')+'">'+d.m+'</text>'+
-      '</g>';
-    }).join('');
-    el.innerHTML='<div style="overflow-x:auto"><svg viewBox="0 0 '+svgW+' '+(h+padB)+'" style="width:100%;min-width:'+Math.max(svgW,300)+'px;height:'+(h+padB)+'px">'+bars+'</svg></div>';
-  } else {
-    // Line chart
-    const pts=vals.map((d,i)=>{
-      const cy=padT+Math.round((1-d.v/mx)*(h-padT-8));
-      const cx=padL+(barW/2)+i*(barW+gap);
-      return{cx,cy,v:d.v,m:d.m,raw:d.raw};
-    });
-    const polyline=pts.map(p=>p.cx+','+p.cy).join(' ');
-    // Area fill path
-    const areaPath='M '+pts[0].cx+','+h+' '+pts.map(p=>'L '+p.cx+','+p.cy).join(' ')+' L '+pts[pts.length-1].cx+','+h+' Z';
-    const gradId='evol-grad-'+Math.random().toString(36).slice(2,6);
-    const dots=pts.map(p=>{
-      const fmtV=p.v>=1e6?(p.v/1e6).toFixed(1)+'M':p.v>=1e3?Math.round(p.v/1e3)+'K':'0';
-      const isCurrentMonth=p.raw===getMonthKey(new Date());
-      return'<g>'+
-        '<circle cx="'+p.cx+'" cy="'+p.cy+'" r="'+(isCurrentMonth?5:3.5)+'" fill="'+col+'" stroke="var(--card)" stroke-width="2"/>'+
-        (p.v>0?'<text x="'+p.cx+'" y="'+(p.cy-9)+'" text-anchor="middle" font-size="10" fill="var(--text)" font-family="DM Mono,monospace">'+fmtV+'</text>':'')+
-        '<text x="'+p.cx+'" y="'+(h+padB-6)+'" text-anchor="middle" font-size="10" fill="'+(isCurrentMonth?col:'var(--text3)')+'" font-family="DM Mono,monospace" font-weight="'+(isCurrentMonth?'700':'400')+'">'+p.m+'</text>'+
-      '</g>';
-    }).join('');
-    el.innerHTML='<div style="overflow-x:auto"><svg viewBox="0 0 '+svgW+' '+(h+padB)+'" style="width:100%;min-width:'+Math.max(svgW,300)+'px;height:'+(h+padB)+'px">'+
-      '<defs><linearGradient id="'+gradId+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+col+'" stop-opacity=".18"/><stop offset="100%" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'+
-      '<path d="'+areaPath+'" fill="url(#'+gradId+')"/>'+
-      '<polyline points="'+polyline+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
-      dots+
-    '</svg></div>';
-  }
-}
-
-
-function renderBarVend(tipo){
-  const vs=vendedores();const ok=r=>r.status!=='Cancelado';
-  const vals=vs.map(v=>{
-    const a=DB.adesionada.filter(r=>r.vendedor===v&&ok(r)).reduce((s,r)=>s+r.valor_liq,0);
-    const l=DB.linear.filter(r=>r.vendedor===v&&ok(r)).reduce((s,r)=>s+r.valor_liq,0);
-    return{nome:v,val:tipo==='ades'?a:tipo==='linear'?l:a+l};
-  }).sort((a,b)=>b.val-a.val);
-  const mx=Math.max(...vals.map(v=>v.val),1);
-  const colors=['#f97316','#60a5fa','#22c55e','#a78bfa','#fbbf24','#f43f5e'];
-  document.getElementById('bar-vend').innerHTML=vals.map((v,i)=>`<div class="bar-row"><div class="bar-label">${v.nome}</div><div class="bar-track"><div class="bar-fill" style="width:${(v.val/mx*100).toFixed(1)}%;background:${colors[i%colors.length]}"></div></div><div class="bar-val">${fmtK(v.val)}</div></div>`).join('');
-}
-
-function renderDonut(){
-  const all=[...DB.adesionada,...DB.linear];
-  const cnt={};
-  all.forEach(r=>{const s=r.status||'Aguardando';cnt[s]=(cnt[s]||0)+1;});
-  const entries=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
-  const tot=all.length;
-  const cols={Pago:'#22c55e',Pendente:'#eab308',Aguardando:'#60a5fa',Cancelado:'#ef4444'};
-  let s=-Math.PI/2,r=44,cx=55,cy=55,inn=26,paths='';
-  entries.forEach(([st,c])=>{
-    const a=(c/tot)*2*Math.PI;
-    const lg=a>Math.PI?1:0;
-    const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s),x2=cx+r*Math.cos(s+a),y2=cy+r*Math.sin(s+a);
-    const xi1=cx+inn*Math.cos(s),yi1=cy+inn*Math.sin(s),xi2=cx+inn*Math.cos(s+a),yi2=cy+inn*Math.sin(s+a);
-    paths+=`<path d="M${xi1} ${yi1} L${x1} ${y1} A${r} ${r} 0 ${lg} 1 ${x2} ${y2} L${xi2} ${yi2} A${inn} ${inn} 0 ${lg} 0 ${xi1} ${yi1}" fill="${cols[st]||'#6b7280'}" opacity=".9"/>`;
-    s+=a;
-  });
-  document.getElementById('donut-svg').innerHTML=paths+`<text x="${cx}" y="${cy-3}" text-anchor="middle" fill="var(--text)" font-size="17" font-weight="700" font-family="Syne">${tot}</text><text x="${cx}" y="${cy+11}" text-anchor="middle" fill="var(--text3)" font-size="9" font-family="DM Mono">vendas</text>`;
-  document.getElementById('donut-leg').innerHTML=entries.map(([st,c])=>`<div class="legend-item"><div class="ldot" style="background:${cols[st]||'#6b7280'}"></div>${st||'—'}<span class="lval">${c} (${(c/tot*100).toFixed(0)}%)</span></div>`).join('');
-}
-
-function renderUlt(){
-  const all=[...DB.adesionada.map(r=>({...r,tipo:'Ades',com:r.com_rs})),...DB.linear.map(r=>({...r,tipo:'Linear',com:r.com_m1+r.com_m2+r.com_m3}))].sort((a,b)=>(b.data_contrato||'').localeCompare(a.data_contrato||'')).slice(0,15);
-  document.getElementById('ult-ct').textContent=`${all.length} mais recentes`;
-  document.querySelector('#tbl-ult tbody').innerHTML=all.map(r=>`<tr><td>${r.vendedor}</td><td>${r.cliente}</td><td><span style="font-size:10px;padding:2px 7px;border-radius:5px;background:${r.tipo==='Ades'?'rgba(249,115,22,.1)':'rgba(167,139,250,.1)'};color:${r.tipo==='Ades'?'var(--accent)':'var(--purple)'}">${r.tipo}</span></td><td>${r.tabela||'—'}</td><td class="mono val-g">${fmt(r.valor_liq)}</td><td class="mono val-o">${r.com?fmt(r.com):'—'}</td><td class="mono">${fmtD(r.data_contrato)}</td><td>${badge(r.status)}</td></tr>`).join('');
-}
 
 // ═══════════════════════════════ MENSAL ══════════════════════════════════════
 function getMonths(){const m=new Set();[...DB.adesionada,...DB.linear].forEach(r=>{if(r.data_contrato)m.add(r.data_contrato.slice(0,7));});return[...m].sort().reverse();}
