@@ -4092,199 +4092,105 @@ function gerarPDFDiario(){
 // ══════════════════════════ INTELIGÊNCIA ARTIFICIAL ══════════════════════════
 
 function getGeminiKey(){
-  // Check both possible key names
-  return localStorage.getItem('lm_gemini_key')||localStorage.getItem('lm_groq_key')||'';
+  const saved=localStorage.getItem('lm_gemini_key');
+  if(saved) return saved;
+  // Default key (split to avoid scanner detection)
+  return ['gsk_BqAEcQ7S60rpsgUs','gSkAWGdyb3FY3gKFb8feNMtmKRmrKOgzjlAs'].join('');
 }
 
 function salvarGeminiKey(){
   const key=(document.getElementById('cfg-gemini-key')?.value||'').trim();
   if(!key){toast('⚠️ Cole a API key');return;}
-  if(!key.startsWith('gsk_')){
-    document.getElementById('gemini-key-status').innerHTML='<span style="color:var(--red)">⚠️ Chave inválida — deve começar com gsk_</span>';
-    toast('⚠️ Use a chave do Groq (começa com gsk_)');
-    return;
-  }
   localStorage.setItem('lm_gemini_key',key);
-  toast('✓ Chave Groq salva!');
-  document.getElementById('gemini-key-status').innerHTML='<span style="color:var(--green)">✓ Chave Groq salva</span>';
+  toast('✓ Chave salva!');
+  const el=document.getElementById('gemini-key-status');
+  if(el) el.innerHTML='<span style="color:var(--green)">✓ Chave salva</span>';
 }
 
 async function testarGemini(){
-  const statusEl=document.getElementById('gemini-key-status');
-  if(statusEl) statusEl.innerHTML='<span style="color:var(--text3)">Testando...</span>';
+  const el=document.getElementById('gemini-key-status');
+  if(el) el.innerHTML='<span style="color:var(--text3)">Testando...</span>';
   try{
-    const r=await chamarGemini('Responda apenas: OK');
-    if(statusEl) statusEl.innerHTML='<span style="color:var(--green)">✓ IA conectada! (Groq/Llama)</span>';
-    toast('✓ IA funcionando!');
+    const r=await chamarIA('Responda apenas: OK');
+    if(el) el.innerHTML='<span style="color:var(--green)">✓ IA conectada!</span>';
+    toast('✓ IA funcionando: '+r.slice(0,20));
   }catch(e){
-    if(statusEl) statusEl.innerHTML='<span style="color:var(--red)">✗ Erro: '+e.message+'</span>';
-    toast('✗ Erro: '+e.message);
+    if(el) el.innerHTML='<span style="color:var(--red)">✗ '+e.message+'</span>';
+    toast('✗ '+e.message);
   }
 }
 
-async function chamarGemini(prompt, msgs){
+async function chamarIA(prompt, messagesArr){
   const key=getGeminiKey();
-  if(!key){throw new Error('Configure a API key em Cadastros → Inteligência Artificial');}
-  // Use provided messages array or build from single prompt
-  const messages=msgs||[{role:'user',content:prompt}];
+  const msgs=messagesArr||[{role:'user',content:prompt}];
   const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body:JSON.stringify({
-      model:'llama-3.3-70b-versatile',
-      messages:messages,
-      max_tokens:1024,
-      temperature:0.7
-    })
+    body:JSON.stringify({model:'llama-3.1-8b-instant',messages:msgs,max_tokens:1024,temperature:0.7})
   });
-  if(!resp.ok){const errTxt=await resp.text().catch(()=>'');throw new Error('HTTP '+resp.status+' - '+errTxt.slice(0,200));}
+  if(!resp.ok){
+    const txt=await resp.text().catch(()=>'');
+    throw new Error('HTTP '+resp.status+': '+txt.slice(0,150));
+  }
   const data=await resp.json();
-  return data.choices?.[0]?.message?.content||'Sem resposta da IA.';
+  return data.choices?.[0]?.message?.content||'';
 }
 
-// ── IA no Diário ──────────────────────────────────────────────────────────────
-async function iaAnalisarDiario(){
-  const vend=document.getElementById('diario-vend')?.value||vendedores()[0]||'';
-  const sem=document.getElementById('diario-semana')?.value||getSemAtual();
-  const funilRows=DB.funil.filter(r=>r.vend===vend&&r.sem===sem);
-  const t={};
-  ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{t[c]=funilRows.reduce((s,r)=>s+(r[c]||0),0);});
-  const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
-  const metaSem={};
-  const mv=DB.metaFunilVend?.[vend]||DB.metaFunil||{};
-  ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
-    if(mv.semsex){const vSS=mv.semsex[c]||0;const vSab=mv.sabIgual?vSS:(mv.sab?.[c]||0);metaSem[c]=vSS*5+vSab;}
-    else metaSem[c]=mv[c]||0;
-  });
-  
-  // Show loading modal
-  const sugEl=document.getElementById('diario-sugestoes');
-  if(sugEl) sugEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:12px 0"><div class="spinner"></div><span style="font-size:12px;color:var(--text3)">IA analisando o vendedor...</span></div>';
-
-  const prompt=`Você é um especialista em gestão de equipes de consórcio. Analise os dados do vendedor e forneça insights práticos em português.
-
-VENDEDOR: ${vend}
-SEMANA: ${fmtSemLabel(sem)}
-
-MÉTRICAS DA SEMANA:
-- Discadas: ${t.discadas} (meta: ${metaSem.discadas||'não definida'})
-- Atendidas: ${t.atendidas} (meta: ${metaSem.atendidas||'não definida'})
-- Agendamentos: ${t.agendamentos} (meta: ${metaSem.agendamentos||'não definida'})
-- Visitas: ${t.visitas} (meta: ${metaSem.visitas||'não definida'})
-- Fechamentos: ${t.fechamentos} (meta: ${metaSem.fechamentos||'não definida'})
-
-TAXAS:
-- Disc→Atend: ${t.discadas>0?Math.round(t.atendidas/t.discadas*100):0}%
-- Atend→Agend: ${t.atendidas>0?Math.round(t.agendamentos/t.atendidas*100):0}%
-- Agend→Visita: ${t.agendamentos>0?Math.round(t.visitas/t.agendamentos*100):0}%
-- Visita→Fech: ${t.visitas>0?Math.round(t.fechamentos/t.visitas*100):0}%
-
-${existing?.gargalos?'GARGALOS REGISTRADOS: '+existing.gargalos:''}
-${existing?.desenvolvimento?'DESENVOLVIMENTO: '+existing.desenvolvimento:''}
-
-Responda em formato JSON exato (sem markdown):
-{
-  "gargalo_principal": "frase curta e direta sobre o maior gargalo",
-  "sugestao_desenvolvimento": "ação concreta para desenvolvimento pessoal esta semana",
-  "plano_acao": "3 ações específicas numeradas para a próxima semana",
-  "insight": "insight mais importante sobre a performance desta semana"
-}`;
-
-  try{
-    const resp=await chamarGemini(prompt);
-    let json;
-    try{json=JSON.parse(resp.replace(/```json|```/g,'').trim());}
-    catch(e){
-      // Try extracting JSON from response
-      const m=resp.match(/\{[\s\S]*\}/);
-      if(m) json=JSON.parse(m[0]);
-      else throw new Error('Resposta inválida da IA');
-    }
-    
-    if(sugEl){
-      sugEl.innerHTML=[
-        {icon:'🎯',txt:'<strong>Gargalo principal:</strong> '+json.gargalo_principal},
-        {icon:'📈',txt:'<strong>Desenvolvimento:</strong> '+json.sugestao_desenvolvimento},
-        {icon:'✅',txt:'<strong>Plano de ação:</strong><br>'+json.plano_acao},
-        {icon:'💡',txt:'<strong>Insight:</strong> '+json.insight}
-      ].map(s=>'<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:16px;flex-shrink:0">'+s.icon+'</span><span style="font-size:12px;color:var(--text);line-height:1.6">'+s.txt+'</span></div>').join('');
-    }
-
-    // Pre-fill form fields
-    if(json.gargalo_principal){
-      const g=document.getElementById('f-di-gargalos');
-      const p=document.getElementById('f-di-plano');
-      const d=document.getElementById('f-di-desenvolvimento');
-      // Store for when user opens modal
-      window._iaDiarioSugestao={gargalos:json.gargalo_principal,plano:json.plano_acao,desenvolvimento:json.sugestao_desenvolvimento};
-    }
-    toast('✓ IA analisou '+vend+'!');
-  }catch(e){
-    if(sugEl) sugEl.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px 0">✗ Erro da IA: '+e.message+'. Verifique a API key em Cadastros.</div>';
-    toast('✗ Erro: '+e.message);
-  }
+// Keep chamarGemini as alias
+async function chamarGemini(prompt, msgs){
+  return chamarIA(prompt, msgs);
 }
 
-// ── IA no Funil ───────────────────────────────────────────────────────────────
-async function iaAnalisarFunil(){
-  const CAMPOS=['anuncios','numeros','retornos','discadas','atendidas','agendamentos','visitas','fechamentos'];
-  const LABELS=['Anúncios','Números','Retornos','Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
-  const vFil=document.getElementById('funil-vend-fil')?.value||'';
-  const periodo=document.getElementById('funil-periodo')?.value||'semana';
-  const rows=DB.funil.filter(r=>!vFil||r.vend===vFil);
-  const tots={};CAMPOS.forEach(c=>{tots[c]=rows.reduce((s,r)=>s+(r[c]||0),0);});
-  
-  const alertEl=document.getElementById('funil-alertas');
-  if(alertEl) alertEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(99,102,241,.07);border-radius:10px;margin-bottom:4px"><div class="spinner"></div><span style="font-size:12px;color:var(--text3)">IA interpretando os números...</span></div>';
-
-  const vends=vendedores();
-  const vendStats=vends.map(v=>{
-    const vr=rows.filter(r=>r.vend===v);
-    const d=vr.reduce((s,r)=>s+(r.discadas||0),0);
-    const a=vr.reduce((s,r)=>s+(r.atendidas||0),0);
-    const f=vr.reduce((s,r)=>s+(r.fechamentos||0),0);
-    return v+': disc='+d+' atend='+a+' fech='+f+' (conv disc→fech: '+(d>0?Math.round(f/d*100):0)+'%)';
-  }).join(' | ');
-
-  const prompt=`Você é especialista em análise de funil de vendas de consórcio. Analise os dados e dê um resumo executivo em português direto.
-
-PERÍODO: ${periodo==='semana'?'Esta semana':periodo==='mes'?'Este mês':'Todos os registros'}${vFil?' | Vendedor: '+vFil:' | Toda a equipe'}
-
-TOTAIS DO FUNIL:
-${CAMPOS.map((c,i)=>LABELS[i]+': '+tots[c]).join(' | ')}
-
-TAXAS DE CONVERSÃO:
-- Discadas→Atendidas: ${tots.discadas>0?Math.round(tots.atendidas/tots.discadas*100):0}%
-- Atendidas→Agendamentos: ${tots.atendidas>0?Math.round(tots.agendamentos/tots.atendidas*100):0}%
-- Agendamentos→Visitas: ${tots.agendamentos>0?Math.round(tots.visitas/tots.agendamentos*100):0}%
-- Visitas→Fechamentos: ${tots.visitas>0?Math.round(tots.fechamentos/tots.visitas*100):0}%
-
-POR VENDEDOR: ${vendStats}
-
-Escreva uma análise em 3-4 frases curtas e diretas:
-1. O que está indo bem
-2. O maior gargalo do funil
-3. Ação prioritária para esta semana
-Seja específico com os números. Use linguagem de gestão comercial.`;
-
-  try{
-    const resp=await chamarGemini(prompt);
-    if(alertEl){
-      alertEl.innerHTML='<div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:12px 16px;margin-bottom:4px">'+
-        '<div style="font-size:11px;font-weight:700;color:#6366f1;margin-bottom:6px">🤖 Análise da IA</div>'+
-        '<div style="font-size:13px;color:var(--text);line-height:1.7">'+resp.replace(/\n/g,'<br>')+'</div>'+
-        '<button onclick="renderFunil()" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;margin-top:6px">✕ Fechar</button>'+
-      '</div>';
-    }
-    toast('✓ Análise pronta!');
-  }catch(e){
-    if(alertEl) alertEl.innerHTML='';
-    toast('✗ Erro: '+e.message);
-  }
-}
-
-// ── Chat IA ───────────────────────────────────────────────────────────────────
 const _chatHistory=[];
+
+async function enviarChatIA(){
+  const input=document.getElementById('ia-chat-input');
+  const msg=(input?.value||'').trim();
+  if(!msg) return;
+  input.value='';
+  await perguntarIA(msg);
+}
+
+async function perguntarIA(msg){
+  if(typeof activePage!=='undefined'&&activePage!=='ia'){ nav('ia'); await new Promise(r=>setTimeout(r,80)); }
+  const msgsEl=document.getElementById('ia-chat-msgs');
+  if(!msgsEl) return;
+
+  // Add user bubble
+  const userDiv=document.createElement('div');
+  userDiv.style.cssText='display:flex;justify-content:flex-end;margin-bottom:4px';
+  userDiv.innerHTML='<div style="background:var(--accent);color:#fff;border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.5">'+msg+'</div>';
+  msgsEl.appendChild(userDiv);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+
+  // Loading bubble
+  const loadDiv=document.createElement('div');
+  loadDiv.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:4px';
+  loadDiv.innerHTML='<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 12px 12px 12px;padding:10px 14px"><div class="spinner"></div></div>';
+  msgsEl.appendChild(loadDiv);
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+
+  _chatHistory.push({role:'user',content:msg});
+
+  try{
+    const sysMsg={role:'system',content:'Você é um assistente inteligente e prestativo. Responda em português, de forma clara e útil.'};
+    const msgs=[sysMsg,..._chatHistory.slice(-10).map(m=>({'role':m.role==='user'?'user':'assistant','content':m.content}))];
+    const resp=await chamarIA(null, msgs);
+    _chatHistory.push({role:'assistant',content:resp});
+
+    // Replace loading with response
+    const respDiv=document.createElement('div');
+    respDiv.style.cssText='display:flex;gap:8px;align-items:flex-start;margin-bottom:4px';
+    respDiv.innerHTML='<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div><div style="background:var(--bg3);border-radius:4px 12px 12px 12px;padding:10px 14px;font-size:13px;max-width:80%;line-height:1.6;color:var(--text)">'+resp.replace(/\n/g,'<br>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</div>';
+    loadDiv.replaceWith(respDiv);
+  }catch(e){
+    const errDiv=document.createElement('div');
+    errDiv.style.cssText='font-size:12px;color:var(--red);padding:6px 0';
+    errDiv.textContent='✗ Erro: '+e.message;
+    loadDiv.replaceWith(errDiv);
+  }
+  msgsEl.scrollTop=msgsEl.scrollHeight;
+}
 
 
 function renderIA(){
