@@ -3667,6 +3667,62 @@ function renderFunilHeatmap(allRows,CAMPOS,LABELS){const el=document.getElementB
 
 function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){const tbody=document.querySelector('#tbl-funil tbody');if(!tbody)return;const filtered=DB.funil.filter(r=>(!vFil||r.vend===vFil)&&(!busca||(r.vend||'').toLowerCase().includes(busca)));const byW={};filtered.forEach(r=>{if(!byW[r.sem])byW[r.sem]=[];byW[r.sem].push(r);});Object.keys(byW).forEach(s=>{if(!byW[s].some(r=>CAMPOS.some(c=>r[c]>0)))delete byW[s];});if(!Object.keys(byW).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro.</td></tr>';return;}const byM={};Object.entries(byW).forEach(([sem,recs])=>{const m=sem.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push([sem,recs]);});const now3=new Date();now3.setHours(0,0,0,0);const dow3=now3.getDay();const seg3=new Date(now3);seg3.setDate(now3.getDate()-(dow3===0?6:dow3-1));tbody.innerHTML=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mId='fm-'+mes.replace('-','');const mT={};CAMPOS.forEach(c=>{mT[c]=semanas.reduce((s,[,r])=>s+r.reduce((ss,rr)=>ss+(rr[c]||0),0),0);});let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mId+'"><td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px"><span id="'+mId+'-ico">▾</span> 📆 '+mLbl+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700">'+mT[c]+'</td>').join('')+'<td></td></tr><tr id="'+mId+'"><td colspan="11" style="padding:0"><table style="width:100%">';semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{const d=new Date(sem+'T12:00:00');const fin=new Date(d);fin.setDate(d.getDate()+5);const sLbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fin.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const isN=d>=seg3&&d<=new Date(seg3.getTime()+6*864e5);const wT={};CAMPOS.forEach(c=>{wT[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});const gId='fg-'+mes+wi;h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+gId+'"><td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+gId+'-ico">'+(isN?'▾':'▸')+'</span> 📅 '+sLbl+(isN?' <span class="badge-novo">Atual</span>':'')+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wT[c]+'</td>').join('')+'<td></td></tr><tr id="'+gId+'"'+(isN?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';recs.forEach(r=>{const idx=DB.funil.findIndex(x=>x.vend===r.vend&&x.sem===r.sem&&x.ts===r.ts);h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')+'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" onclick="editFunilBtn(this)" data-sem="'+r.sem+'" data-vend="'+r.vend+'">✏</button> <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';});h+='</table></td></tr>';});h+='</table></td></tr>';return h;}).join('');}
 
+function renderDashMeta(){
+  const el=document.getElementById('dash-meta');
+  if(!el) return;
+  const meta=DB.metaFunil||{};
+  const CAMPOS=['discadas','atendidas','agendamentos','visitas','fechamentos'];
+  const LABELS=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
+  const ICONS=['📱','✅','📅','🤝','🏆'];
+
+  const now=new Date();now.setHours(0,0,0,0);
+  const dow=now.getDay();
+  const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
+  const dom=new Date(seg);dom.setDate(seg.getDate()+6);
+
+  // Totals this week
+  const tots={};
+  CAMPOS.forEach(c=>{tots[c]=DB.funil.filter(r=>{
+    const d=new Date(r.sem+'T12:00:00');
+    return d>=seg&&d<=dom;
+  }).reduce((s,r)=>s+(r[c]||0),0);});
+
+  // Get meta value
+  const getMetaVal=(c)=>{
+    if(!meta||Object.keys(meta).length===0) return 0;
+    if(meta.semsex){
+      const vSS=meta.semsex[c]||0;
+      const vSab=meta.sabIgual?vSS:(meta.sab?.[c]||0);
+      return vSS*5+vSab;
+    }
+    return meta[c]||0;
+  };
+
+  const hasAny=CAMPOS.some(c=>getMetaVal(c)>0);
+  if(!hasAny){
+    el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Configure as metas no Funil de Vendas → 🎯 Metas.</div>';
+    return;
+  }
+
+  el.innerHTML=CAMPOS.map((c,i)=>{
+    const m=getMetaVal(c);
+    if(!m) return '';
+    const v=tots[c]||0;
+    const pct=Math.min(Math.round(v/m*100),100);
+    const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
+    return`<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:12px;color:var(--text2)">${ICONS[i]} ${LABELS[i]}</span>
+        <span style="font-size:12px;font-weight:700;color:${cor};font-family:DM Mono,monospace">${v} / ${m} (${pct}%)</span>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${cor};border-radius:999px;transition:width .8s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
 function renderDash(){
   // Preencher seletor de anos
   const anos=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,4)).filter(Boolean))].sort().reverse();
