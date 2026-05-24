@@ -4124,6 +4124,7 @@ async function testarGemini(){
 }
 
 async function chamarIA(prompt, messagesArr){
+  console.log('chamarIA called from:', new Error().stack.split('\n')[2]);
   const key=getGeminiKey();
   const msgs=messagesArr||[{role:'user',content:prompt}];
   const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
