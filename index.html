@@ -3005,23 +3005,29 @@ function salvarNovaSenha(){
 }
 
 function render(p){
-  if(p==='dashboard')renderDash();
-  else if(p==='mensal')renderMensal();
-  else if(p==='vendas-mensais')renderVendasMensais();
-  else if(p==='adesionada')renderAdes();
-  else if(p==='linear')renderLin();
-  else if(p==='comissoes'){renderCom();renderComTimeline();}
-  else if(p==='canceladas')renderCanceladas();
-  else if(p==='metas')renderMetas();
-  else if(p==='contempl')renderContempl();
-  else if(p==='simulador')renderSimulador();
-  else if(p==='comunicacao')renderComunicacao();
-  else if(p==='presenca')renderPresenca();
-  else if(p==='funil')renderFunil();
-  else if(p==='ia')renderIA();
-  else if(p==='diario')renderDiario();
-  else if(p==='portal')renderPortal();
-  else if(p==='cadastro')renderCad();
+  const fns={
+    dashboard:()=>renderDash(),
+    mensal:()=>renderMensal(),
+    'vendas-mensais':()=>renderVendasMensais(),
+    adesionada:()=>renderAdes(),
+    linear:()=>renderLin(),
+    comissoes:()=>{renderCom();renderComTimeline();},
+    canceladas:()=>renderCanceladas(),
+    metas:()=>renderMetas(),
+    contempl:()=>renderContempl(),
+    simulador:()=>renderSimulador(),
+    comunicacao:()=>renderComunicacao(),
+    presenca:()=>renderPresenca(),
+    funil:()=>renderFunil(),
+    ia:()=>renderIA(),
+    diario:()=>renderDiario(),
+    portal:()=>renderPortal(),
+    cadastro:()=>renderCad(),
+  };
+  if(fns[p]){
+    try{ fns[p](); }
+    catch(e){ console.error('render('+p+') ERROR:',e.message,e.stack); }
+  }
   setTimeout(()=>{
     document.querySelectorAll('.tbl-outer').forEach(o=>delete o.dataset.mirrorDone);
     initScrollMirror();
@@ -3842,7 +3848,15 @@ function renderEvolucao(tipo){
   });
   const mx=Math.max(...vals,1);
   const lbMes=m=>{const[y,mo]=m.split('-');return new Date(y,mo-1,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.','');};
-  el.innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding-bottom:4px">'+vals.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;opacity:${0.5+v/mx*0.5}" title="${fmtK(v)}" style="height:${Math.max(Math.round(v/mx*70),v>0?4:0)}px;width:100%;background:var(--accent);border-radius:4px 4px 0 0"></div><div style="font-size:9px;color:var(--text3)">${lbMes(meses[i])}</div></div>`).join('')+'</div>';
+  el.innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding-bottom:4px">'+
+    vals.map((v,i)=>{
+      const h=Math.max(Math.round(v/mx*70),v>0?4:0);
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'+
+        '<div title="'+fmtK(v)+'" style="height:'+h+'px;width:100%;background:var(--accent);border-radius:4px 4px 0 0;opacity:'+(0.5+v/mx*0.5)+'"></div>'+
+        '<div style="font-size:9px;color:var(--text3)">'+lbMes(meses[i])+'</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
 }
 function setEvolTipo(t){}
 
@@ -9574,12 +9588,21 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
   // Limpar domingos de dados já salvos
   limparDomingosPresenca();
 
-  // Restaurar última página visitada
+  // Sempre mostrar dashboard primeiro
   try{
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    const pgD=document.getElementById('page-dashboard');
+    if(pgD) pgD.classList.add('active');
+    activePage='dashboard';
+    renderDash();
+    // Depois tentar restaurar última página
     const lastPage=localStorage.getItem('lm_last_page');
-    if(lastPage&&lastPage!=='dashboard') nav(lastPage);
-    else renderDash();
-  }catch(e){ renderDash(); }
+    if(lastPage&&lastPage!=='dashboard') setTimeout(()=>{try{nav(lastPage);}catch(e){console.warn('nav error',e);}},100);
+  }catch(e){ 
+    console.error('Init error:',e);
+    const pgD=document.getElementById('page-dashboard');
+    if(pgD) pgD.classList.add('active');
+  }
   setTimeout(initScrollMirror,200);
 
   // Atualizar grid de volume ao redimensionar
