@@ -2327,7 +2327,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div class="sh" style="margin-bottom:0"><div class="sh-title">Cadastros</div><div class="sh-sub">Vendedores, tabelas, status, supervisores e configuração da nuvem</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn btn-g" onclick="syncNow()" title="Baixar dados mais recentes da nuvem">☁️ Sincronizar</button>
-          <button class="btn btn-g" onclick="exportBackup()" title="Baixar backup JSON de todos os dados">⬇ Backup</button>
+          <button class="btn btn-g" onclick="exportBackup()" title="Baixar backup JSON de todos os dados">⬇ JSON</button>
+          <button class="btn btn-g" onclick="exportarExcel()" title="Exportar dados para Excel">📊 Excel</button>
+          <button class="btn btn-g" onclick="exportarPDF()" title="Gerar relatório PDF">📄 PDF</button>
           <button class="btn btn-g" onclick="document.getElementById('import-file').click()" title="Restaurar backup JSON">⬆ Restaurar</button>
           <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(event)">
           <button class="btn" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="clearStorage()">🗑 Limpar Cache</button>
@@ -7352,6 +7354,324 @@ function exportBackup(){
   a.click(); URL.revokeObjectURL(a.href);
   toast('✓ Backup exportado!');
 }
+
+// ── EXPORTAR EXCEL ────────────────────────────────────────────────────────────
+function exportarExcel(){
+  const now = new Date();
+  const mesLabel = now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const fmtD = s=>{if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+  const fmtR = v=>v?Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2}):'-';
+
+  // CSS styles
+  const css = `
+    body{font-family:Arial,sans-serif;font-size:11pt;}
+    .titulo{background:#EA580C;color:white;font-size:14pt;font-weight:bold;text-align:center;padding:8px;}
+    .subtitulo{background:#FED7AA;color:#92400E;font-size:10pt;text-align:center;padding:4px;}
+    .th-laranja{background:#EA580C;color:white;font-weight:bold;text-align:center;border:1px solid #ccc;padding:6px;}
+    .th-azul{background:#1D4ED8;color:white;font-weight:bold;text-align:center;border:1px solid #ccc;padding:6px;}
+    .th-verde{background:#15803D;color:white;font-weight:bold;text-align:center;border:1px solid #ccc;padding:6px;}
+    .th-cinza{background:#374151;color:white;font-weight:bold;text-align:center;border:1px solid #ccc;padding:6px;}
+    .tr-par{background:#FFFFFF;}
+    .tr-impar{background:#F3F4F6;}
+    td{border:1px solid #E5E7EB;padding:5px 8px;vertical-align:middle;}
+    .total{background:#EA580C;color:white;font-weight:bold;text-align:center;}
+    .total-azul{background:#1D4ED8;color:white;font-weight:bold;text-align:center;}
+    .total-verde{background:#15803D;color:white;font-weight:bold;text-align:center;}
+    .num{text-align:right;font-family:monospace;}
+    .center{text-align:center;}
+    .kpi-box{border:2px solid #EA580C;padding:8px 16px;text-align:center;border-radius:6px;display:inline-block;margin:4px;}
+    .kpi-val{font-size:20pt;font-weight:bold;color:#EA580C;}
+    .kpi-lbl{font-size:9pt;color:#666;}
+    .section-title{font-size:13pt;font-weight:bold;color:#EA580C;margin:16px 0 6px;border-bottom:2px solid #EA580C;padding-bottom:4px;}
+  `;
+
+  const ok = r => r.status !== 'Cancelado';
+  const fmtK = v => v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v||0).toLocaleString('pt-BR');
+
+  // ── Totais
+  const totalAdes = DB.adesionada.filter(ok).reduce((s,r)=>s+(r.valor_liq||0),0);
+  const totalLin  = DB.linear.filter(ok).reduce((s,r)=>s+(r.valor_liq||0),0);
+  const funilTots = {};
+  ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+    funilTots[c] = DB.funil.reduce((s,r)=>s+(r[c]||0),0);
+  });
+  const conv = funilTots.discadas>0 ? (funilTots.fechamentos/funilTots.discadas*100).toFixed(1)+'%' : '-';
+
+  // ── Ranking vendedores
+  const vends = vendedores();
+  const rankVends = vends.map(v=>{
+    const vol = [...DB.adesionada,...DB.linear].filter(r=>ok(r)&&r.vendedor===v).reduce((s,r)=>s+(r.valor_liq||0),0);
+    const qt = [...DB.adesionada,...DB.linear].filter(r=>ok(r)&&r.vendedor===v).length;
+    return {v,vol,qt};
+  }).sort((a,b)=>b.vol-a.vol);
+  const medals = ['🥇','🥈','🥉'];
+
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8"><style>${css}</style></head><body>`;
+
+  // ══ RESUMO ══════════════════════════════════════════════════════════════════
+  html += `<div class="titulo">🍊 LARANJA MECÂNICA — RELATÓRIO COMPLETO</div>`;
+  html += `<div class="subtitulo">${mesLabel} • Gerado em ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>`;
+  html += `<p class="section-title">📊 RESUMO EXECUTIVO</p>`;
+  html += `<table style="border-collapse:collapse;width:100%"><tr>`;
+  html += `<td style="border:none"><div class="kpi-box"><div class="kpi-val">${DB.adesionada.filter(ok).length+DB.linear.filter(ok).length}</div><div class="kpi-lbl">Total de Vendas</div></div></td>`;
+  html += `<td style="border:none"><div class="kpi-box"><div class="kpi-val">${fmtK(totalAdes+totalLin)}</div><div class="kpi-lbl">Volume Total</div></div></td>`;
+  html += `<td style="border:none"><div class="kpi-box"><div class="kpi-val">${funilTots.fechamentos}</div><div class="kpi-lbl">Fechamentos (Funil)</div></div></td>`;
+  html += `<td style="border:none"><div class="kpi-box"><div class="kpi-val">${conv}</div><div class="kpi-lbl">Conv. Disc→Fech</div></div></td>`;
+  html += `</tr></table>`;
+
+  // Ranking
+  html += `<p class="section-title">🏆 RANKING DE VENDEDORES</p>`;
+  html += `<table style="border-collapse:collapse;width:60%"><tr>
+    <th class="th-laranja" style="width:40px">Pos</th>
+    <th class="th-laranja">Vendedor</th>
+    <th class="th-laranja">Vendas</th>
+    <th class="th-laranja">Volume Líquido</th>
+  </tr>`;
+  rankVends.forEach((r,i)=>{
+    const bg = i%2===0?'#FFFFFF':'#F3F4F6';
+    html += `<tr style="background:${bg}">
+      <td class="center">${medals[i]||i+1+'°'}</td>
+      <td style="font-weight:bold">${r.v}</td>
+      <td class="center">${r.qt}</td>
+      <td class="num">${fmtK(r.vol)}</td>
+    </tr>`;
+  });
+  html += `</table>`;
+
+  // ══ ADESIONADA ══════════════════════════════════════════════════════════════
+  html += `<p class="section-title">📋 VENDAS ADESIONADA (${DB.adesionada.filter(ok).length} registros)</p>`;
+  html += `<table style="border-collapse:collapse;width:100%"><tr>
+    <th class="th-laranja">Nº</th><th class="th-laranja">Data</th>
+    <th class="th-laranja">Cliente</th><th class="th-laranja">Vendedor</th>
+    <th class="th-laranja">Tabela</th><th class="th-laranja">Carta Bruta</th>
+    <th class="th-laranja">Carta Líquida</th><th class="th-laranja">Prazo</th>
+    <th class="th-laranja">Status</th>
+  </tr>`;
+  DB.adesionada.filter(ok).sort((a,b)=>(b.data_contrato||'').localeCompare(a.data_contrato||'')).forEach((r,i)=>{
+    const bg = i%2===0?'#FFFFFF':'#FFF7ED';
+    html += `<tr style="background:${bg}">
+      <td class="center">${i+1}</td>
+      <td class="center">${fmtD(r.data_contrato)}</td>
+      <td>${r.cliente||r.nome||'-'}</td>
+      <td class="center">${r.vendedor||'-'}</td>
+      <td class="center">${r.tabela||'-'}</td>
+      <td class="num">R$ ${fmtR(r.carta_bruta||0)}</td>
+      <td class="num" style="font-weight:bold">R$ ${fmtR(r.valor_liq||r.carta_liq||0)}</td>
+      <td class="center">${r.prazo||'-'}</td>
+      <td class="center"><b>${r.status||'-'}</b></td>
+    </tr>`;
+  });
+  html += `<tr>
+    <td colspan="5" class="total">TOTAL ADESIONADA</td>
+    <td class="total num">R$ ${fmtR(DB.adesionada.filter(ok).reduce((s,r)=>s+(r.carta_bruta||0),0))}</td>
+    <td class="total num">R$ ${fmtR(totalAdes)}</td>
+    <td class="total" colspan="2">${DB.adesionada.filter(ok).length} vendas</td>
+  </tr></table>`;
+
+  // ══ LINEAR ══════════════════════════════════════════════════════════════════
+  html += `<p class="section-title">📈 VENDAS LINEAR (${DB.linear.filter(ok).length} registros)</p>`;
+  html += `<table style="border-collapse:collapse;width:100%"><tr>
+    <th class="th-azul">Nº</th><th class="th-azul">Data</th>
+    <th class="th-azul">Cliente</th><th class="th-azul">Vendedor</th>
+    <th class="th-azul">Tabela</th><th class="th-azul">Carta Bruta</th>
+    <th class="th-azul">Carta Líquida</th><th class="th-azul">Prazo</th>
+    <th class="th-azul">Status</th>
+  </tr>`;
+  DB.linear.filter(ok).sort((a,b)=>(b.data_contrato||'').localeCompare(a.data_contrato||'')).forEach((r,i)=>{
+    const bg = i%2===0?'#FFFFFF':'#EFF6FF';
+    html += `<tr style="background:${bg}">
+      <td class="center">${i+1}</td>
+      <td class="center">${fmtD(r.data_contrato)}</td>
+      <td>${r.cliente||r.nome||'-'}</td>
+      <td class="center">${r.vendedor||'-'}</td>
+      <td class="center">${r.tabela||'-'}</td>
+      <td class="num">R$ ${fmtR(r.carta_bruta||0)}</td>
+      <td class="num" style="font-weight:bold">R$ ${fmtR(r.valor_liq||r.carta_liq||0)}</td>
+      <td class="center">${r.prazo||'-'}</td>
+      <td class="center"><b>${r.status||'-'}</b></td>
+    </tr>`;
+  });
+  html += `<tr>
+    <td colspan="5" class="total-azul">TOTAL LINEAR</td>
+    <td class="total-azul num">R$ ${fmtR(DB.linear.filter(ok).reduce((s,r)=>s+(r.carta_bruta||0),0))}</td>
+    <td class="total-azul num">R$ ${fmtR(totalLin)}</td>
+    <td class="total-azul" colspan="2">${DB.linear.filter(ok).length} vendas</td>
+  </tr></table>`;
+
+  // ══ FUNIL ══════════════════════════════════════════════════════════════════
+  html += `<p class="section-title">📊 FUNIL DE VENDAS (${DB.funil.length} registros)</p>`;
+  html += `<table style="border-collapse:collapse;width:100%"><tr>
+    <th class="th-verde">Semana</th><th class="th-verde">Vendedor</th>
+    <th class="th-verde">Discadas</th><th class="th-verde">Atendidas</th>
+    <th class="th-verde">Agendamentos</th><th class="th-verde">Visitas</th>
+    <th class="th-verde">Fechamentos</th><th class="th-verde">Conv. D→F</th>
+  </tr>`;
+  DB.funil.sort((a,b)=>(b.sem||'').localeCompare(a.sem||'')).forEach((r,i)=>{
+    const bg = i%2===0?'#FFFFFF':'#F0FDF4';
+    const conv2 = r.discadas>0?(r.fechamentos/r.discadas*100).toFixed(1)+'%':'-';
+    html += `<tr style="background:${bg}">
+      <td class="center">${r.sem||'-'}</td>
+      <td class="center"><b>${r.vend||'-'}</b></td>
+      <td class="center">${r.discadas||0}</td>
+      <td class="center">${r.atendidas||0}</td>
+      <td class="center">${r.agendamentos||0}</td>
+      <td class="center">${r.visitas||0}</td>
+      <td class="center" style="font-weight:bold;color:#15803D">${r.fechamentos||0}</td>
+      <td class="center" style="font-weight:bold">${conv2}</td>
+    </tr>`;
+  });
+  html += `<tr>
+    <td colspan="2" class="total-verde">TOTAL GERAL</td>
+    <td class="total-verde center">${funilTots.discadas}</td>
+    <td class="total-verde center">${funilTots.atendidas}</td>
+    <td class="total-verde center">${funilTots.agendamentos}</td>
+    <td class="total-verde center">${funilTots.visitas}</td>
+    <td class="total-verde center">${funilTots.fechamentos}</td>
+    <td class="total-verde center">${conv}</td>
+  </tr></table>`;
+
+  html += '</body></html>';
+
+  const blob = new Blob([html], {type:'application/vnd.ms-excel;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `laranja-mecanica-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Excel exportado com sucesso!');
+}
+
+// ── EXPORTAR PDF ──────────────────────────────────────────────────────────────
+function exportarPDF(){
+  const now = new Date();
+  const mesLabel = now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const mesAtual = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  
+  const vendasMes = [...DB.adesionada,...DB.linear].filter(r=>
+    r.status!=='Cancelado' && r.data_contrato?.startsWith(mesAtual)
+  ).sort((a,b)=>(b.data_contrato||'').localeCompare(a.data_contrato||''));
+  
+  const totalVol = vendasMes.reduce((s,r)=>s+(r.valor_liq||0),0);
+  const fmtK = v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v).toLocaleString('pt-BR');
+  const fmtD = s=>{if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+  
+  // Funil do mês
+  const funilMes = DB.funil.filter(r=>r.sem?.startsWith(mesAtual));
+  const tots={};
+  ['discadas','atendidas','agendamentos','visitas','fechamentos'].forEach(c=>{
+    tots[c]=funilMes.reduce((s,r)=>s+(r[c]||0),0);
+  });
+  
+  // Por vendedor
+  const vends = vendedores();
+  const vendStats = vends.map(v=>{
+    const vVendas = vendasMes.filter(r=>r.vendedor===v);
+    const vol = vVendas.reduce((s,r)=>s+(r.valor_liq||0),0);
+    return {v, qt:vVendas.length, vol};
+  }).filter(x=>x.qt>0).sort((a,b)=>b.vol-a.vol);
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#333;font-size:12px;}
+  .header{background:#f97316;color:white;padding:20px 24px;border-radius:8px;margin-bottom:20px;}
+  .header h1{margin:0;font-size:22px;}
+  .header p{margin:4px 0 0;opacity:.85;font-size:13px;}
+  .section{margin-bottom:20px;}
+  .section h2{font-size:14px;font-weight:bold;color:#f97316;border-bottom:2px solid #f97316;padding-bottom:4px;margin-bottom:10px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+  .kpi{background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:12px;text-align:center;}
+  .kpi-val{font-size:20px;font-weight:bold;color:#f97316;}
+  .kpi-label{font-size:10px;color:#666;margin-top:2px;}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  th{background:#f97316;color:white;padding:6px 8px;text-align:left;}
+  td{padding:5px 8px;border-bottom:1px solid #eee;}
+  tr:nth-child(even){background:#fff7ed;}
+  .rank{background:#fffbf5;border:1px solid #fed7aa;border-radius:6px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+  .rank-medal{font-size:24px;}
+  .rank-name{font-weight:bold;font-size:13px;}
+  .rank-vol{font-size:18px;font-weight:bold;color:#f97316;margin-left:auto;}
+  .funil{display:flex;flex-direction:column;gap:6px;}
+  .funil-row{display:flex;align-items:center;gap:8px;}
+  .funil-label{width:100px;font-size:11px;color:#666;}
+  .funil-bar-wrap{flex:1;height:18px;background:#f0f0f0;border-radius:4px;overflow:hidden;}
+  .funil-bar{height:100%;background:#f97316;border-radius:4px;}
+  .funil-val{width:40px;text-align:right;font-weight:bold;font-size:11px;}
+  .footer{margin-top:24px;text-align:center;font-size:10px;color:#999;}
+  @media print{body{margin:0;padding:15px;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🍊 Laranja Mecânica — Relatório Mensal</h1>
+  <p>${mesLabel} • Gerado em ${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</p>
+</div>
+
+<div class="section">
+  <h2>📊 Resumo do Mês</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-val">${vendasMes.length}</div><div class="kpi-label">Vendas</div></div>
+    <div class="kpi"><div class="kpi-val">${fmtK(totalVol)}</div><div class="kpi-label">Volume Total</div></div>
+    <div class="kpi"><div class="kpi-val">${tots.fechamentos||0}</div><div class="kpi-label">Fechamentos (Funil)</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🏆 Ranking de Vendedores</h2>
+  ${vendStats.map((v,i)=>`<div class="rank">
+    <div class="rank-medal">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'👤'}</div>
+    <div><div class="rank-name">${v.v}</div><div style="font-size:11px;color:#666">${v.qt} venda(s)</div></div>
+    <div class="rank-vol">${fmtK(v.vol)}</div>
+  </div>`).join('')||'<p style="color:#999">Sem vendas no mês.</p>'}
+</div>
+
+<div class="section">
+  <h2>📱 Funil de Vendas</h2>
+  <div class="funil">
+    ${[['Discadas',tots.discadas||0],['Atendidas',tots.atendidas||0],['Agendamentos',tots.agendamentos||0],['Visitas',tots.visitas||0],['Fechamentos',tots.fechamentos||0]].map(([label,val])=>{
+      const mx=Math.max(tots.discadas||1,1);
+      return `<div class="funil-row">
+        <div class="funil-label">${label}</div>
+        <div class="funil-bar-wrap"><div class="funil-bar" style="width:${Math.round(val/mx*100)}%"></div></div>
+        <div class="funil-val">${val}</div>
+      </div>`;
+    }).join('')}
+  </div>
+</div>
+
+<div class="section">
+  <h2>📋 Detalhamento de Vendas</h2>
+  <table>
+    <thead><tr><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Tipo</th><th>Tabela</th><th>Valor Líq.</th><th>Status</th></tr></thead>
+    <tbody>
+      ${vendasMes.map(r=>`<tr>
+        <td>${fmtD(r.data_contrato)}</td>
+        <td>${r.cliente||r.nome||'-'}</td>
+        <td>${r.vendedor||'-'}</td>
+        <td>${r.tipo||('valor_liq' in r?'Linear':'Ades')}</td>
+        <td>${r.tabela||'-'}</td>
+        <td style="font-weight:bold">${fmtK(r.valor_liq||0)}</td>
+        <td>${r.status||'-'}</td>
+      </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:#999">Sem vendas no mês</td></tr>'}
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">Laranja Mecânica • ${mesLabel} • Relatório gerado automaticamente</div>
+</body>
+</html>`;
+
+  const win = window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.print();
+  toast('✓ PDF aberto para impressão!');
+}
+
 
 function importBackup(event){
   const file=event.target.files[0];
