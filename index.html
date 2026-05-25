@@ -923,7 +923,10 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div id="bar-vend" class="bar-chart"></div>
         </div>
         <div class="card">
-          <div class="card-hd"><div class="card-title">Status das Vendas</div></div>
+          <div class="card-hd">
+            <div class="card-title">Status das Vendas</div>
+            <select class="fi" id="donut-mes-sel" style="min-width:100px;padding:4px 8px;font-size:11px" onchange="renderDonut()"></select>
+          </div>
           <div class="donut-wrap"><svg width="110" height="110" id="donut-svg"></svg><div id="donut-leg" style="flex:1"></div></div>
         </div>
       </div>
@@ -3739,6 +3742,30 @@ function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){const tbody=documen
 // ── Formatadores (definidos acima como const) ───────────────────────────────
 
 // ── Dashboard helpers ─────────────────────────────────────────────────────────
+function abrirModalMetaVendas(){
+  const metaVol=localStorage.getItem('lm_meta_vol_mes')||'';
+  const metaQt=localStorage.getItem('lm_meta_qt_mes')||'';
+  const html=`<div style="display:flex;flex-direction:column;gap:14px;padding:4px 0">
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:6px">💰 Meta de Volume (R$)</label>
+      <input id="meta-vol-input" class="finput" type="number" placeholder="Ex: 500000" value="${metaVol}" style="font-size:16px">
+    </div>
+    <div>
+      <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;display:block;margin-bottom:6px">🏆 Meta de Quantidade (vendas)</label>
+      <input id="meta-qt-input" class="finput" type="number" placeholder="Ex: 10" value="${metaQt}" style="font-size:16px">
+    </div>
+  </div>`;
+  openModal('generic', '🎯 Meta do Mês — Vendas', html, ()=>{
+    const vol=document.getElementById('meta-vol-input')?.value||'';
+    const qt=document.getElementById('meta-qt-input')?.value||'';
+    localStorage.setItem('lm_meta_vol_mes', vol);
+    localStorage.setItem('lm_meta_qt_mes', qt);
+    toast('✓ Meta de vendas salva!');
+    renderDashMeta();
+  });
+}
+
+
 function renderDashCountdown(){
   const el=document.getElementById('dash-countdown-body');
   if(!el)return;
@@ -3802,18 +3829,37 @@ function renderBarVend(tipo){
 function renderDonut(){
   const svg=document.getElementById('donut-svg');
   const leg=document.getElementById('donut-leg');
-  if(!svg||!leg)return;
-  const ok=r=>r.status!=='Cancelado';
-  const vA=DB.adesionada.filter(ok).reduce((s,r)=>s+r.valor_liq,0);
-  const vL=DB.linear.filter(ok).reduce((s,r)=>s+r.valor_liq,0);
+  if(!svg||!leg) return;
+
+  // Populate month selector
+  const mesSel=document.getElementById('donut-mes-sel');
+  if(mesSel){
+    const now=new Date();
+    const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const meses=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
+    if(!mesSel.options.length){
+      mesSel.innerHTML='<option value="">Todos</option>'+meses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===mesAtual?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</option>`;}).join('');
+      if(!mesSel.value&&meses.includes(mesAtual)) mesSel.value=mesAtual;
+    }
+  }
+  const mesFil=mesSel?.value||'';
+  const ok=r=>r.status!=='Cancelado'&&(!mesFil||r.data_contrato?.startsWith(mesFil));
+
+  const fmtK=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v||0).toLocaleString('pt-BR');
+  const vA=DB.adesionada.filter(ok).reduce((s,r)=>s+(r.valor_liq||0),0);
+  const vL=DB.linear.filter(ok).reduce((s,r)=>s+(r.valor_liq||0),0);
   const tot=vA+vL||1;
-  const pA=Math.round(vA/tot*100);const pL=100-pA;
+  const pA=Math.round(vA/tot*100);
+  const pL=100-pA;
   const r=40;const circ=2*Math.PI*r;
   svg.innerHTML=`<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--bg3)" stroke-width="18"/>
-    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--accent)" stroke-width="18" stroke-dasharray="${circ*pA/100} ${circ}" stroke-dashoffset="${circ/4}" transform="rotate(-90 60 60)"/>
-    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--blue)" stroke-width="18" stroke-dasharray="${circ*pL/100} ${circ}" stroke-dashoffset="${circ/4-circ*pA/100}" transform="rotate(-90 60 60)"/>
-    <text x="60" y="65" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--text)">${tot>1?pA+'%':'0%'}</text>`;
-  leg.innerHTML=`<div style="font-size:11px"><span style="color:var(--accent)">■</span> Ades: ${fmtK(vA)} (${pA}%)</div><div style="font-size:11px;margin-top:4px"><span style="color:var(--blue)">■</span> Linear: ${fmtK(vL)} (${pL}%)</div>`;
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--accent)" stroke-width="18"
+      stroke-dasharray="${circ*pA/100} ${circ}" stroke-dashoffset="${circ/4}" transform="rotate(-90 60 60)"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="#6366f1" stroke-width="18"
+      stroke-dasharray="${circ*pL/100} ${circ}" stroke-dashoffset="${circ/4-circ*pA/100}" transform="rotate(-90 60 60)"/>
+    <text x="60" y="64" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--text)">${pA}%</text>`;
+  leg.innerHTML=`<div style="font-size:11px;margin-bottom:6px"><span style="color:var(--accent)">■</span> <b>Ades:</b> ${fmtK(vA)} (${pA}%)</div>
+    <div style="font-size:11px"><span style="color:#6366f1">■</span> <b>Linear:</b> ${fmtK(vL)} (${pL}%)</div>`;
 }
 
 function renderUlt(){
@@ -3906,55 +3952,57 @@ function renderRanking(){
 function renderDashMeta(){
   const el=document.getElementById('dash-meta-body');
   if(!el) return;
-  const CAMPOS=['discadas','atendidas','agendamentos','visitas','fechamentos'];
-  const LABELS=['Discadas','Atendidas','Agendamentos','Visitas','Fechamentos'];
-  const ICONS=['📱','✅','📅','🤝','🏆'];
 
-  const now=new Date();now.setHours(0,0,0,0);
-  const dow=now.getDay();
-  const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
+  // Pegar meta de volume de vendas (R$) definida pelo usuário
+  const metaVol = parseFloat(localStorage.getItem('lm_meta_vol_mes')||'0');
+  const metaQt  = parseInt(localStorage.getItem('lm_meta_qt_mes')||'0');
 
-  // Totals this week from funil
-  const tots={};
-  CAMPOS.forEach(c=>{tots[c]=DB.funil.filter(r=>{
-    const d=new Date(r.sem+'T12:00:00');
-    return d>=seg&&d<=new Date(seg.getTime()+6*864e5);
-  }).reduce((s,r)=>s+(r[c]||0),0);});
+  // Volume real do mês atual
+  const now=new Date();
+  const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const ok=r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(mesAtual);
+  const vendasMes=[...DB.adesionada,...DB.linear].filter(ok);
+  const volReal=vendasMes.reduce((s,r)=>s+(r.valor_liq||0),0);
+  const qtReal=vendasMes.length;
+  const fmtK=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v||0).toLocaleString('pt-BR');
 
-  const gv=(mo,c)=>{
-    if(!mo)return 0;
-    if(mo.semsex){const vSS=mo.semsex[c]||0;const vSab=mo.sabIgual?vSS:(mo.sab?.[c]||0);return vSS*5+vSab;}
-    return mo[c]||0;
-  };
-
-  // Use geral or fallback to first vendor meta
-  let meta=DB.metaFunil||{};
-  if(!CAMPOS.some(c=>gv(meta,c)>0)){
-    const vends=Object.entries(DB.metaFunilVend||{});
-    if(vends.length>0) meta=vends[0][1];
-  }
-
-  const hasAny=CAMPOS.some(c=>gv(meta,c)>0);
-  if(!hasAny){
-    el.innerHTML='<div style="font-size:12px;color:var(--text3);padding:8px 0">Configure as metas no Funil de Vendas → 🎯 Metas.</div>';
+  if(!metaVol&&!metaQt){
+    el.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:8px 0">
+      Nenhuma meta definida. Clique em <strong>Definir</strong> para configurar.
+    </div>`;
     return;
   }
 
-  el.innerHTML=CAMPOS.map((c,i)=>{
-    const m=gv(meta,c);if(!m)return'';
-    const v=tots[c]||0;
-    const pct=Math.min(Math.round(v/m*100),100);
+  let html='';
+  if(metaVol>0){
+    const pct=Math.min(Math.round(volReal/metaVol*100),100);
     const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
-    return '<div style="margin-bottom:10px">'+
-      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
-        '<span style="font-size:12px;color:var(--text2)">'+ICONS[i]+' '+LABELS[i]+'</span>'+
-        '<span style="font-size:12px;font-weight:700;color:'+cor+';font-family:DM Mono">'+v+' / '+m+' ('+pct+'%)</span>'+
-      '</div>'+
-      '<div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden">'+
-        '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:999px;transition:width .8s"></div>'+
-      '</div>'+
-    '</div>';
-  }).join('');
+    html+=`<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text2)">💰 Volume de Vendas</span>
+        <span style="font-size:13px;font-weight:700;color:${cor};font-family:DM Mono">${fmtK(volReal)} / ${fmtK(metaVol)} (${pct}%)</span>
+      </div>
+      <div style="height:8px;background:var(--bg3);border-radius:999px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${cor};border-radius:999px;transition:width .8s"></div>
+      </div>
+      ${pct>=100?'<div style="font-size:11px;color:var(--green);margin-top:4px">✓ Meta de volume batida! 🎉</div>':`<div style="font-size:11px;color:var(--text3);margin-top:4px">Faltam ${fmtK(metaVol-volReal)}</div>`}
+    </div>`;
+  }
+  if(metaQt>0){
+    const pct2=Math.min(Math.round(qtReal/metaQt*100),100);
+    const cor2=pct2>=100?'var(--green)':pct2>=70?'var(--yellow)':'var(--accent)';
+    html+=`<div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text2)">🏆 Qtd de Vendas</span>
+        <span style="font-size:13px;font-weight:700;color:${cor2};font-family:DM Mono">${qtReal} / ${metaQt} (${pct2}%)</span>
+      </div>
+      <div style="height:8px;background:var(--bg3);border-radius:999px;overflow:hidden">
+        <div style="height:100%;width:${pct2}%;background:${cor2};border-radius:999px;transition:width .8s"></div>
+      </div>
+      ${pct2>=100?'<div style="font-size:11px;color:var(--green);margin-top:4px">✓ Meta de quantidade batida! 🎉</div>':`<div style="font-size:11px;color:var(--text3);margin-top:4px">Faltam ${metaQt-qtReal} vendas</div>`}
+    </div>`;
+  }
+  el.innerHTML=html;
 }
 
 
