@@ -859,7 +859,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     </div>
   </div>
 
-  <div class="page active" id="page-dashboard">
+  <div class="page" id="page-dashboard">
     <div class="hero">
       <div class="hero-eyebrow">Gestão de Vendas</div>
       <div class="hero-title" id="dash-greeting">Bem-vindo de volta.</div>
@@ -910,6 +910,12 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div class="card">
           <div class="card-hd">
             <div class="card-title">Volume por Vendedor</div>
+            <div style="display:flex;gap:6px">
+              <select class="fi" id="bar-mes-sel" style="min-width:100px;padding:4px 8px;font-size:11px" onchange="renderBarVend(document.getElementById('bar-tipo-sel').value)"></select>
+              <select class="fi" id="bar-tipo-sel" style="min-width:90px;padding:4px 8px;font-size:11px" onchange="renderBarVend(this.value)">
+                <option value="total">Total</option><option value="ades">Adesionada</option><option value="linear">Linear</option>
+              </select>
+            </div>
             <select class="fi" style="min-width:100px;padding:5px 10px;font-size:12px" onchange="renderBarVend(this.value)">
               <option value="total">Total</option><option value="ades">Adesionada</option><option value="linear">Linear</option>
             </select>
@@ -976,6 +982,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       </div>
     </div>
   </div>
+
+  </div><!-- /page-dashboard -->
 
   <!-- RESUMO MENSAL -->
   <div class="page" id="page-mensal">
@@ -3764,30 +3772,29 @@ function renderBarVend(tipo){
   if(!el)return;
   // Populate month selector
   const mesSel=document.getElementById('bar-mes-sel');
-  if(mesSel&&!mesSel.innerHTML){
-    const now=new Date();
+  if(mesSel&&!mesSel.options.length){
+    const now=new Date();const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     const meses=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
-    mesSel.innerHTML='<option value="">Todos os meses</option>'+meses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}">${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</option>`;}).join('');
+    mesSel.innerHTML='<option value="">Todos</option>'+meses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}">${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</option>`;}).join('');
   }
   const mesFil=mesSel?.value||'';
-  const vends=vendedores();
   const ok=r=>r.status!=='Cancelado'&&(!mesFil||r.data_contrato?.startsWith(mesFil));
+  const vends=vendedores();
   const dados=vends.map(v=>{
     const a=DB.adesionada.filter(r=>ok(r)&&r.vendedor===v);
     const l=DB.linear.filter(r=>ok(r)&&r.vendedor===v);
-    const vol=(tipo==='ades'?a:tipo==='linear'?l:[...a,...l]).reduce((s,r)=>s+(r.valor_liq||0),0);
-    const qt=(tipo==='ades'?a:tipo==='linear'?l:[...a,...l]).length;
-    return{v,vol,qt};
+    const arr=tipo==='ades'?a:tipo==='linear'?l:[...a,...l];
+    return{v,vol:arr.reduce((s,r)=>s+(r.valor_liq||0),0),qt:arr.length};
   }).sort((a,b)=>b.vol-a.vol);
   const mx=Math.max(...dados.map(d=>d.vol),1);
-  el.innerHTML=dados.map(d=>`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="width:70px;font-size:12px;color:var(--text2);flex-shrink:0">${d.v}</div>
-      <div style="flex:1;height:20px;background:var(--bg3);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${d.vol>0?Math.max(Math.round(d.vol/mx*100),4):0}%;background:var(--accent);border-radius:4px"></div>
-      </div>
-      <div style="width:70px;font-size:11px;font-family:DM Mono;color:var(--text3);text-align:right">${fmtK(d.vol)}</div>
-    </div>`).join('')||'<div style="color:var(--text3);font-size:12px">Sem vendas.</div>';
+  const fmtV=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v);
+  el.innerHTML=dados.map(d=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <div style="width:70px;font-size:12px;color:var(--text2);flex-shrink:0">${d.v}</div>
+    <div style="flex:1;height:20px;background:var(--bg3);border-radius:4px;overflow:hidden">
+      <div style="height:100%;width:${d.vol>0?Math.max(Math.round(d.vol/mx*100),4):0}%;background:var(--accent);border-radius:4px"></div>
+    </div>
+    <div style="width:70px;font-size:11px;font-family:DM Mono;color:var(--text3);text-align:right">${fmtV(d.vol)}</div>
+  </div>`).join('')||'<div style="color:var(--text3);font-size:12px">Sem vendas.</div>';
 }
 
 function renderDonut(){
@@ -3812,26 +3819,25 @@ function renderUlt(){
   const ct=document.getElementById('ult-ct');
   if(!el)return;
   const mesSel=document.getElementById('ult-mes-sel');
-  // Populate month selector
-  if(mesSel){
-    const now=new Date();
-    const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  if(mesSel&&!mesSel.options.length){
+    const now=new Date();const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
     const meses=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
-    const cur=mesSel.value||(meses.includes(mesAtual)?mesAtual:(meses[0]||''));
-    mesSel.innerHTML='<option value="">Todos</option>'+meses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===cur?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</option>`;}).join('');
-    if(!mesSel.value&&meses.length) mesSel.value=meses[0];
+    mesSel.innerHTML='<option value="">Todos</option>'+meses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===mesAtual?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</option>`;}).join('');
+    if(!mesSel.value&&meses.includes(mesAtual))mesSel.value=mesAtual;
   }
   const mesFil=mesSel?.value||'';
   const ok=r=>r.status!=='Cancelado'&&(!mesFil||r.data_contrato?.startsWith(mesFil));
   const all=[...DB.adesionada.filter(ok).map(r=>({...r,_tipo:'Ades'})),...DB.linear.filter(ok).map(r=>({...r,_tipo:'Lin'}))].sort((a,b)=>(b.data_contrato||'').localeCompare(a.data_contrato||''));
-  if(ct) ct.textContent=all.length+' venda(s)';
-  el.innerHTML=all.length?all.slice(0,15).map(r=>`<tr>
+  if(ct)ct.textContent=all.length+' venda(s)';
+  const fmt=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v);
+  const fmtD=s=>{if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+  el.innerHTML=all.slice(0,15).map(r=>`<tr>
     <td style="padding:6px 10px;font-size:12px">${fmtD(r.data_contrato)}</td>
     <td style="padding:6px 10px;font-size:12px">${r.cliente||r.nome||'-'}</td>
     <td style="padding:6px 10px;font-size:12px">${r.vendedor||'-'}</td>
-    <td style="padding:6px 10px;font-size:12px;font-family:DM Mono">${fmtK(r.valor_liq||0)}</td>
+    <td style="padding:6px 10px;font-size:12px;font-family:DM Mono">${fmt(r.valor_liq||0)}</td>
     <td style="padding:6px 10px;font-size:11px"><span style="background:${r._tipo==='Ades'?'rgba(249,115,22,.1)':'rgba(99,102,241,.1)'};color:${r._tipo==='Ades'?'var(--accent)':'#6366f1'};padding:2px 6px;border-radius:4px">${r._tipo}</span></td>
-  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhuma venda.</td></tr>';
+  </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">Nenhuma venda.</td></tr>';
 }
 
 function renderEvolucao(tipo){
@@ -3961,15 +3967,15 @@ function renderDash(){
     sel.innerHTML='<option value="">Todos os anos</option>'+anos.map(a=>`<option${a===cur?' selected':''}>${a}</option>`).join('');
   }
   const anoFiltro=sel?.value||'';
-  // Preencher seletor de meses
   const mesSel=document.getElementById('dash-mes');
   const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const mesFiltro=mesSel?.value||'';
+  // Preencher seletor de meses
   if(mesSel){
     const cur=mesSel.value;
     mesSel.innerHTML='<option value="">Todos os meses</option>'+MESES.map((m,i)=>{const v=String(i+1).padStart(2,'0');return`<option value="${v}"${v===cur?' selected':''}>${m}</option>`;}).join('');
     mesSel.value=cur;
   }
-  const mesFiltro=mesSel?.value||'';
 
   const now=new Date();
   const anoAtual=now.getFullYear();
@@ -8517,7 +8523,7 @@ function gerarPropostaPDF(){
     '<div class="card"><div class="card-label">Parcela Mensal</div><div class="card-val">R$ '+fmtBR(parcela)+(parcelaManual?' <small style="font-size:12px;color:#6b7280">(informada)</small>':'')+'</div></div>'+
     '<div class="card"><div class="card-label">Prazo</div><div class="card-val">'+prazo+' meses</div></div>'+
     taxaHtml+entradaHtml+
-    '<div class="card"><div class="card-label">Total a Pagar</div><div class="card-val">R$ '+fmtBR(totalPago)+'</div></div>'+
+    ''+
     '</div></div>'+
     compHtml+
     '<div class="section"><h2>Vantagens do Consorcio</h2>'+
