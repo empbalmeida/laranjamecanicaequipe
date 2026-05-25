@@ -900,15 +900,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           </div>
           <div class="kpi-sub" id="kpi-vol-s" style="margin-top:10px"></div>
         </div>
-        <div class="kpi">
-          <div class="kpi-accent" style="background:var(--blue)"></div>
-          <div class="kpi-label">Comissão & Ticket</div>
-          <div class="kpi-row">
-            <div class="kpi-sub-val"><div class="kpi-sub-label">Com. Total</div><div class="kpi-val" style="color:var(--blue)" id="kpi-com">—</div></div>
-            <div class="kpi-sub-val"><div class="kpi-sub-label">Ticket Méd.</div><div class="kpi-sub-num" style="color:var(--purple)" id="kpi-tk">—</div></div>
-          </div>
-          <div class="kpi-sub" id="kpi-com-s" style="margin-top:10px"></div>
-        </div>
+        
       </div>
 
       <div class="grid2">
@@ -3567,26 +3559,42 @@ function renderVolDestaque(){
   const el=document.getElementById('vol-destaque');
   if(!el) return;
   const now=new Date();
-  const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  const vendas=[...DB.adesionada,...DB.linear].filter(r=>r.status!=='Cancelado');
-  const vends=vendedores();
-  const cards=vends.map(v=>{
-    const vVendas=vendas.filter(r=>r.vendedor===v);
-    const mesVendas=vVendas.filter(r=>r.data_contrato?.startsWith(mesAtual));
-    const vol=mesVendas.reduce((s,r)=>s+(parseFloat(r.carta_bruta||r.valor||0)),0);
-    const qt=mesVendas.length;
-    return{v,vol,qt};
-  }).sort((a,b)=>b.vol-a.vol);
-  const fmt=v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toFixed(0);
-  el.innerHTML=cards.map((c,i)=>`
+  now.setHours(0,0,0,0);
+  const hoje=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const mesAtual=hoje.slice(0,7);
+  const dow=now.getDay();
+  const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
+  const segStr=seg.getFullYear()+'-'+String(seg.getMonth()+1).padStart(2,'0')+'-'+String(seg.getDate()).padStart(2,'0');
+
+  const ok=r=>r.status!=='Cancelado';
+  const vendas=[...DB.adesionada,...DB.linear].filter(ok);
+  const fmtV=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v);
+
+  // Hoje
+  const hj=vendas.filter(r=>r.data_contrato===hoje);
+  const volHj=hj.reduce((s,r)=>s+(r.valor_liq||0),0);
+
+  // Semana
+  const sem=vendas.filter(r=>r.data_contrato>=segStr&&r.data_contrato<=hoje);
+  const volSem=sem.reduce((s,r)=>s+(r.valor_liq||0),0);
+
+  // Mês
+  const mes=vendas.filter(r=>r.data_contrato?.startsWith(mesAtual));
+  const volMes=mes.reduce((s,r)=>s+(r.valor_liq||0),0);
+
+  const cards=[
+    {label:'📅 Hoje',vol:volHj,qt:hj.length,cor:'var(--green)'},
+    {label:'📆 Semana',vol:volSem,qt:sem.length,cor:'var(--accent)'},
+    {label:'🗓 Mês',vol:volMes,qt:mes.length,cor:'var(--blue)'},
+  ];
+
+  el.innerHTML=cards.map(c=>`
     <div class="card" style="padding:14px 18px">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:4px">${['🥇','🥈','🥉'][i]||'👤'} ${c.v}</div>
-      <div style="font-size:22px;font-weight:800;color:var(--accent)">R$ ${fmt(c.vol)}</div>
-      <div style="font-size:11px;color:var(--text3)">${c.qt} venda(s) este mês</div>
-    </div>`).join('')||'<div style="color:var(--text3);font-size:13px;padding:8px">Sem vendas este mês.</div>';
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600">${c.label}</div>
+      <div style="font-size:22px;font-weight:800;color:${c.cor}">${fmtV(c.vol)}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">${c.qt} venda(s)</div>
+    </div>`).join('');
 }
-
-
 
 function toggleFunilGrp(id){const el=document.getElementById(id);const ico=document.getElementById(id+'-ico');if(!el)return;const h=el.style.display==='none';el.style.display=h?'':'none';if(ico)ico.textContent=h?'▾':'▸';}
 function renderFunilSemana(){renderFunil();}
@@ -3666,6 +3674,128 @@ function renderFunilRanking(allRows,CAMPOS){const el=document.getElementById('fu
 function renderFunilHeatmap(allRows,CAMPOS,LABELS){const el=document.getElementById('funil-heatmap');const campo=document.getElementById('funil-heat-campo')?.value||'fechamentos';if(!el)return;const sems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();if(!sems.length){el.innerHTML='<div style="color:var(--text3);font-size:12px">Sem dados.</div>';return;}const byM={};sems.forEach(s=>{const m=s.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push(s);});const mx=Math.max(...sems.map(s=>allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[campo]||0),0)),1);const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));el.innerHTML=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,ss])=>{const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mTot=ss.reduce((s,sem)=>s+allRows.filter(r=>r.sem===sem).reduce((ss2,r)=>ss2+(r[campo]||0),0),0);const cells=ss.map(s=>{const d=new Date(s+'T12:00:00');const lbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});const v=allRows.filter(r=>r.sem===s).reduce((sum,r)=>sum+(r[campo]||0),0);const it=v/mx;const bg=v===0?'var(--bg3)':`rgba(249,115,22,${0.1+it*0.85})`;const txt=v===0?'var(--text3)':it>0.5?'#fff':'var(--text)';const isN=d>=seg&&d<=new Date(seg.getTime()+6*864e5);return'<div style="width:72px;height:72px;border-radius:10px;background:'+bg+';display:flex;flex-direction:column;align-items:center;justify-content:center;border:'+(isN?'2px solid var(--accent)':'1px solid var(--border)')+';flex-shrink:0"><div style="font-size:18px;font-weight:800;color:'+txt+'">'+v+'</div><div style="font-size:9px;color:'+txt+';font-family:DM Mono">'+lbl+'</div></div>';}).join('');return'<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px">'+mLbl+'<span style="font-size:10px;color:var(--text3)">total: '+mTot+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+cells+'</div></div>';}).join('');}
 
 function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){const tbody=document.querySelector('#tbl-funil tbody');if(!tbody)return;const filtered=DB.funil.filter(r=>(!vFil||r.vend===vFil)&&(!busca||(r.vend||'').toLowerCase().includes(busca)));const byW={};filtered.forEach(r=>{if(!byW[r.sem])byW[r.sem]=[];byW[r.sem].push(r);});Object.keys(byW).forEach(s=>{if(!byW[s].some(r=>CAMPOS.some(c=>r[c]>0)))delete byW[s];});if(!Object.keys(byW).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro.</td></tr>';return;}const byM={};Object.entries(byW).forEach(([sem,recs])=>{const m=sem.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push([sem,recs]);});const now3=new Date();now3.setHours(0,0,0,0);const dow3=now3.getDay();const seg3=new Date(now3);seg3.setDate(now3.getDate()-(dow3===0?6:dow3-1));tbody.innerHTML=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mId='fm-'+mes.replace('-','');const mT={};CAMPOS.forEach(c=>{mT[c]=semanas.reduce((s,[,r])=>s+r.reduce((ss,rr)=>ss+(rr[c]||0),0),0);});let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mId+'"><td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px"><span id="'+mId+'-ico">▾</span> 📆 '+mLbl+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700">'+mT[c]+'</td>').join('')+'<td></td></tr><tr id="'+mId+'"><td colspan="11" style="padding:0"><table style="width:100%">';semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{const d=new Date(sem+'T12:00:00');const fin=new Date(d);fin.setDate(d.getDate()+5);const sLbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fin.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const isN=d>=seg3&&d<=new Date(seg3.getTime()+6*864e5);const wT={};CAMPOS.forEach(c=>{wT[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});const gId='fg-'+mes+wi;h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+gId+'"><td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+gId+'-ico">'+(isN?'▾':'▸')+'</span> 📅 '+sLbl+(isN?' <span class="badge-novo">Atual</span>':'')+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wT[c]+'</td>').join('')+'<td></td></tr><tr id="'+gId+'"'+(isN?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';recs.forEach(r=>{const idx=DB.funil.findIndex(x=>x.vend===r.vend&&x.sem===r.sem&&x.ts===r.ts);h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')+'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" onclick="editFunilBtn(this)" data-sem="'+r.sem+'" data-vend="'+r.vend+'">✏</button> <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';});h+='</table></td></tr>';});h+='</table></td></tr>';return h;}).join('');}
+
+// ── Formatadores (definidos acima como const) ───────────────────────────────
+
+// ── Dashboard helpers ─────────────────────────────────────────────────────────
+function renderDashCountdown(){
+  const el=document.getElementById('dash-countdown-body');
+  if(!el)return;
+  const now=new Date();
+  const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const dias=fim.getDate()-now.getDate();
+  el.innerHTML=`<div style="font-size:36px;font-weight:800;color:var(--accent)">${dias}</div><div style="font-size:12px;color:var(--text3)">dias até o fim do mês</div>`;
+}
+
+function renderDashAlertas(){
+  const el=document.getElementById('dash-alertas');
+  if(!el)return;
+  const alertas=[];
+  const now=new Date();
+  const prefMes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const aMes=[...DB.adesionada,...DB.linear].filter(r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(prefMes));
+  if(aMes.length===0) alertas.push({icon:'⚠️',txt:'Nenhuma venda registrada este mês',cor:'var(--yellow)'});
+  el.innerHTML=alertas.map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:rgba(249,115,22,.07);border-radius:10px;margin-bottom:6px"><span style="font-size:15px">${a.icon}</span><span style="font-size:12px;color:var(--text)">${a.txt}</span></div>`).join('')||'';
+}
+
+function renderDashRecv(){
+  const el=document.getElementById('dash-recv');
+  if(!el)return;
+  const now=new Date();
+  const mes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const recv=DB.recebimentos?.filter(r=>r.mes_ref===mes)||[];
+  const tot=recv.reduce((s,r)=>s+(r.valor||0),0);
+  el.innerHTML=tot>0?`<div style="font-size:20px;font-weight:700;color:var(--green)">${fmtK(tot)}</div><div style="font-size:11px;color:var(--text3)">${recv.length} recebimento(s) este mês</div>`:'<div style="font-size:12px;color:var(--text3)">Sem recebimentos este mês</div>';
+}
+
+function renderBarVend(tipo){
+  const el=document.getElementById('bar-vend');
+  if(!el)return;
+  const vends=vendedores();
+  const ok=r=>r.status!=='Cancelado';
+  const dados=vends.map(v=>{
+    const a=DB.adesionada.filter(r=>ok(r)&&r.vendedor===v);
+    const l=DB.linear.filter(r=>ok(r)&&r.vendedor===v);
+    const vol=a.reduce((s,r)=>s+r.valor_liq,0)+l.reduce((s,r)=>s+r.valor_liq,0);
+    const qt=a.length+l.length;
+    return{v,vol,qt};
+  }).sort((a,b)=>b.vol-a.vol);
+  const mx=Math.max(...dados.map(d=>d.vol),1);
+  el.innerHTML=dados.map(d=>`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:80px;font-size:12px;color:var(--text2);flex-shrink:0">${d.v}</div>
+      <div style="flex:1;height:20px;background:var(--bg3);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${Math.round(d.vol/mx*100)}%;background:var(--accent);border-radius:4px"></div>
+      </div>
+      <div style="width:70px;font-size:11px;font-family:DM Mono;color:var(--text3);text-align:right">${fmtK(d.vol)}</div>
+    </div>`).join('');
+}
+
+function renderDonut(){
+  const svg=document.getElementById('donut-svg');
+  const leg=document.getElementById('donut-leg');
+  if(!svg||!leg)return;
+  const ok=r=>r.status!=='Cancelado';
+  const vA=DB.adesionada.filter(ok).reduce((s,r)=>s+r.valor_liq,0);
+  const vL=DB.linear.filter(ok).reduce((s,r)=>s+r.valor_liq,0);
+  const tot=vA+vL||1;
+  const pA=Math.round(vA/tot*100);const pL=100-pA;
+  const r=40;const circ=2*Math.PI*r;
+  svg.innerHTML=`<circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--bg3)" stroke-width="18"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--accent)" stroke-width="18" stroke-dasharray="${circ*pA/100} ${circ}" stroke-dashoffset="${circ/4}" transform="rotate(-90 60 60)"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="var(--blue)" stroke-width="18" stroke-dasharray="${circ*pL/100} ${circ}" stroke-dashoffset="${circ/4-circ*pA/100}" transform="rotate(-90 60 60)"/>
+    <text x="60" y="65" text-anchor="middle" font-size="14" font-weight="bold" fill="var(--text)">${tot>1?pA+'%':'0%'}</text>`;
+  leg.innerHTML=`<div style="font-size:11px"><span style="color:var(--accent)">■</span> Ades: ${fmtK(vA)} (${pA}%)</div><div style="font-size:11px;margin-top:4px"><span style="color:var(--blue)">■</span> Linear: ${fmtK(vL)} (${pL}%)</div>`;
+}
+
+function renderUlt(){
+  const el=document.getElementById('tbl-ult');
+  if(!el)return;
+  const all=[...DB.adesionada.map(r=>({...r,_tipo:'Ades'})),...DB.linear.map(r=>({...r,_tipo:'Lin'}))].filter(r=>r.status!=='Cancelado').sort((a,b)=>(b.data_contrato||'').localeCompare(a.data_contrato||'')).slice(0,8);
+  el.innerHTML=all.map(r=>`<tr><td style="padding:6px 10px;font-size:12px">${fmtD(r.data_contrato)}</td><td style="padding:6px 10px;font-size:12px">${r.cliente||r.nome||'-'}</td><td style="padding:6px 10px;font-size:12px">${r.vendedor||'-'}</td><td style="padding:6px 10px;font-size:12px;font-family:DM Mono">${fmtK(r.valor_liq||r.carta_liq||0)}</td><td style="padding:6px 10px;font-size:11px"><span style="background:${r._tipo==='Ades'?'rgba(249,115,22,.1)':'rgba(99,102,241,.1)'};color:${r._tipo==='Ades'?'var(--accent)':'#6366f1'};padding:2px 6px;border-radius:4px">${r._tipo}</span></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhuma venda registrada.</td></tr>';
+}
+
+function renderEvolucao(tipo){
+  const el=document.getElementById('evolucao-chart');
+  if(!el)return;
+  const meses=[];
+  const now=new Date();
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);meses.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'));}
+  const ok=r=>r.status!=='Cancelado';
+  const vals=meses.map(m=>{
+    const a=DB.adesionada.filter(r=>ok(r)&&r.data_contrato?.startsWith(m));
+    const l=DB.linear.filter(r=>ok(r)&&r.data_contrato?.startsWith(m));
+    return a.reduce((s,r)=>s+r.valor_liq,0)+l.reduce((s,r)=>s+r.valor_liq,0);
+  });
+  const mx=Math.max(...vals,1);
+  const lbMes=m=>{const[y,mo]=m.split('-');return new Date(y,mo-1,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.','');};
+  el.innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding-bottom:4px">'+vals.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;opacity:${0.5+v/mx*0.5}" title="${fmtK(v)}" style="height:${Math.max(Math.round(v/mx*70),v>0?4:0)}px;width:100%;background:var(--accent);border-radius:4px 4px 0 0"></div><div style="font-size:9px;color:var(--text3)">${lbMes(meses[i])}</div></div>`).join('')+'</div>';
+}
+function setEvolTipo(t){}
+
+function renderRanking(){
+  const el=document.getElementById('ranking-vend');
+  if(!el)return;
+  const mesSel=document.getElementById('rank-mes-sel');
+  const now=new Date();
+  const mes=mesSel?.value||(now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'));
+  if(mesSel&&!mesSel.innerHTML){
+    const meses=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,7)).filter(Boolean))].sort().reverse();
+    mesSel.innerHTML=meses.map(m=>{const d=new Date(m+'-01T12:00:00');return`<option value="${m}"${m===mes?' selected':''}>${d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</option>`;}).join('');
+  }
+  const ok=r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(mes);
+  const vends=vendedores();
+  const dados=vends.map(v=>{
+    const a=DB.adesionada.filter(r=>ok(r)&&r.vendedor===v);
+    const l=DB.linear.filter(r=>ok(r)&&r.vendedor===v);
+    const vol=a.reduce((s,r)=>s+r.valor_liq,0)+l.reduce((s,r)=>s+r.valor_liq,0);
+    const qt=a.length+l.length;
+    return{v,vol,qt};
+  }).filter(d=>d.qt>0).sort((a,b)=>b.vol-a.vol);
+  el.innerHTML=dados.length?dados.map((d,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:20px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°'}</div><div style="flex:1"><div style="font-size:13px;font-weight:600">${d.v}</div><div style="font-size:11px;color:var(--text3)">${d.qt} venda(s)</div></div><div style="font-size:14px;font-weight:700;color:var(--accent)">${fmtK(d.vol)}</div></div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhuma venda neste mês.</div>';
+}
+
+// ── Meta vs Realizado (funil) ─────────────────────────────────────────────────
 
 function renderDashMeta(){
   const el=document.getElementById('dash-meta');
@@ -3771,9 +3901,6 @@ function renderDash(){
   document.getElementById('kpi-vol-ano').textContent=fmtK(volAno);
   document.getElementById('kpi-vol-mes').textContent=volMes?fmtK(volMes):'R$ 0';
   document.getElementById('kpi-vol-s').innerHTML=`Ades: ${fmtK(va)} · Linear: ${fmtK(vl)}`;
-  document.getElementById('kpi-com').textContent=fmtK(com);
-  document.getElementById('kpi-tk').textContent=fmtK(tk);
-  document.getElementById('kpi-com-s').innerHTML=`Ades: ${fmtK(ca)} · Lin: ${fmtK(cl)}`;
 
   renderVolDestaque();
   renderDashMeta();
@@ -8203,14 +8330,6 @@ function togglePropComp(cb){
   if(thumb) thumb.style.transform=cb.checked?'translateX(18px)':'translateX(0)';
 }
 
-function togglePropComp(cb){
-  const track=document.getElementById('prop-comp-track');
-  const thumb=document.getElementById('prop-comp-thumb');
-  const fields=document.getElementById('prop-comp-fields');
-  if(track) track.style.background=cb.checked?'var(--accent)':'var(--bg3)';
-  if(thumb) thumb.style.transform=cb.checked?'translateX(18px)':'translateX(0)';
-  if(fields) fields.style.opacity=cb.checked?'1':'0.4';
-}
 
 function gerarPropostaPDF(){
   const cli=document.getElementById('prop-cli')?.value.trim()||'Cliente';
@@ -8913,9 +9032,6 @@ function updateUltimaSync(){
 }
 
 // ═══════════════════ RELATÓRIO PDF COMPLETO ═══════════════════════════════════
-function editFunilBtn(btn){
-  editFunil(btn.dataset.sem, btn.dataset.vend);
-}
 
 function editFunil(sem, vend){
   openModal('funil');
