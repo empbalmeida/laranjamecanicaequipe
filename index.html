@@ -3937,6 +3937,8 @@ function renderDashMeta(){
 
 
 function renderDash(){
+  try{
+
   // Preencher seletor de anos
   const anos=[...new Set([...DB.adesionada,...DB.linear].map(r=>r.data_contrato?.slice(0,4)).filter(Boolean))].sort().reverse();
   const sel=document.getElementById('dash-ano');
@@ -3947,20 +3949,18 @@ function renderDash(){
   const anoFiltro=sel?.value||'';
   // Preencher seletor de meses
   const mesSel=document.getElementById('dash-mes');
+  const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   if(mesSel){
     const cur=mesSel.value;
-    const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const mesesDisp=anos.length?MESES.map((m,i)=>({label:m,val:String(i+1).padStart(2,'0')})):[];
     mesSel.innerHTML='<option value="">Todos os meses</option>'+MESES.map((m,i)=>{const v=String(i+1).padStart(2,'0');return`<option value="${v}"${v===cur?' selected':''}>${m}</option>`;}).join('');
     mesSel.value=cur;
   }
   const mesFiltro=mesSel?.value||'';
-  const prefixoFiltro=anoFiltro?(anoFiltro+(mesFiltro?'-'+mesFiltro:'')):mesFiltro?('???-'+mesFiltro):'';
 
   const now=new Date();
   const anoAtual=now.getFullYear();
   const mesAtual=String(now.getMonth()+1).padStart(2,'0');
-  const prefixoMes=`${anoAtual}-${mesAtual}`;
+  const prefixoMes=mesFiltro?(mesFiltro.length===7?mesFiltro:(anoFiltro||String(anoAtual))+'-'+mesFiltro):`${anoAtual}-${mesAtual}`;
   const ok=r=>r.status!=='Cancelado';
   const filtroAno=r=>{
     if(!anoFiltro&&!mesFiltro) return true;
@@ -4011,6 +4011,11 @@ function renderDash(){
   renderRanking();
   renderDashRecv();
   renderDashAlertas();
+
+  }catch(e){
+    console.error("renderDash ERROR:",e.message, e.stack);
+    document.getElementById("dash-greeting").innerHTML='<div style="color:red;padding:20px">Erro: '+e.message+'</div>';
+  }
 }
 
 // ═══════════════════════════ FUNIL DE VENDAS ════════════════════════════════
