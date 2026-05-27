@@ -3953,55 +3953,112 @@ function renderDashMeta(){
   const el=document.getElementById('dash-meta-body');
   if(!el) return;
 
-  // Pegar meta de volume de vendas (R$) definida pelo usuário
-  const metaVol = parseFloat(localStorage.getItem('lm_meta_vol_mes')||'0');
-  const metaQt  = parseInt(localStorage.getItem('lm_meta_qt_mes')||'0');
-
-  // Volume real do mês atual
-  const now=new Date();
-  const mesAtual=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  const ok=r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(mesAtual);
-  const vendasMes=[...DB.adesionada,...DB.linear].filter(ok);
-  const volReal=vendasMes.reduce((s,r)=>s+(r.valor_liq||0),0);
-  const qtReal=vendasMes.length;
   const fmtK=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1)+'M':v>=1e3?'R$ '+(v/1e3).toFixed(0)+'K':'R$ '+Math.round(v||0).toLocaleString('pt-BR');
 
-  if(!metaVol&&!metaQt){
+  // Determinar mês de referência (respeita seletor do dashboard)
+  const now=new Date();
+  const anoAtual=now.getFullYear();
+  const mesAtualNum=String(now.getMonth()+1).padStart(2,'0');
+  const dashAnoEl=document.getElementById('dash-ano');
+  const dashMesEl=document.getElementById('dash-mes');
+  const anoRef=dashAnoEl?.value||String(anoAtual);
+  const mesRef=dashMesEl?.value||mesAtualNum;
+  const mesKey=anoRef+'-'+mesRef; // ex: "2026-05"
+
+  const metas=DB.metas||[];
+  const ok=r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(mesKey);
+  const vendasMes=[...DB.adesionada,...DB.linear].filter(ok);
+
+  // Identificar supervisoras (vendedores com campo supervisor vazio ou quem supervisionam outros)
+  const todosSupervisores=new Set();
+  DB.vendedores.forEach(v=>{ if(v.supervisor) todosSupervisores.add(v.supervisor); });
+  DB.adesionada.forEach(r=>{ if(r.supervisor) todosSupervisores.add(r.supervisor); });
+  DB.linear.forEach(r=>{ if(r.supervisor) todosSupervisores.add(r.supervisor); });
+
+  // Separar metas do mês por tipo
+  const metasMes=metas.filter(m=>m.mes===mesKey);
+  const metasVendedores=metasMes.filter(m=>!todosSupervisores.has(m.vendedor));
+  const metasSupervisoras=metasMes.filter(m=>todosSupervisores.has(m.vendedor));
+
+  if(metasMes.length===0){
     el.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:8px 0">
-      Nenhuma meta definida. Clique em <strong>Definir</strong> para configurar.
+      Nenhuma meta definida para este mês. Clique em <strong>Definir</strong> para configurar.
     </div>`;
     return;
   }
 
+  // Helper: barra de progresso
+  function barraBloco({label, volReal, qtReal, metaVol, metaQtd, mb='16px'}){
+    let h='';
+    if(metaVol>0){
+      const pct=Math.min(Math.round(volReal/metaVol*100),100);
+      const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
+      h+=`<div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--text2)">${label} — Volume</span>
+          <span style="font-size:12px;font-weight:700;color:${cor};font-family:DM Mono">${fmtK(volReal)} / ${fmtK(metaVol)} (${pct}%)</span>
+        </div>
+        <div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${cor};border-radius:999px;transition:width .8s"></div>
+        </div>
+        <div style="font-size:10px;color:${pct>=100?'var(--green)':'var(--text3)'};margin-top:2px">${pct>=100?'✓ Meta batida! 🎉':'Faltam '+fmtK(metaVol-volReal)}</div>
+      </div>`;
+    }
+    if(metaQtd>0){
+      const pct2=Math.min(Math.round(qtReal/metaQtd*100),100);
+      const cor2=pct2>=100?'var(--green)':pct2>=70?'var(--yellow)':'var(--accent)';
+      h+=`<div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--text2)">${label} — Qtd</span>
+          <span style="font-size:12px;font-weight:700;color:${cor2};font-family:DM Mono">${qtReal} / ${metaQtd} (${pct2}%)</span>
+        </div>
+        <div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden">
+          <div style="height:100%;width:${pct2}%;background:${cor2};border-radius:999px;transition:width .8s"></div>
+        </div>
+        <div style="font-size:10px;color:${pct2>=100?'var(--green)':'var(--text3)'};margin-top:2px">${pct2>=100?'✓ Meta batida! 🎉':'Faltam '+( metaQtd-qtReal)+' vendas'}</div>
+      </div>`;
+    }
+    return h?`<div style="margin-bottom:${mb}">${h}</div>`:'';
+  }
+
   let html='';
-  if(metaVol>0){
-    const pct=Math.min(Math.round(volReal/metaVol*100),100);
-    const cor=pct>=100?'var(--green)':pct>=70?'var(--yellow)':'var(--accent)';
-    html+=`<div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-size:12px;color:var(--text2)">💰 Volume de Vendas</span>
-        <span style="font-size:13px;font-weight:700;color:${cor};font-family:DM Mono">${fmtK(volReal)} / ${fmtK(metaVol)} (${pct}%)</span>
-      </div>
-      <div style="height:8px;background:var(--bg3);border-radius:999px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${cor};border-radius:999px;transition:width .8s"></div>
-      </div>
-      ${pct>=100?'<div style="font-size:11px;color:var(--green);margin-top:4px">✓ Meta de volume batida! 🎉</div>':`<div style="font-size:11px;color:var(--text3);margin-top:4px">Faltam ${fmtK(metaVol-volReal)}</div>`}
+
+  // ── SEÇÃO: Equipe (soma de todos os vendedores com meta) ──────────────────
+  if(metasVendedores.length>0){
+    const volEquipe=metasVendedores.reduce((s,m)=>s+(m.meta_vol||0),0);
+    const qtEquipe=metasVendedores.reduce((s,m)=>s+(m.meta_qtd||0),0);
+    const nomesVend=metasVendedores.map(m=>m.vendedor);
+    const volRealEquipe=vendasMes.filter(r=>nomesVend.includes(r.vendedor)).reduce((s,r)=>s+(r.valor_liq||0),0);
+    const qtRealEquipe=vendasMes.filter(r=>nomesVend.includes(r.vendedor)).length;
+
+    html+=`<div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">🏆 Equipe</div>
+      ${barraBloco({label:'Total', volReal:volRealEquipe, qtReal:qtRealEquipe, metaVol:volEquipe, metaQtd:qtEquipe, mb:'0'})}
     </div>`;
+
+    // ── SEÇÃO: Por vendedor ───────────────────────────────────────────────────
+    html+=`<div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">👤 Por Vendedor</div>`;
+    metasVendedores.forEach(m=>{
+      const vReal=vendasMes.filter(r=>r.vendedor===m.vendedor).reduce((s,r)=>s+(r.valor_liq||0),0);
+      const qReal=vendasMes.filter(r=>r.vendedor===m.vendedor).length;
+      html+=barraBloco({label:m.vendedor, volReal:vReal, qtReal:qReal, metaVol:m.meta_vol||0, metaQtd:m.meta_qtd||0});
+    });
+    html+=`</div>`;
   }
-  if(metaQt>0){
-    const pct2=Math.min(Math.round(qtReal/metaQt*100),100);
-    const cor2=pct2>=100?'var(--green)':pct2>=70?'var(--yellow)':'var(--accent)';
+
+  // ── SEÇÃO: Supervisora(s) ─────────────────────────────────────────────────
+  if(metasSupervisoras.length>0){
     html+=`<div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-size:12px;color:var(--text2)">🏆 Qtd de Vendas</span>
-        <span style="font-size:13px;font-weight:700;color:${cor2};font-family:DM Mono">${qtReal} / ${metaQt} (${pct2}%)</span>
-      </div>
-      <div style="height:8px;background:var(--bg3);border-radius:999px;overflow:hidden">
-        <div style="height:100%;width:${pct2}%;background:${cor2};border-radius:999px;transition:width .8s"></div>
-      </div>
-      ${pct2>=100?'<div style="font-size:11px;color:var(--green);margin-top:4px">✓ Meta de quantidade batida! 🎉</div>':`<div style="font-size:11px;color:var(--text3);margin-top:4px">Faltam ${metaQt-qtReal} vendas</div>`}
-    </div>`;
+      <div style="font-size:11px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">👑 Supervisora</div>`;
+    metasSupervisoras.forEach(m=>{
+      const vReal=vendasMes.filter(r=>r.supervisor===m.vendedor).reduce((s,r)=>s+(r.valor_liq||0),0);
+      const qReal=vendasMes.filter(r=>r.supervisor===m.vendedor).length;
+      html+=barraBloco({label:m.vendedor, volReal:vReal, qtReal:qReal, metaVol:m.meta_vol||0, metaQtd:m.meta_qtd||0});
+    });
+    html+=`</div>`;
   }
+
   el.innerHTML=html;
 }
 
