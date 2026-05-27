@@ -211,7 +211,7 @@ body{
 .hero-eyebrow{
   font-size:10px; font-weight:600; color:var(--accent);
   text-transform:uppercase; letter-spacing:2px;
-  font-family:'DM Mono',monospace; margin-bottom:2px;
+  font-family:var(--mono); margin-bottom:2px;
 }
 .hero-title{
   font-size:20px; font-weight:700;
@@ -226,7 +226,7 @@ body{
   display:flex; align-items:center; gap:8px; flex-shrink:0;
 }
 .hero-date{
-  font-size:12px; color:var(--text3); font-family:'DM Mono',monospace;
+  font-size:12px; color:var(--text3); font-family:var(--mono);
   background:var(--bg3); padding:5px 12px; border-radius:20px;
   border:1px solid var(--border);
 }
@@ -243,14 +243,14 @@ body{
 }
 .hero-metric-label{
   font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.8px;
-  font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:10px;
+  font-family:var(--mono);color:var(--text3);margin-bottom:10px;
 }
 .hero-metric-val{
   font-size:clamp(22px,2.8vw,36px);font-weight:800;letter-spacing:-.04em;line-height:1;
-  font-family:'DM Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .hero-metric-sub{
-  font-size:11px;color:var(--text3);margin-top:8px;font-family:'DM Mono',monospace;
+  font-size:11px;color:var(--text3);margin-top:8px;font-family:var(--mono);
 }
 
 /* ── KPI GRID ── */
@@ -278,7 +278,7 @@ body{
 .kpi-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:18px 18px 0 0;}
 .kpi-label{
   font-size:11px; color:var(--text3); text-transform:uppercase;
-  letter-spacing:1.5px; font-family:'DM Mono',monospace; margin-bottom:12px;
+  letter-spacing:1.5px; font-family:var(--mono); margin-bottom:12px;
 }
 .kpi-val{
   font-size:28px; font-weight:700; color:var(--text);
@@ -289,7 +289,7 @@ body{
 .kpi-sub-val{
   display:flex;flex-direction:column;gap:2px;
 }
-.kpi-sub-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:'DM Mono',monospace;}
+.kpi-sub-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);}
 .kpi-sub-num{font-size:19px;font-weight:700;letter-spacing:-.02em;}
 
 /* ── CARDS ── */
@@ -327,7 +327,7 @@ thead th{
   text-align:left;padding:10px 16px;
   font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.8px;
   color:var(--text3);border-bottom:1px solid var(--border);
-  background:var(--bg2);font-family:'DM Mono',monospace;white-space:nowrap;
+  background:var(--bg2);font-family:var(--mono);white-space:nowrap;
   position:sticky;top:0;z-index:2;
 }
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
@@ -335,13 +335,13 @@ tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:var(--bg3);}
 td{padding:11px 18px;color:var(--text2);}
 td:first-child{color:var(--text);font-weight:500;}
-.mono{font-family:'DM Mono',monospace;font-size:12px;}
+.mono{font-family:var(--mono);font-size:12px;}
 .val-g{color:var(--green);}
 .val-o{color:var(--accent);}
 .val-r{color:var(--red);}
 
 /* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:500;font-family:var(--mono);}
 .badge::before{content:'';width:5px;height:5px;border-radius:50%;}
 .b-pago,.b-ok,.b-presente{background:rgba(48,209,88,.12);color:var(--green);}
 .b-pago::before,.b-ok::before,.b-presente::before{background:var(--green);}
@@ -384,13 +384,13 @@ select.fi option{background:var(--bg2);}
 .bar-label{font-size:12px;color:var(--text2);width:72px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bar-track{flex:1;height:6px;background:var(--bg3);border-radius:999px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:999px;transition:width 1s cubic-bezier(.4,0,.2,1);}
-.bar-val{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;width:80px;}
+.bar-val{font-size:11px;color:var(--text3);font-family:var(--mono);width:80px;}
 
 /* ── DONUT ── */
 .donut-wrap{display:flex;align-items:center;gap:24px;padding:20px 22px;}
 .legend-item{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:12px;color:var(--text2);}
 .ldot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.lval{margin-left:auto;font-family:'DM Mono',monospace;font-size:11px;color:var(--text);}
+.lval{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text);}
 
 /* ── RANKING ── */
 .rank-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
@@ -402,15 +402,15 @@ select.fi option{background:var(--bg2);}
 .rank-name{flex:1;font-weight:500;font-size:13px;}
 .rank-bar{flex:2;height:5px;background:var(--bg3);border-radius:999px;overflow:hidden;}
 .rank-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
-.rank-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);white-space:nowrap;}
+.rank-val{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap;}
 
 /* ── RECV BARS ── */
 .recv-bar{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
 .recv-bar:last-child{border-bottom:none;}
-.recv-month{font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);width:80px;}
+.recv-month{font-size:12px;font-family:var(--mono);color:var(--text2);width:80px;}
 .recv-track{flex:1;height:8px;background:var(--bg3);border-radius:999px;overflow:hidden;}
 .recv-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));}
-.recv-val{font-size:12px;font-family:'DM Mono',monospace;color:var(--accent);width:90px;text-align:right;}
+.recv-val{font-size:12px;font-family:var(--mono);color:var(--accent);width:90px;text-align:right;}
 .recv-count{font-size:11px;color:var(--text3);width:60px;text-align:right;}
 
 /* ── PRESENÇA ── */
@@ -424,11 +424,11 @@ select.fi option{background:var(--bg2);}
 .mtab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 .week-block{background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:14px;overflow:hidden;}
 .week-hd{padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.week-title{font-size:12px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace;}
+.week-title{font-size:12px;font-weight:700;color:var(--accent);font-family:var(--mono);}
 .prow:hover{background:var(--bg2);}
-.day-hd{background:var(--bg2);font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;font-weight:500;}
+.day-hd{background:var(--bg2);font-size:10px;color:var(--text3);font-family:var(--mono);font-weight:500;}
 /* RESUMO MES */
-.rm-day{text-align:center;padding:6px 4px;font-size:10px;font-family:'DM Mono',monospace;min-width:34px;border-right:1px solid var(--border);color:var(--text3);white-space:nowrap;}
+.rm-day{text-align:center;padding:6px 4px;font-size:10px;font-family:var(--mono);min-width:34px;border-right:1px solid var(--border);color:var(--text3);white-space:nowrap;}
 .rm-day.weekend{color:var(--text3);background:var(--bg3);}
 .rm-cell{text-align:center;padding:5px 3px;font-size:11px;border-right:1px solid var(--border);cursor:default;}
 .rm-cell.p{color:var(--green);}
@@ -436,10 +436,10 @@ select.fi option{background:var(--bg2);}
 .rm-cell.h{color:var(--purple);}
 .rm-cell.e{color:var(--text3);}
 .rm-cell.t{color:var(--blue);}
-.rm-total{font-family:'DM Mono',monospace;font-size:11px;text-align:center;padding:5px 8px;border-right:1px solid var(--border);}
-.rm-pct{font-family:'DM Mono',monospace;font-size:11px;text-align:center;padding:5px 8px;font-weight:600;}
+.rm-total{font-family:var(--mono);font-size:11px;text-align:center;padding:5px 8px;border-right:1px solid var(--border);}
+.rm-pct{font-family:var(--mono);font-size:11px;text-align:center;padding:5px 8px;font-weight:600;}
 .rm-name{padding:7px 14px;font-size:12px;font-weight:500;border-right:1px solid var(--border);white-space:nowrap;min-width:100px;}
-.rm-hd-stat{text-align:center;padding:6px 8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);border-right:1px solid var(--border);}
+.rm-hd-stat{text-align:center;padding:6px 8px;font-size:10px;font-family:var(--mono);color:var(--text3);border-right:1px solid var(--border);}
 
 /* ── MODAL ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;}
@@ -451,7 +451,7 @@ select.fi option{background:var(--bg2);}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .fg{display:flex;flex-direction:column;gap:6px;}
 .fg.full{grid-column:1/-1;}
-.flabel{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;font-family:'DM Mono',monospace;margin-bottom:2px;}
+.flabel{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;font-family:var(--mono);margin-bottom:2px;}
 .finput{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:10px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;width:100%;}
 .finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
 .finput::placeholder{color:var(--text3);}
@@ -497,7 +497,7 @@ select.finput option{background:var(--bg2);}
 .sup-visible .sup-val{filter:none;}
 .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
-.badge-novo{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:1px 5px;border-radius:4px;background:rgba(48,209,88,.15);color:var(--green);margin-left:5px;vertical-align:middle;font-family:'DM Mono',monospace;}
+.badge-novo{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:1px 5px;border-radius:4px;background:rgba(48,209,88,.15);color:var(--green);margin-left:5px;vertical-align:middle;font-family:var(--mono);}
 /* Sortable headers */
 th.sortable{cursor:pointer;user-select:none;transition:color .15s;}
 th.sortable:hover{color:var(--accent);}
@@ -515,10 +515,10 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 .tr-detail td{padding:0!important;border-bottom:2px solid var(--accent);background:var(--bg2)!important;}
 .detail-panel{padding:16px 22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;animation:fadeUp .18s ease;}
 .detail-item{display:flex;flex-direction:column;gap:3px;}
-.detail-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-family:'DM Mono',monospace;font-weight:600;}
+.detail-label{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);font-family:var(--mono);font-weight:600;}
 .detail-val{font-size:12px;color:var(--text);font-weight:500;}
 .detail-actions{display:flex;gap:6px;align-items:center;padding:12px 22px;border-top:1px solid var(--border);background:var(--bg3);flex-wrap:wrap;}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--green);color:var(--green);padding:10px 20px;border-radius:12px;font-size:12px;z-index:400;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;font-family:'DM Mono',monospace;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--green);color:var(--green);padding:10px 20px;border-radius:12px;font-size:12px;z-index:400;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;font-family:var(--mono);}
 .toast.show{transform:translateY(0);opacity:1;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -538,7 +538,7 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 .sidebar-link.active{color:var(--accent);background:rgba(249,115,22,.08);font-weight:600;}
 .sidebar-link svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0;}
 .sidebar-sep{height:1px;background:var(--border);margin:6px 4px;}
-.sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);padding:8px 12px 4px;font-family:'DM Mono',monospace;}
+.sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);padding:8px 12px 4px;font-family:var(--mono);}
 .main-with-sidebar{margin-left:0;}
 .nav-links{display:none;}
 .nav-hamburger{display:flex!important;}
@@ -662,6 +662,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         </button>
         <div class="nav-dropdown">
           <button class="nav-dd-item" id="nl-simulador" onclick="nav('simulador')"><span class="dd-icon">🧮</span>Simulador</button>
+          <button class="nav-dd-item" id="nl-crm" onclick="nav('crm')"><span class="dd-icon">🎯</span>CRM Inteligente</button>
           <div class="nav-dd-sep"></div>
           <button class="nav-dd-item" id="nl-cadastro" onclick="nav('cadastro')"><span class="dd-icon">⚙️</span>Cadastros</button>
         </div>
@@ -673,8 +674,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <div id="busca-res" style="display:none;position:absolute;top:54px;left:220px;width:320px;max-height:380px;overflow-y:auto;background:var(--bg);border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow-md);z-index:500"></div>
       <span class="save-dot" id="save-dot" title="Dados salvos"></span>
       <button id="compact-btn" onclick="toggleCompact()" title="Modo compacto" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--text2);font-size:16px;line-height:1;border-radius:6px" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">⊟</button>
-      <span id="sync-status" title="Status de sincronização" style="font-size:10px;padding:2px 7px;border-radius:5px;margin-left:4px;font-family:'DM Mono',monospace;display:none"></span>
-      <span id="offline-badge" style="display:none;font-size:10px;padding:2px 7px;border-radius:5px;background:rgba(255,214,10,.15);color:var(--yellow);border:1px solid rgba(255,214,10,.3);margin-left:4px;font-family:'DM Mono',monospace">📶 Offline</span>
+      <span id="sync-status" title="Status de sincronização" style="font-size:10px;padding:2px 7px;border-radius:5px;margin-left:4px;font-family:var(--mono);display:none"></span>
+      <span id="offline-badge" style="display:none;font-size:10px;padding:2px 7px;border-radius:5px;background:rgba(255,214,10,.15);color:var(--yellow);border:1px solid rgba(255,214,10,.3);margin-left:4px;font-family:var(--mono)">📶 Offline</span>
       <div class="dot-live"></div>
       <button class="nav-btn nav-btn-ghost" onclick="toggleTheme()" id="theme-btn">☀️ Claro</button>
       <button class="nav-btn nav-btn-primary" id="top-btn" onclick="openModal()">+ Nova Venda</button>
@@ -725,6 +726,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   <button class="mob-nav-link" onclick="nav('metas');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Metas
   </button>
+  <button class="mob-nav-link" onclick="nav('crm');closeMobDrawer()">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> CRM
+  </button>
   <button class="mob-nav-link" onclick="nav('simulador');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Simulador
   </button>
@@ -772,6 +776,10 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     </button>
     <button class="sidebar-link" id="sl-diario" onclick="nav('diario')">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Diário da Equipe
+    </button>
+    <button class="sidebar-link" id="sl-crm" onclick="nav('crm')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>CRM Inteligente</span>
     </button>
     <button class="sidebar-link" id="sl-funil" onclick="nav('funil')">
       <svg viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>Funil de Vendas
@@ -1740,7 +1748,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
                 <span style="font-size:12px;color:var(--text3)">Auto</span>
               </div>
             </div>
-            <div id="sim-parcela-auto-row" style="font-size:13px;color:var(--text2);font-family:'DM Mono',monospace;min-height:20px">
+            <div id="sim-parcela-auto-row" style="font-size:13px;color:var(--text2);font-family:var(--mono);min-height:20px">
               Será calculada automaticamente a partir dos campos acima.
             </div>
             <div id="sim-parcela-manual-row" style="display:none">
@@ -2441,7 +2449,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)">
             <div style="font-size:13px;color:var(--text2)">Última sincronização</div>
-            <div id="ultima-sync-label" style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace">—</div>
+            <div id="ultima-sync-label" style="font-size:12px;color:var(--text3);font-family:var(--mono)">—</div>
           </div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="font-size:13px;color:var(--text2)">Relatório completo em PDF</div>
@@ -2480,7 +2488,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
             <button class="btn btn-g" style="font-size:12px" onclick="testSupabaseConnection()">🔌 Testar Conexão</button>
             <button class="btn btn-g" style="font-size:12px;color:var(--red)" onclick="clearSupabaseConfig()">✕ Remover Config</button>
           </div>
-          <div id="cfg-sb-msg" style="font-size:12px;margin-top:10px;min-height:16px;font-family:'DM Mono',monospace"></div>
+          <div id="cfg-sb-msg" style="font-size:12px;margin-top:10px;min-height:16px;font-family:var(--mono)"></div>
         </div>
       </div>
 
@@ -2523,7 +2531,104 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     </div>
   </div>
 
+
+  <!-- CRM INTELIGENTE -->
+  <div class="page" id="page-crm">
+    <div class="section-sm">
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px">
+        <div class="kpi"><div class="kpi-accent" style="background:var(--blue)"></div><div class="kpi-label">Total de Leads</div><div class="kpi-val" id="crm-kpi-total" style="color:var(--blue)">0</div><div class="kpi-sub" id="crm-kpi-total-sub">—</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:var(--green)"></div><div class="kpi-label">% Comparecimento</div><div class="kpi-val" id="crm-kpi-comp" style="color:var(--green)">—</div><div class="kpi-sub" id="crm-kpi-comp-sub">—</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:var(--accent)"></div><div class="kpi-label">% Fechamento</div><div class="kpi-val" id="crm-kpi-fech" style="color:var(--accent)">—</div><div class="kpi-sub" id="crm-kpi-fech-sub">—</div></div>
+        <div class="kpi"><div class="kpi-accent" style="background:var(--red)"></div><div class="kpi-label">% Não Compareceu</div><div class="kpi-val" id="crm-kpi-nc" style="color:var(--red)">—</div><div class="kpi-sub" id="crm-kpi-nc-sub">—</div></div>
+      </div>
+
+      <!-- Alertas -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Alertas do Sistema
+            <span id="crm-alert-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;font-family:var(--mono);padding:1px 7px;border-radius:20px;font-weight:700;margin-left:6px">0</span>
+          </div>
+          <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="crmLimparAlertas()">Limpar</button>
+        </div>
+        <div id="crm-alerts-list" style="padding:12px 16px;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto">
+          <div id="crm-no-alerts" style="color:var(--text3);font-size:12px;font-family:var(--mono);padding:12px 0">Nenhum alerta. Sistema monitorando…</div>
+        </div>
+      </div>
+
+      <!-- Insights 3 colunas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">👤 Por Vendedor</div></div>
+          <div id="crm-insight-vend" style="padding:0 16px 12px;display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">📌 Motivos de Perda</div></div>
+          <div id="crm-insight-motivos" style="padding:0 16px 12px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">🧬 Padrões Detectados</div></div>
+          <div id="crm-insight-patterns" style="padding:0 16px 12px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <button id="crm-per-todos"  onclick="crmSetPeriodo('todos')"  class="btn btn-g" style="border-radius:0;border:none;font-size:11px;padding:5px 12px;background:var(--accent);color:#fff">Todos</button>
+          <button id="crm-per-hoje"   onclick="crmSetPeriodo('hoje')"   class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 12px">Hoje</button>
+          <button id="crm-per-semana" onclick="crmSetPeriodo('semana')" class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 12px">Esta semana</button>
+          <button id="crm-per-mes"    onclick="crmSetPeriodo('mes')"    class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 12px">Este mês</button>
+        </div>
+        <div style="position:relative;flex:1;min-width:150px">
+          <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="crm-busca" placeholder="Buscar cliente…" oninput="crmRenderTabela()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px 7px 28px;font-size:12px;color:var(--text);outline:none">
+        </div>
+        <select class="fi" id="crm-fil-vend" onchange="crmRenderTabela()" style="font-size:12px;padding:6px 10px"><option value="">Todos vendedores</option></select>
+        <select class="fi" id="crm-fil-status" onchange="crmRenderTabela()" style="font-size:12px;padding:6px 10px">
+          <option value="">Todos status</option>
+          <option value="compareceu">Compareceu</option>
+          <option value="nao_compareceu">Não compareceu</option>
+        </select>
+        <select class="fi" id="crm-fil-result" onchange="crmRenderTabela()" style="font-size:12px;padding:6px 10px">
+          <option value="">Todos resultados</option>
+          <option value="fechou">Fechou</option>
+          <option value="nao_fechou">Não fechou</option>
+        </select>
+        <button class="btn btn-o" onclick="openModal('crm-reg')" style="font-size:12px">+ Adicionar Cliente</button>
+        <button class="btn btn-g" onclick="crmExportarCSV()" style="font-size:12px">↓ CSV</button>
+      </div>
+
+      <!-- Tabela -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="tbl-outer">
+          <div class="tbl-scroll-top"><div class="tbl-scroll-top-inner"></div></div>
+          <div class="tbl-wrap">
+            <table id="crm-tbl">
+              <thead><tr>
+                <th onclick="crmSort('data')">Data ↕</th>
+                <th onclick="crmSort('vendedor')">Vendedor ↕</th>
+                <th onclick="crmSort('cliente')">Cliente ↕</th>
+                <th>Temp.</th>
+                <th>Status</th>
+                <th>Resultado</th>
+                <th>Motivo</th>
+                <th>WhatsApp</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="crm-tbl-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- /page-crm -->
 </main>
+
 
 <!-- MODAL PRINCIPAL -->
 <div class="overlay" id="overlay" onclick="closeModal(event)">
@@ -2934,7 +3039,7 @@ function stats(){
 }
 
 // ═══════════════════════════════ NAVIGATE ════════════════════════════════════
-const TITLES={dashboard:'Dashboard',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
+const TITLES={dashboard:'Dashboard',crm:'CRM Inteligente',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
@@ -3074,6 +3179,7 @@ function render(p){
     funil:()=>renderFunil(),
     ia:()=>renderIA(),
     diario:()=>renderDiario(),
+    crm:()=>renderCRM(),
     portal:()=>renderPortal(),
     cadastro:()=>renderCad(),
   };
@@ -3155,11 +3261,11 @@ function renderMetasProgress(mes){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:13px;font-weight:600;color:var(--text)">${v}</span>
-          <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">${qtdReal} venda${qtdReal!==1?'s':''}${metaQtd?' / meta '+metaQtd:''}</span>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${qtdReal} venda${qtdReal!==1?'s':''}${metaQtd?' / meta '+metaQtd:''}</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace">Com: <span style="color:var(--green)">${fmt(comTotal)}</span></span>
-          <span style="font-size:12px;font-weight:700;color:${pctColor};font-family:'DM Mono',monospace">${metaVol>0?pct+'%':'Sem meta'}</span>
+          <span style="font-size:11px;color:var(--text2);font-family:var(--mono)">Com: <span style="color:var(--green)">${fmt(comTotal)}</span></span>
+          <span style="font-size:12px;font-weight:700;color:${pctColor};font-family:var(--mono)">${metaVol>0?pct+'%':'Sem meta'}</span>
         </div>
       </div>
       <div style="position:relative;height:10px;background:var(--bg3);border-radius:999px;overflow:hidden">
@@ -3167,7 +3273,7 @@ function renderMetasProgress(mes){
         ${metaVol>0?'<div style="position:absolute;right:0;top:50%;transform:translateY(-50%);width:2px;height:14px;background:var(--text3);border-radius:2px;margin-top:-2px"></div>':''}
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace">${fmtK(volReal)}</span>
+        <span style="font-size:11px;color:var(--accent);font-family:var(--mono)">${fmtK(volReal)}</span>
         ${metaVol>0?('<span style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace">Meta: '+fmtK(metaVol)+'</span>'):('<button onclick="openMetaMes(\''+v+'\''+',\''+mes+'\')" style="font-size:10px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:inherit">+ Definir meta</button>')}
       </div>
     </div>`;
@@ -3197,12 +3303,12 @@ function renderExtratoMensal(mes){
       <div style="text-align:right">
         ${comA>0?`<div style="font-size:11px;color:var(--text2)">Ades: <span class="mono" style="color:var(--accent)">${fmt(comA)}</span></div>`:''}
         ${comL>0?`<div style="font-size:11px;color:var(--text2)">Linear: <span class="mono" style="color:var(--purple)">${fmt(comL)}</span></div>`:''}
-        <div style="font-size:14px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${fmt(comTotal)}</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green);font-family:var(--mono)">${fmt(comTotal)}</div>
       </div>
     </div>`;
   }).filter(Boolean).join('');
   el.innerHTML=(rows||'<div style="padding:20px 22px;color:var(--text3);font-size:13px">Sem comissões neste mês.</div>')
-    +(totalGeral>0?`<div style="display:flex;justify-content:space-between;padding:12px 22px;border-top:2px solid var(--border2)"><span style="font-size:13px;font-weight:600">Total Equipe</span><span style="font-size:15px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace">${fmt(totalGeral)}</span></div>`:'');
+    +(totalGeral>0?`<div style="display:flex;justify-content:space-between;padding:12px 22px;border-top:2px solid var(--border2)"><span style="font-size:13px;font-weight:600">Total Equipe</span><span style="font-size:15px;font-weight:700;color:var(--green);font-family:var(--mono)">${fmt(totalGeral)}</span></div>`:'');
 }
 
 function renderEvolVendedor(){
@@ -4152,6 +4258,365 @@ function renderDashMeta(){
 
   el.innerHTML=html;
 }
+
+
+// ══════════════════════════════ CRM INTELIGENTE ══════════════════════════════
+
+let crmDB = JSON.parse(localStorage.getItem('crm_lm_v1')||'[]');
+let crmSortCol = 'data', crmSortDir = -1;
+let crmAlertas = [], crmEditIdx = null;
+
+function crmSave(){ localStorage.setItem('crm_lm_v1', JSON.stringify(crmDB)); }
+
+function crmCalcTemp(r){
+  if(r.resultado==='fechou') return 'quente';
+  if(r.status==='compareceu'&&r.resultado==='nao_fechou') return 'morno';
+  return 'frio';
+}
+
+function renderCRM(){
+  crmRenderKPIs();
+  crmRenderAlertas();
+  crmRenderInsights();
+  crmRenderTabela();
+}
+
+function crmRenderKPIs(){
+  const n=crmDB.length;
+  const el=(id)=>document.getElementById(id);
+  el('crm-kpi-total').textContent=n;
+  el('crm-kpi-total-sub').textContent=n===1?'1 atendimento':n+' atendimentos';
+  if(!n){['crm-kpi-comp','crm-kpi-fech','crm-kpi-nc'].forEach(id=>el(id).textContent='—');return;}
+  const comp=crmDB.filter(r=>r.status==='compareceu').length;
+  const nc=crmDB.filter(r=>r.status==='nao_compareceu').length;
+  const fech=crmDB.filter(r=>r.resultado==='fechou').length;
+  const pComp=Math.round(comp/n*100);
+  const pNc=Math.round(nc/n*100);
+  const pFech=comp>0?Math.round(fech/comp*100):0;
+  el('crm-kpi-comp').textContent=pComp+'%';
+  el('crm-kpi-comp-sub').textContent=comp+' compareceram';
+  el('crm-kpi-fech').textContent=pFech+'%';
+  el('crm-kpi-fech-sub').textContent=fech+' fech / '+comp+' presenças';
+  el('crm-kpi-nc').textContent=pNc+'%';
+  el('crm-kpi-nc-sub').textContent=nc+' não compareceram';
+}
+
+function crmRenderAlertas(){
+  const novos=[];
+  const vends=[...new Set(crmDB.map(r=>r.vendedor))].filter(Boolean);
+  // Regra 1: 3+ NC seguidos
+  vends.forEach(v=>{
+    const vR=crmDB.filter(r=>r.vendedor===v).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+    let seq=0;for(const r of vR){if(r.status==='nao_compareceu')seq++;else break;}
+    if(seq>=3) novos.push({nivel:'crit',icon:'🚨',title:'Alta taxa de NC: '+v,desc:seq+' não comparecimentos seguidos',key:'nc_seq_'+v});
+  });
+  // Regra 2: motivo 3+ vezes
+  const motivos={};
+  crmDB.forEach(r=>{
+    if(r.motivoPerda) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1;
+    if(r.motivoNc) motivos[r.motivoNc]=(motivos[r.motivoNc]||0)+1;
+  });
+  Object.entries(motivos).forEach(([m,c])=>{
+    if(c>=3) novos.push({nivel:'warn',icon:'⚠️',title:'Motivo recorrente: "'+m+'"',desc:c+'x detectado',key:'mot_'+m});
+  });
+  // Regra 3: fechamento < 30%
+  vends.forEach(v=>{
+    const vC=crmDB.filter(r=>r.vendedor===v&&r.status==='compareceu');
+    if(vC.length<3) return;
+    const tx=Math.round(vC.filter(r=>r.resultado==='fechou').length/vC.length*100);
+    if(tx<30) novos.push({nivel:'warn',icon:'📉',title:'Queda de conversão: '+v,desc:tx+'% (mín. 30%)',key:'fech_'+v});
+  });
+  // Regra 4: clientes sumindo
+  const sumindo=crmDB.filter(r=>r.motivoNc==='Sumiu após agendamento'||r.motivoNc==='Contato pelo WhatsApp sumiu').length;
+  if(sumindo>=3) novos.push({nivel:'crit',icon:'👻',title:'Clientes sumindo após agendamento',desc:sumindo+' casos',key:'sumindo'});
+  // Regra 5: sem fech nos últimos 5
+  if(crmDB.length>=5){
+    const u5=crmDB.slice(-5);
+    if(u5.every(r=>r.resultado!=='fechou')) novos.push({nivel:'warn',icon:'⚡',title:'Sem fechamentos recentes',desc:'Últimos 5 sem conversão',key:'sem_fech'});
+  }
+  // Deduplica
+  const keys=new Set(crmAlertas.map(a=>a.key));
+  novos.forEach(a=>{if(!keys.has(a.key)) crmAlertas.unshift({...a,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});});
+  crmAlertas=crmAlertas.filter(a=>novos.some(n=>n.key===a.key));
+
+  const list=document.getElementById('crm-alerts-list');
+  const noMsg=document.getElementById('crm-no-alerts');
+  const badge=document.getElementById('crm-alert-badge');
+  const strip=document.getElementById('crm-alert-strip');
+  const stripInner=document.getElementById('crm-alert-strip-inner');
+  if(!list) return;
+
+  if(!crmAlertas.length){
+    badge.style.display='none';
+    if(strip) strip.style.display='none';
+    list.innerHTML='';
+    if(noMsg){noMsg.style.display='';list.appendChild(noMsg);}
+    return;
+  }
+  if(noMsg) noMsg.style.display='none';
+  badge.style.display='';
+  badge.textContent=crmAlertas.length;
+
+  const corMap={crit:'rgba(239,68,68,.1)',warn:'rgba(234,179,8,.08)',info:'rgba(59,130,246,.08)'};
+  const bdrMap={crit:'rgba(239,68,68,.25)',warn:'rgba(234,179,8,.25)',info:'rgba(59,130,246,.2)'};
+  list.innerHTML=crmAlertas.map(a=>`
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;background:${corMap[a.nivel]};border:1px solid ${bdrMap[a.nivel]}">
+      <span style="font-size:14px;flex-shrink:0">${a.icon}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${a.title}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${a.desc}</div>
+      </div>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);white-space:nowrap">${a.time}</span>
+    </div>`).join('');
+
+  const crits=crmAlertas.filter(a=>a.nivel==='crit');
+  if(strip){
+    strip.style.display=crits.length?'':'none';
+    if(stripInner) stripInner.innerHTML=crits.map(a=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5">${a.icon} ${a.title}</span>`).join('');
+  }
+}
+
+function crmLimparAlertas(){ crmAlertas=[]; crmRenderAlertas(); toast('Alertas limpos.'); }
+
+function crmRenderInsights(){
+  const vends=[...new Set(crmDB.map(r=>r.vendedor))].filter(Boolean).sort();
+  // Por vendedor
+  const elV=document.getElementById('crm-insight-vend');
+  if(elV) elV.innerHTML=vends.length?vends.map(v=>{
+    const vR=crmDB.filter(r=>r.vendedor===v);
+    const comp=vR.filter(r=>r.status==='compareceu').length;
+    const fech=vR.filter(r=>r.resultado==='fechou').length;
+    const txC=vR.length?Math.round(comp/vR.length*100):0;
+    const txF=comp?Math.round(fech/comp*100):0;
+    const cC=txC>=70?'var(--green)':txC>=40?'var(--yellow)':'var(--red)';
+    const cF=txF>=40?'var(--green)':txF>=20?'var(--yellow)':'var(--red)';
+    return `<div style="padding:10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+      <div style="font-family:var(--mono);font-weight:700;font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between">${v}<span style="color:var(--text3);font-weight:400">${vR.length} atend.</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:${cC}">Comp: ${txC}%</span>
+        <span style="font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:${cF}">Fech: ${txF}%</span>
+      </div>
+    </div>`;
+  }).join(''):'<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">Aguardando dados…</div>';
+
+  // Motivos
+  const motivos={};
+  crmDB.forEach(r=>{ if(r.motivoPerda) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1; });
+  const mList=Object.entries(motivos).sort((a,b)=>b[1]-a[1]);
+  const maxM=mList[0]?.[1]||1;
+  const elM=document.getElementById('crm-insight-motivos');
+  if(elM) elM.innerHTML=mList.length?mList.map(([m,ct])=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--text2);min-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m}</span>
+      <div style="flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.round(ct/maxM*100)}%;background:var(--accent);border-radius:2px"></div></div>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${ct}x</span>
+    </div>`).join(''):'<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">Sem dados de perda.</div>';
+
+  // Padrões
+  const pats=[];
+  vends.forEach(v=>{
+    const vR=crmDB.filter(r=>r.vendedor===v).sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+    let seq=0;for(const r of vR){if(r.status==='nao_compareceu')seq++;else break;}
+    if(seq>=3) pats.push({e:'🔴',t:v+': '+seq+' NC seguidos',c:seq,cor:'var(--red)'});
+  });
+  Object.entries(motivos).filter(([,ct])=>ct>=3).forEach(([m,ct])=>pats.push({e:'📌',t:m,c:ct,cor:'var(--yellow)'}));
+  const sumindo=crmDB.filter(r=>r.motivoNc==='Sumiu após agendamento'||r.motivoNc==='Contato pelo WhatsApp sumiu').length;
+  if(sumindo>=3) pats.push({e:'👻',t:'Clientes sumindo',c:sumindo,cor:'var(--red)'});
+  const elP=document.getElementById('crm-insight-patterns');
+  if(elP) elP.innerHTML=pats.length?pats.map(p=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+      <span style="font-size:15px">${p.e}</span>
+      <span style="font-size:12px;color:var(--text2);flex:1">${p.t}</span>
+      <span style="font-size:11px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:20px;background:var(--bg);color:${p.cor}">${p.c}x</span>
+    </div>`).join(''):'<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">Nenhum padrão.</div>';
+}
+
+let crmPeriodo='todos';
+
+function crmSetPeriodo(p){
+  crmPeriodo=p;
+  ['todos','hoje','semana','mes'].forEach(x=>{
+    const btn=document.getElementById('crm-per-'+x);
+    if(!btn) return;
+    btn.style.background=x===p?'var(--accent)':'';
+    btn.style.color=x===p?'#fff':'';
+  });
+  crmRenderTabela();
+}
+
+function crmFiltrarPeriodo(rows){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const hoje=now.toISOString().slice(0,10);
+  const dow=now.getDay();
+  const seg=new Date(now); seg.setDate(now.getDate()-(dow===0?6:dow-1));
+  const segStr=seg.toISOString().slice(0,10);
+  const mes=hoje.slice(0,7);
+  if(crmPeriodo==='hoje')   return rows.filter(r=>r.data===hoje);
+  if(crmPeriodo==='semana') return rows.filter(r=>r.data>=segStr&&r.data<=hoje);
+  if(crmPeriodo==='mes')    return rows.filter(r=>r.data?.startsWith(mes));
+  return rows;
+}
+
+function crmWppVendedor(r){
+  // Buscar telefone do vendedor no cadastro
+  const vend=DB.vendedores.find(v=>v.nome===r.vendedor||v.nome.toLowerCase()===r.vendedor?.toLowerCase());
+  const tel=vend?.telefone?.replace(/\D/g,'');
+  if(!tel){toast('⚠ Telefone do vendedor não cadastrado. Vá em Cadastros → Vendedor.');return;}
+  const msg=`Oi ${r.vendedor}! 👋 Passando para perguntar sobre o cliente *${r.cliente}*, que tinha atendimento em ${r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'data não informada'}. Qual foi a situação real? Compareceu? Fechou negócio? Me atualiza! 🍊`;
+  window.open('https://wa.me/55'+tel+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+function crmWppCliente(r){
+  const tel=r.telCliente?.replace(/\D/g,'');
+  if(!tel){toast('⚠ Telefone do cliente não cadastrado neste registro.');return;}
+  const msg=`Olá *${r.cliente}*! 😊 Aqui é da *Laranja Mecânica*. Gostaríamos de confirmar seu atendimento${r.data?' em '+new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):''}. Tudo certo para nossa conversa? Qualquer dúvida, estamos à disposição! 🍊`;
+  window.open('https://wa.me/55'+tel+'?text='+encodeURIComponent(msg),'_blank');
+}
+
+function crmSort(col){ if(crmSortCol===col) crmSortDir*=-1; else{crmSortCol=col;crmSortDir=-1;} crmRenderTabela(); }
+
+function crmRenderTabela(){
+  const busca=(document.getElementById('crm-busca')?.value||'').toLowerCase();
+  const fV=document.getElementById('crm-fil-vend')?.value||'';
+  const fS=document.getElementById('crm-fil-status')?.value||'';
+  const fR=document.getElementById('crm-fil-result')?.value||'';
+
+  // Popular filtro vendedor
+  const vendEl=document.getElementById('crm-fil-vend');
+  if(vendEl){
+    const vends=[...new Set(crmDB.map(r=>r.vendedor))].filter(Boolean).sort();
+    const cur=vendEl.value;
+    vendEl.innerHTML='<option value="">Todos vendedores</option>'+vends.map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+  }
+
+  let rows=crmDB.map((r,i)=>({...r,_i:i}));
+  rows=crmFiltrarPeriodo(rows);
+  if(fV) rows=rows.filter(r=>r.vendedor===fV);
+  if(fS) rows=rows.filter(r=>r.status===fS);
+  if(fR) rows=rows.filter(r=>r.resultado===fR);
+  if(busca) rows=rows.filter(r=>(r.cliente||'').toLowerCase().includes(busca)||(r.vendedor||'').toLowerCase().includes(busca));
+  rows.sort((a,b)=>(a[crmSortCol]||'').toString().localeCompare((b[crmSortCol]||'').toString())*crmSortDir);
+
+  const tbody=document.getElementById('crm-tbl-body');
+  if(!tbody) return;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text3);font-size:12px;font-family:var(--mono)">Nenhum registro encontrado.</td></tr>';return;}
+
+  const statusBadge=s=>s==='compareceu'
+    ?'<span class="badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)">✓ Compareceu</span>'
+    :'<span class="badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">✗ Não compareceu</span>';
+
+  const resultBadge=r=>r==='fechou'
+    ?'<span class="badge" style="background:rgba(249,115,22,.1);color:var(--accent);border:1px solid rgba(249,115,22,.2)">🏆 Fechou</span>'
+    :r==='nao_fechou'?'<span class="badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">Não fechou</span>'
+    :'<span class="badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border)">—</span>';
+
+  const tempBadge=t=>{
+    const map={quente:['🔥','var(--accent)','rgba(249,115,22,.1)'],morno:['🌡','var(--yellow)','rgba(234,179,8,.1)'],frio:['❄','var(--blue)','rgba(59,130,246,.1)']};
+    const [ico,cor,bg]=map[t]||map.frio;
+    return `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:${bg};color:${cor}">${ico} ${t.charAt(0).toUpperCase()+t.slice(1)}</span>`;
+  };
+
+  tbody.innerHTML=rows.map(r=>{
+    const temp=crmCalcTemp(r);
+    const dt=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+    const mot=r.motivoPerda||r.motivoNc||'—';
+        const hasWppVend=!!(DB.vendedores.find(v=>v.nome===r.vendedor)?.telefone);
+    const hasWppCli=!!r.telCliente;
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${dt}</td>
+      <td style="font-weight:600;font-size:13px">${r.vendedor||'—'}</td>
+      <td style="font-size:12px">${r.cliente||'—'}</td>
+      <td>${tempBadge(temp)}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${resultBadge(r.resultado)}</td>
+      <td style="color:var(--text3);font-size:11px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${mot}">${mot}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-g" title="${hasWppVend?'Lembrete ao vendedor':'Cadastre o tel. do vendedor'}" style="font-size:10px;padding:3px 7px;${hasWppVend?'color:#25d366':'opacity:.4'}" onclick="crmWppVendedor(crmDB[${r._i}])">📲 Vend</button>
+        <button class="btn btn-g" title="${hasWppCli?'Mensagem ao cliente':'Cadastre o tel. do cliente'}" style="font-size:10px;padding:3px 7px;margin-left:3px;${hasWppCli?'color:#25d366':'opacity:.4'}" onclick="crmWppCliente(crmDB[${r._i}])">📲 Cli</button>
+      </td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-g" style="font-size:10px;padding:3px 8px" onclick="crmOpenEdit(${r._i})">✎</button>
+        <button class="btn btn-g" style="font-size:10px;padding:3px 8px;color:var(--red);margin-left:3px" onclick="crmDeletar(${r._i})">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function crmOpenEdit(idx){
+  crmEditIdx=idx;
+  openModal('crm-reg');
+  setTimeout(()=>{
+    const r=crmDB[idx];
+    document.getElementById('f-crm-data').value=r.data||'';
+    document.getElementById('f-crm-vend').value=r.vendedor||'';
+    document.getElementById('f-crm-cliente').value=r.cliente||'';
+    document.getElementById('f-crm-status').value=r.status||'';
+    document.getElementById('f-crm-motivo-nc').value=r.motivoNc||'';
+    document.getElementById('f-crm-resultado').value=r.resultado||'';
+    document.getElementById('f-crm-motivo-perda').value=r.motivoPerda||'';
+    const telCli=document.getElementById('f-crm-tel-cliente');if(telCli)telCli.value=r.telCliente||'';
+    document.getElementById('f-crm-obs').value=r.obs||'';
+    crmOnStatus();
+    crmOnResultado();
+  },30);
+}
+
+function crmDeletar(idx){
+  if(!confirm('Remover este lead?')) return;
+  crmDB.splice(idx,1);
+  crmSave();
+  renderCRM();
+  toast('Lead removido.');
+}
+
+function crmOnStatus(){
+  const s=document.getElementById('f-crm-status')?.value;
+  document.getElementById('f-crm-cond-nc').style.display=s==='nao_compareceu'?'':'none';
+  document.getElementById('f-crm-cond-res').style.display=s==='compareceu'?'':'none';
+  if(s!=='compareceu') document.getElementById('f-crm-cond-perda').style.display='none';
+}
+function crmOnResultado(){
+  const r=document.getElementById('f-crm-resultado')?.value;
+  document.getElementById('f-crm-cond-perda').style.display=r==='nao_fechou'?'':'none';
+}
+
+function crmSalvar(){
+  const vend=document.getElementById('f-crm-vend')?.value;
+  const cliente=document.getElementById('f-crm-cliente')?.value.trim();
+  const status=document.getElementById('f-crm-status')?.value;
+  if(!vend||!cliente||!status){toast('⚠ Preencha vendedor, cliente e status.');return;}
+  const rec={
+    id:crmEditIdx!==null?crmDB[crmEditIdx].id:Date.now(),
+    data:document.getElementById('f-crm-data').value,
+    vendedor:vend,cliente,status,
+    motivoNc:document.getElementById('f-crm-motivo-nc').value,
+    resultado:status==='compareceu'?document.getElementById('f-crm-resultado').value:'nao_se_aplica',
+    motivoPerda:document.getElementById('f-crm-motivo-perda').value,
+    telCliente:document.getElementById('f-crm-tel-cliente')?.value.trim()||'',
+    obs:document.getElementById('f-crm-obs').value.trim(),
+    ts:Date.now()
+  };
+  if(crmEditIdx!==null){crmDB[crmEditIdx]=rec;toast('✓ Lead atualizado!');}
+  else{crmDB.push(rec);toast('✓ Lead registrado!');}
+  crmEditIdx=null;
+  crmSave();
+  document.getElementById('overlay').classList.remove('open');
+  renderCRM();
+}
+
+function crmExportarCSV(){
+  if(!crmDB.length){toast('Sem dados para exportar.');return;}
+  const cols=['data','vendedor','cliente','status','motivoNc','resultado','motivoPerda','obs'];
+  const header=['Data','Vendedor','Cliente','Status','Motivo NC','Resultado','Motivo Perda','Obs'];
+  const csv=[header.join(','),...crmDB.map(r=>cols.map(c=>`"${(r[c]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='crm_laranja_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('CSV exportado!');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 
 
 function renderDash(){
@@ -5407,13 +5872,13 @@ function renderComSup(){
       return`<div class="card" style="margin-bottom:16px">
         <div class="card-hd" style="background:linear-gradient(135deg,rgba(191,90,242,.08),transparent)">
           <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:13px;font-weight:700;color:var(--purple);font-family:'DM Mono',monospace"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${mes}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--purple);font-family:var(--mono)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${mes}</span>
             <span style="font-size:11px;color:var(--text3)">${rows.length} registro(s)</span>
           </div>
           <div style="display:flex;gap:16px;align-items:center">
-            <span style="font-size:11px;color:var(--green);font-family:'DM Mono',monospace">✓ ${fmt(pagoMes)}</span>
-            <span style="font-size:11px;color:var(--yellow);font-family:'DM Mono',monospace"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${fmt(pendMes)}</span>
-            <span style="font-size:13px;font-weight:700;color:var(--purple);font-family:'DM Mono',monospace">${fmt(totMes)}</span>
+            <span style="font-size:11px;color:var(--green);font-family:var(--mono)">✓ ${fmt(pagoMes)}</span>
+            <span style="font-size:11px;color:var(--yellow);font-family:var(--mono)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${fmt(pendMes)}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--purple);font-family:var(--mono)">${fmt(totMes)}</span>
           </div>
         </div>
         <div class="tbl-outer"><div class="tbl-scroll-top"><div class="tbl-scroll-top-inner"></div></div>
@@ -6025,6 +6490,7 @@ function editCad(tipo, i){
       if(supSel) supSel.value=v.supervisor||'';
       set('f-pa',v.pct_ades);
       set('f-pl',v.pct_lin);
+      set('f-tel-vend',v.telefone||'');
       // Change save to update
       modalEditIdx={tipo:'vend',i};
       document.getElementById('m-title').textContent='✏ Editar Vendedor';
@@ -6177,7 +6643,7 @@ function openModal(type='ades'){
     <div class="step-panel" id="sp-ades-3">
       <div class="fg"><label class="flabel">% Comissão</label><input class="finput" id="f-pct" type="number" step="0.001" placeholder="ex: 0.006"></div>
       <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:14px 16px;margin-top:6px" class="fg full">
-        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-family:'DM Mono',monospace">👑 Supervisora (opcional)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-family:var(--mono)">👑 Supervisora (opcional)</div>
         <div class="fgrid" style="gap:10px">
           <div class="fg"><label class="flabel">Supervisor</label><select class="finput" id="f-sup-nome"><option value="">Nenhum</option>${supOpts}</select></div>
           <div class="fg"><label class="flabel">Tabela Supervisora</label><select class="finput" id="f-sup-tab" onchange="autoSupPct('ades')"><option value="">Selecione a tabela…</option>${tOpts}</select></div>
@@ -6241,7 +6707,7 @@ function openModal(type='ades'){
       <div class="fg"><label class="flabel">% Mês 2</label><input class="finput" id="f-p2" type="number" step="0.001" placeholder="0.003"></div>
       <div class="fg"><label class="flabel">% Mês 3</label><input class="finput" id="f-p3" type="number" step="0.001" placeholder="0.0015"></div>
       <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:14px 16px;margin-top:6px" class="fg full">
-        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-family:'DM Mono',monospace">👑 Supervisora (opcional)</div>
+        <div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-family:var(--mono)">👑 Supervisora (opcional)</div>
         <div class="fgrid" style="gap:10px">
           <div class="fg"><label class="flabel">Supervisor</label><select class="finput" id="f-sup-nome"><option value="">Nenhum</option>${supOpts}</select></div>
           <div class="fg"><label class="flabel">Tabela Supervisora</label><select class="finput" id="f-sup-tab" onchange="autoSupPct('lin')"><option value="">Selecione a tabela…</option>${tOpts}</select></div>
@@ -6312,7 +6778,7 @@ function openModal(type='ades'){
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <input class="finput" id="f-plance" type="number" step="0.01" placeholder="Valor do lance (R$)" style="flex:1">
-        <span id="lance-unidade" style="font-size:12px;color:var(--accent);font-family:'DM Mono',monospace;white-space:nowrap;min-width:28px">R$</span>
+        <span id="lance-unidade" style="font-size:12px;color:var(--accent);font-family:var(--mono);white-space:nowrap;min-width:28px">R$</span>
       </div>
     </div>
     <input type="hidden" id="f-plance-tipo" value="rs">
@@ -6390,6 +6856,7 @@ function openModal(type='ades'){
     title='Novo Vendedor';sub='Adicionar ao cadastro';
     const supOpts3=`<option value="">Nenhum</option>`+DB.supervisores.map(s=>`<option>${s.nome}</option>`).join('');
     form=`<div class="fg"><label class="flabel">Nome</label><input class="finput" id="f-nome" placeholder="Nome completo"></div>
+    <div class="fg"><label class="flabel">WhatsApp (com DDD, só números)</label><input class="finput" id="f-tel-vend" type="tel" placeholder="ex: 87999990000"></div>
     <div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-sup">${supOpts3}</select></div>
     <div class="fg"><label class="flabel">% Com. Adesionada</label><input class="finput" id="f-pa" type="number" step="0.001"></div>
     <div class="fg"><label class="flabel">% Com. Linear</label><input class="finput" id="f-pl" type="number" step="0.001"></div>`;
@@ -6914,6 +7381,59 @@ function openModal(type='ades'){
     <div class="fg"><label class="flabel">Semana (índice, ex: 0 para a 1ª)</label><input class="finput" id="f-sidx" type="number" value="0" min="0"></div>
     <div class="fg"><label class="flabel">Dia (índice: 0=seg, 1=ter…)</label><input class="finput" id="f-didx" type="number" value="0" min="0"></div>
     <div class="fg full"><label class="flabel">Status</label><select class="finput" id="f-pstat"><option>PRESENTE</option><option>FALTA</option><option>FERIADO</option><option>Palestra</option><option>Treinamento</option><option value=""> </option></select></div>`;
+  } else if(type==='crm-reg'){
+    crmEditIdx=null;
+    const vOpts=vendedores().map(v=>`<option value="${v}">${v}</option>`).join('');
+    title='Novo Lead'; sub='Registre o atendimento no CRM';
+    form=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><label class="flabel">Data</label><input class="finput" type="date" id="f-crm-data" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fg"><label class="flabel">Vendedor</label><select class="finput" id="f-crm-vend"><option value="">Selecione…</option>${vOpts}</select></div>
+    </div>
+    <div class="fg"><label class="flabel">Cliente</label><input class="finput" type="text" id="f-crm-cliente" placeholder="Nome do cliente"></div>
+    <div class="fg"><label class="flabel">Status do Agendamento</label>
+      <select class="finput" id="f-crm-status" onchange="crmOnStatus()">
+        <option value="">Selecione…</option>
+        <option value="compareceu">✅ Compareceu</option>
+        <option value="nao_compareceu">❌ Não compareceu</option>
+      </select>
+    </div>
+    <div class="fg" id="f-crm-cond-nc" style="display:none">
+      <label class="flabel">Motivo do não comparecimento</label>
+      <select class="finput" id="f-crm-motivo-nc">
+        <option value="">Selecione…</option>
+        <option>Sumiu após agendamento</option>
+        <option>Cancelou na hora</option>
+        <option>Problema pessoal</option>
+        <option>Esqueceu</option>
+        <option>Contato pelo WhatsApp sumiu</option>
+        <option>Outro</option>
+      </select>
+    </div>
+    <div class="fg" id="f-crm-cond-res" style="display:none">
+      <label class="flabel">Resultado</label>
+      <select class="finput" id="f-crm-resultado" onchange="crmOnResultado()">
+        <option value="">Selecione…</option>
+        <option value="fechou">🏆 Fechou</option>
+        <option value="nao_fechou">❌ Não fechou</option>
+      </select>
+    </div>
+    <div class="fg" id="f-crm-cond-perda" style="display:none">
+      <label class="flabel">Motivo da não conversão</label>
+      <select class="finput" id="f-crm-motivo-perda">
+        <option value="">Selecione…</option>
+        <option>Preço alto</option>
+        <option>Precisou pensar mais</option>
+        <option>Parcela não cabe no orçamento</option>
+        <option>Preferiu outro produto</option>
+        <option>Não gostou das condições</option>
+        <option>Aguardando aprovação familiar</option>
+        <option>Decidiu adiar</option>
+        <option>Outro</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flabel">Telefone / WhatsApp do Cliente (só números, com DDD)</label><input class="finput" type="tel" id="f-crm-tel-cliente" placeholder="ex: 87999990000"></div>
+    <div class="fg"><label class="flabel">Observações</label><textarea class="finput" id="f-crm-obs" rows="2" placeholder="Anotações livres…"></textarea></div>`;
   }
 
   document.getElementById('m-title').innerHTML=title;
@@ -7156,6 +7676,9 @@ function saveModal(){
       Object.assign(DB.metaFunilVend[mfVend], recMF);
     }
     setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
+  } else if(modalType==='crm-reg'){
+    crmSalvar();
+    return;
   } else if(modalType==='diario-reg'){
     const vend=g('f-di-vend');const sem=g('f-di-sem');
     if(!vend){alert('Selecione o vendedor.');return;}
@@ -7235,7 +7758,7 @@ function saveModal(){
     DB.indicacoes.push({data:g('f-ind-data'),indicado_por:g('f-ind-por'),cliente:g('f-ind-cli').trim(),vendedor:g('f-ind-vend'),obs:g('f-ind-obs'),convertido:false});
   } else if(modalType==='vend'){
     if(!g('f-nome').trim()){alert('Informe o nome do vendedor.');return;}
-    const recV={nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl')};
+    const recV={nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl'),telefone:g('f-tel-vend').trim(),ativo:true};
     if(modalEditIdx&&modalEditIdx.tipo==='vend'){DB.vendedores[modalEditIdx.i]=recV;modalEditIdx=null;}
     else DB.vendedores.push(recV);
   } else if(modalType==='stat'){
