@@ -2912,9 +2912,11 @@ function badge(s){
 }
 
 function vendedores(){
-  const norm=v=>v?v.charAt(0).toUpperCase()+v.slice(1).toLowerCase().replace(/^(beatriz|rafael)$/i,m=>m.charAt(0).toUpperCase()+m.slice(1)):v;
-  // Collect and normalise all seller names
+  // Collect and normalise all seller names — DB.vendedores é a fonte primária
   const s=new Set();
+  // Fonte 1: cadastro de vendedores (sempre disponível)
+  (DB.vendedores||[]).forEach(v=>{if(v.nome)s.add(v.nome.trim());});
+  // Fonte 2: vendas registradas (captura nomes históricos não cadastrados)
   DB.adesionada.forEach(r=>{if(r.vendedor)s.add(r.vendedor.trim());});
   DB.linear.forEach(r=>{if(r.vendedor)s.add(r.vendedor.trim());});
   // Normalise: capitalize first letter
@@ -6914,8 +6916,8 @@ function openModal(type='ades'){
     <div class="fg full"><label class="flabel">Status</label><select class="finput" id="f-pstat"><option>PRESENTE</option><option>FALTA</option><option>FERIADO</option><option>Palestra</option><option>Treinamento</option><option value=""> </option></select></div>`;
   }
 
-  document.getElementById('m-title').textContent=title;
-  document.getElementById('m-sub').textContent=sub||'';
+  document.getElementById('m-title').innerHTML=title;
+  document.getElementById('m-sub').innerHTML=sub||'';
   document.getElementById('m-form').innerHTML=form||'';
   document.getElementById('overlay').classList.add('open');
 
