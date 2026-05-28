@@ -548,11 +548,45 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
   .section,.section-sm{padding:20px 16px;}
   table{font-size:11px;}
   thead th,tbody td{padding:8px 10px;}
+  /* Botões de ação nas páginas */
+  .sh + div, [style*="display:flex"][style*="flex-wrap:wrap"]{flex-wrap:wrap!important;}
+  /* Filtros */
+  .filters{flex-wrap:wrap!important;gap:6px!important;}
+  .filters select, .filters .fi{min-width:0!important;flex:1 1 140px!important;}
+  /* Card headers com muitos botões */
+  .card-hd{flex-wrap:wrap!important;gap:6px!important;}
+  /* Insights do CRM — 4 colunas vira 1 */
+  #crm-insights-grid{grid-template-columns:1fr!important;}
+  /* Tabela CRM scroll horizontal */
+  #crm-tbl{min-width:700px;}
+  /* Hero metric — 3 cards */
+  #vol-destaque{grid-template-columns:1fr!important;}
+  /* Botões topo de página */
+  .sh-actions{flex-wrap:wrap!important;gap:6px!important;}
 }
 @media(max-width:480px){
   .kpi-grid-3,.kpi-grid-4{grid-template-columns:1fr!important;}
-  .hero-title{font-size:28px;}
+  .hero-title{font-size:20px;}
   #busca-input{width:120px!important;}
+  /* Hero metrics empilhados */
+  #vol-destaque{grid-template-columns:1fr!important;}
+  .hero-metric-val{font-size:22px!important;}
+  /* Funil botões */
+  #page-funil .btn, #page-diario .btn, #page-crm .btn{font-size:11px!important;padding:6px 10px!important;}
+  /* Período tabs CRM */
+  #crm-per-todos,#crm-per-hoje,#crm-per-semana,#crm-per-mes,#crm-per-custom{padding:5px 8px!important;font-size:10px!important;}
+  /* Agendamentos hoje — lista compacta */
+  #dash-agendamentos-hoje [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr 1fr!important;}
+  /* Modal full width */
+  .modal{width:calc(100vw - 20px)!important;padding:20px 16px!important;}
+  /* Fgrid modal — 1 coluna */
+  .fgrid,[style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr!important;}
+  [style*="grid-template-columns:1fr 1fr"]:not(.kpi-grid):not(#vol-destaque){grid-template-columns:1fr!important;}
+  /* Tabelas scroll */
+  .tbl-wrap{overflow-x:auto!important;}
+  table{min-width:500px;}
+  /* KPIs do funil — 2 colunas */
+  #funil-kpis{grid-template-columns:1fr 1fr!important;}
 }
 
 /* ── Modo compacto ──────────────────────────────────────────────── */
@@ -1087,7 +1121,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div class="sh-title">📓 Diário da Equipe</div>
           <div class="sh-sub">Acompanhamento semanal individual e visão de liderança</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-g" onclick="gerarPDFDiario()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> PDF Reunião</button>
           <button class="btn btn-g" onclick="openModal('diario-gestao')">👔 Reunião c/ Gestão</button>
           <button class="btn btn-g" onclick="iaAnalisarDiario()" style="background:linear-gradient(135deg,#4285f4,#a855f7);color:#fff;border:none">✨ Analisar com IA</button>
@@ -1194,7 +1228,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <div class="sh-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Funil de Vendas</div>
           <div class="sh-sub">Acompanhe anúncios, ligações, retornos, agendamentos e fechamentos</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-g" onclick="iaAnalisarFunil()" style="background:linear-gradient(135deg,#4285f4,#a855f7);color:#fff;border:none">✨ Analisar com IA</button>
           <button class="btn btn-g" onclick="gerarRelatorioFunil()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> PDF</button>
           <button class="btn btn-g" onclick="copiarSemanaAnterior()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Copiar semana ant.</button>
@@ -2577,7 +2611,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       </div>
 
       <!-- Insights 3 colunas + canal -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:18px">
+      <div id="crm-insights-grid" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px">
         <div class="card">
           <div class="card-hd"><div class="card-title">👤 Por Vendedor</div></div>
           <div id="crm-insight-vend" style="padding:0 16px 12px;display:flex;flex-direction:column;gap:8px"></div>
@@ -4004,8 +4038,44 @@ function renderDashCountdown(){
   if(!el)return;
   const now=new Date();
   const fim=new Date(now.getFullYear(),now.getMonth()+1,0);
-  const dias=fim.getDate()-now.getDate();
-  el.innerHTML=`<div style="font-size:36px;font-weight:800;color:var(--accent)">${dias}</div><div style="font-size:12px;color:var(--text3)">dias até o fim do mês</div>`;
+  const diasRestantes=fim.getDate()-now.getDate();
+  const totalDias=fim.getDate();
+  const pct=Math.round((now.getDate()/totalDias)*100);
+  const cor=diasRestantes<=3?'var(--red)':diasRestantes<=7?'var(--yellow)':'var(--green)';
+  const emoji=diasRestantes<=3?'🔴':diasRestantes<=7?'🟡':'🟢';
+
+  // Projeção baseada no ritmo atual
+  const prefMes=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const vendasMes=[...DB.adesionada,...DB.linear].filter(r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(prefMes));
+  const qtMes=vendasMes.length;
+  const projecao=now.getDate()>0?Math.round(qtMes/now.getDate()*totalDias):0;
+
+  el.innerHTML=`
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div style="text-align:center;min-width:64px">
+        <div style="font-size:42px;font-weight:800;color:${cor};line-height:1;font-family:var(--mono)">${diasRestantes}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em">dias restantes</div>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">
+          <span>Progresso do mês</span><span>${pct}%</span>
+        </div>
+        <div style="height:6px;background:var(--bg3);border-radius:999px;overflow:hidden;margin-bottom:10px">
+          <div style="height:100%;width:${pct}%;background:${cor};border-radius:999px;transition:width .8s"></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">Vendas no mês</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);font-family:var(--mono)">${qtMes}</div>
+          </div>
+          ${projecao>0?`<div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">Projeção final</div>
+            <div style="font-size:16px;font-weight:700;color:var(--accent);font-family:var(--mono)">~${projecao}</div>
+          </div>`:''}
+        </div>
+        <div style="font-size:11px;color:${cor};margin-top:8px;font-weight:600">${emoji} ${diasRestantes===0?'Último dia do mês!':diasRestantes<=3?'Atenção: poucos dias restantes!':diasRestantes<=7?'Semana final do mês':'Mês em andamento'}</div>
+      </div>
+    </div>`;
 }
 
 function renderDashAlertas(){
