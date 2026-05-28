@@ -811,7 +811,6 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="nav-dropdown">
-          <button class="nav-dd-item" id="nl-simulador" onclick="nav('simulador')"><span class="dd-icon">🧮</span>Simulador</button>
           <button class="nav-dd-item" id="nl-crm" onclick="nav('crm')"><span class="dd-icon">🎯</span>CRM Inteligente</button>
           <div class="nav-dd-sep"></div>
           <button class="nav-dd-item" id="nl-cadastro" onclick="nav('cadastro')"><span class="dd-icon">⚙️</span>Cadastros</button>
@@ -878,9 +877,6 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   </button>
   <button class="mob-nav-link" onclick="nav('crm');closeMobDrawer()">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> CRM
-  </button>
-  <button class="mob-nav-link" onclick="nav('simulador');closeMobDrawer()">
-    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Simulador
   </button>
   <button class="mob-nav-link" onclick="nav('comunicacao');closeMobDrawer()">
     <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Comunicação
@@ -976,9 +972,6 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
     <div class="sidebar-sep"></div>
     <div class="sidebar-section">Ferramentas</div>
-    <button class="sidebar-link" id="sl-simulador" onclick="nav('simulador')">
-      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Simulador
-    </button>
     <button class="sidebar-link" id="sl-cadastro" onclick="nav('cadastro')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg> Cadastros
     </button>
@@ -1400,7 +1393,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div class="card-hd" style="flex-wrap:wrap;gap:8px">
           <div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Taxas de Conversão</div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <select class="fi" id="conv-tipo" onchange="renderFunilTaxasComparativo()" style="font-size:11px;padding:3px 8px">
+            <select class="fi" id="conv-tipo" onchange="populateConvSelects(window._convCtx?.allRows||[],window._convCtx?.CAMPOS||[],window._convCtx?.LABELS||[],window._convCtx?.ICONS||[]);renderFunilTaxasComparativo()" style="font-size:11px;padding:3px 8px">
               <option value="semana">Por semana</option>
               <option value="mes">Por mês</option>
             </select>
@@ -1745,464 +1738,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     </div>
   </div>
 
-  <!-- SIMULADOR -->
-  <div class="page" id="page-simulador">
-    <div class="section-sm">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-        <div class="sh" style="margin-bottom:0">
-          <div class="sh-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Simulador de Consórcio</div>
-          <div class="sh-sub">Simule parcelas, lance e compare cenários para o cliente</div>
-        </div>
-        <button class="btn btn-g" style="font-size:12px;padding:6px 14px" onclick="toggleAjudaSim()">❓ Como usar</button>
-      </div>
 
-      <!-- Ajuda / Explicativo -->
-      <div id="sim-ajuda" style="display:none;margin-bottom:16px">
-        <div class="card">
-          <div class="card-hd">
-            <div class="card-title">❓ Como usar o Simulador</div>
-            <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="toggleAjudaSim()">✕ Fechar</button>
-          </div>
-          <div style="padding:18px 22px;font-size:13px;line-height:1.7;color:var(--text2)">
-
-            <!-- Visão geral -->
-            <div style="background:rgba(249,115,22,.07);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:18px;color:var(--text)">
-              O simulador tem <strong>dois fluxos</strong>: simular uma proposta do zero para o cliente, e recalcular o cenário pós-contemplação de uma venda já existente. Todos os campos de <strong>% e R$</strong> se sincronizam automaticamente.
-            </div>
-
-            <!-- Seção 1 -->
-            <div style="margin-bottom:16px">
-              <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">1 — Parâmetros da Simulação</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px">
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Carta de crédito</div>
-                  <div style="font-size:12px">Valor que o cliente receberá na contemplação.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Prazo</div>
-                  <div style="font-size:12px">Duração do grupo em meses.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Taxa de administração</div>
-                  <div style="font-size:12px">% cobrado pela administradora. Use "Tabela salva" para preencher automaticamente.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Fundo de reserva + Seguro</div>
-                  <div style="font-size:12px">Padrão: 1% + 0,3%. Compõem a parcela final.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Parcela — Auto ou Manual</div>
-                  <div style="font-size:12px">Auto: calculada automaticamente. Manual: informe a parcela real do contrato — badge <span style="background:rgba(249,115,22,.15);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:10px">MANUAL</span> aparece no resultado.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Seção 2 -->
-            <div style="margin-bottom:16px">
-              <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">2 — Resultados automáticos</div>
-              <div style="font-size:12px;color:var(--text2)">Ao calcular, o sistema gera automaticamente: <strong>4 KPIs</strong> (carta, parcela, total a pagar, taxa total) · <strong>Composição da parcela</strong> (amortização, taxa, reserva, seguro) · <strong>Comparativo consórcio vs financiamento</strong> (~1,65% a.m.) · <strong>Gráfico do saldo devedor</strong> mês a mês.</div>
-            </div>
-
-            <!-- Seção 3 -->
-            <div style="margin-bottom:16px">
-              <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">3 — Lance & Contemplação</div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px">
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Lance Próprio</div>
-                  <div style="font-size:12px">Dinheiro do bolso. Reduz o saldo devedor. Pode reduzir o prazo ou a parcela.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">🔄 Lance Embutido</div>
-                  <div style="font-size:12px">Descontado da própria carta. Reduz o crédito disponível, sem desembolso imediato.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">⚡ Próprio + Embutido</div>
-                  <div style="font-size:12px">Combinação dos dois. Cada parte em % ou R$ separadamente.</div>
-                </div>
-              </div>
-              <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:6px">
-                <div style="font-size:11px;color:var(--text3);margin-bottom:3px">Parcela até a contemplação — 3 modos</div>
-                <div style="font-size:12px"><strong>Auto</strong>: calculada (saldo ÷ prazo × taxa) · <strong>R$</strong>: informe o valor real · <strong>%</strong>: percentual da carta por mês (ex: 0,5% de R$200k = R$1.000/mês). O modo manual mostra a diferença vs o calculado.</div>
-              </div>
-              <div style="font-size:12px;color:var(--text3)">💡 O botão <strong>"Sugerir ideal"</strong> simula lances de 20% a 40% e mostra o impacto em prazo, parcela e economia para cada um.</div>
-            </div>
-
-            <!-- Seção 4 -->
-            <div style="margin-bottom:16px">
-              <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">4 — Recalcular Pós-Contemplação</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Contemplação normal</div>
-                  <div style="font-size:12px">Para quem entra desde o início. Informe carta, lances pagos e parcelas pagas até a contemplação. O botão "Usar simulação atual" preenche automaticamente.</div>
-                </div>
-                <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-                  <div style="font-size:11px;color:var(--text3);margin-bottom:3px">🔄 Grupo em andamento</div>
-                  <div style="font-size:12px">Para quem entra em grupo com assembleias já realizadas. Calcula as <strong>cotas atrasadas</strong> (R$ a pagar no ato), o lance, e a parcela pós-contemplação em Auto / R$ / %.</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Seção 5 -->
-            <div>
-              <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">5 — Histórico e ações</div>
-              <div style="font-size:12px;color:var(--text2)"><strong>💾 Salvar</strong> — guarda até 20 simulações localmente, carregue qualquer uma com um clique. <strong><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Proposta PDF</strong> — copia os dados para Comunicação e gera a proposta formatada. <strong>📱 WhatsApp</strong> — copia mensagem resumo pronta para enviar ao cliente.</div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- Inputs principais -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-hd"><div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg> Parâmetros da Simulação</div></div>
-        <div style="padding:18px 22px">
-          <div class="fgrid" style="gap:12px;margin-bottom:16px">
-            <div class="fg">
-              <label class="flabel">Carta de Crédito (R$)</label>
-              <input class="finput" id="sim-carta" type="number" step="1000" placeholder="ex: 200000" oninput="calcSimulador()">
-            </div>
-            <div class="fg">
-              <label class="flabel">Prazo (meses)</label>
-              <input class="finput" id="sim-prazo" type="number" step="1" placeholder="ex: 180" oninput="calcSimulador()">
-            </div>
-            <div class="fg">
-              <label class="flabel">Taxa de Administração (%)</label>
-              <input class="finput" id="sim-taxa" type="number" step="0.01" placeholder="ex: 18" oninput="calcSimulador()">
-            </div>
-            <div class="fg">
-              <label class="flabel">Fundo de Reserva (%)</label>
-              <input class="finput" id="sim-reserva" type="number" step="0.01" placeholder="ex: 1" value="1" oninput="calcSimulador()">
-            </div>
-            <div class="fg">
-              <label class="flabel">Seguro (%)</label>
-              <input class="finput" id="sim-seguro" type="number" step="0.001" placeholder="ex: 0.3" value="0.3" oninput="calcSimulador()">
-            </div>
-            <div class="fg">
-              <label class="flabel">Tabela salva</label>
-              <select class="finput" id="sim-tabela" onchange="preencherTabelaSim()">
-                <option value="">Selecione uma tabela…</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Parcela manual -->
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-              <span style="font-size:13px;font-weight:600;color:var(--text)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Parcela</span>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:12px;color:var(--text3)">Manual</span>
-                <label style="position:relative;display:inline-block;width:38px;height:20px;cursor:pointer">
-                  <input type="checkbox" id="sim-parcela-auto" checked onchange="toggleParcelaMode()"
-                    style="opacity:0;width:0;height:0;position:absolute">
-                  <span id="sim-toggle-track" style="position:absolute;inset:0;border-radius:999px;background:var(--accent);transition:.3s">
-                    <span id="sim-toggle-thumb" style="position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.3s;transform:translateX(18px)"></span>
-                  </span>
-                </label>
-                <span style="font-size:12px;color:var(--text3)">Auto</span>
-              </div>
-            </div>
-            <div id="sim-parcela-auto-row" style="font-size:13px;color:var(--text2);font-family:var(--mono);min-height:20px">
-              Será calculada automaticamente a partir dos campos acima.
-            </div>
-            <div id="sim-parcela-manual-row" style="display:none">
-              <input class="finput" id="sim-parcela-manual" type="number" step="0.01"
-                placeholder="ex: 1250.00 — informe a parcela real do contrato"
-                oninput="calcSimulador()" style="margin-top:4px">
-              <div style="font-size:11px;color:var(--text3);margin-top:6px">
-                ℹ️ Com parcela manual, o total a pagar e comparativos usam este valor. Taxa e composição são estimativas.
-              </div>
-            </div>
-          </div>
-
-          <button class="btn btn-o" onclick="calcSimulador()">▶ Calcular</button>
-          <button class="btn btn-g" style="margin-left:8px" onclick="limparSimulador()">✕ Limpar</button>
-        </div>
-      </div>
-
-      <!-- Resultado principal -->
-      <div id="sim-resultado" style="display:none">
-        <!-- KPI cards -->
-        <div class="kpi-grid" style="margin-bottom:16px" id="sim-kpis"></div>
-
-        <!-- Lance -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-hd">
-            <div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> Simulação de Lance & Contemplação</div>
-            <button class="btn btn-g" style="font-size:11px" onclick="sugerirLanceIdeal()">💡 Sugerir ideal</button>
-          </div>
-          <div style="padding:18px 22px">
-
-            <!-- Tipo de lance -->
-            <div style="margin-bottom:16px">
-              <label class="flabel">Tipo de Lance</label>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-                <button id="btn-lt-proprio" onclick="setTipoLance('proprio')" class="btn btn-o" style="font-size:12px;padding:6px 16px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Próprio</button>
-                <button id="btn-lt-embutido" onclick="setTipoLance('embutido')" class="btn btn-g" style="font-size:12px;padding:6px 16px">🔄 Embutido</button>
-                <button id="btn-lt-misto" onclick="setTipoLance('misto')" class="btn btn-g" style="font-size:12px;padding:6px 16px">⚡ Próprio + Embutido</button>
-              </div>
-            </div>
-
-            <div style="font-size:11px;color:var(--text3);margin-bottom:8px">💡 Digite em <b>%</b> ou em <b>R$</b> — os campos se atualizam automaticamente.</div>
-            <div class="fgrid" style="gap:12px;margin-bottom:12px">
-              <div class="fg">
-                <label class="flabel">Lance Total (%)</label>
-                <input class="finput" id="sim-lance-pct" type="number" step="0.5" placeholder="ex: 25,00" oninput="syncLanceRs()">
-              </div>
-              <div class="fg">
-                <label class="flabel">Lance Total (R$)</label>
-                <input class="finput" id="sim-lance-rs" type="number" step="100" placeholder="ex: 50000,00" oninput="syncLancePct()">
-              </div>
-              <div class="fg" id="sim-proprio-wrap" style="display:none">
-                <label class="flabel">Parte Própria (%)</label>
-                <input class="finput" id="sim-lance-proprio-pct" type="number" step="0.5" placeholder="ex: 15" oninput="syncMistoRs('proprio')">
-              </div>
-              <div class="fg" id="sim-proprio-rs-wrap" style="display:none">
-                <label class="flabel">Parte Própria (R$)</label>
-                <input class="finput" id="sim-lance-proprio-rs" type="number" step="100" placeholder="ex: 30000" oninput="syncMistoPct('proprio')">
-              </div>
-              <div class="fg" id="sim-embutido-wrap" style="display:none">
-                <label class="flabel">Parte Embutida (%)</label>
-                <input class="finput" id="sim-lance-embutido-pct" type="number" step="0.5" placeholder="ex: 10" oninput="syncMistoRs('embutido')">
-              </div>
-              <div class="fg" id="sim-embutido-rs-wrap" style="display:none">
-                <label class="flabel">Parte Embutida (R$)</label>
-                <input class="finput" id="sim-lance-embutido-rs" type="number" step="100" placeholder="ex: 20000" oninput="syncMistoPct('embutido')">
-              </div>
-            </div>
-
-            <!-- Parcela reduzida até contemplação -->
-            <div style="background:rgba(10,132,255,.06);border:1px solid rgba(10,132,255,.15);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-                <div style="font-size:12px;font-weight:600;color:var(--blue)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Parcela até a Contemplação</div>
-                <div style="display:flex;gap:6px;align-items:center">
-                  <span style="font-size:11px;color:var(--text3)">Modo:</span>
-                  <button id="btn-parc-auto" onclick="setModoParcelaContempl('auto')" class="btn btn-o" style="font-size:11px;padding:3px 10px">Auto</button>
-                  <button id="btn-parc-rs" onclick="setModoParcelaContempl('rs')" class="btn btn-g" style="font-size:11px;padding:3px 10px">R$</button>
-                  <button id="btn-parc-pct" onclick="setModoParcelaContempl('pct')" class="btn btn-g" style="font-size:11px;padding:3px 10px">%</button>
-                </div>
-              </div>
-              <div class="fgrid" style="gap:10px">
-                <div class="fg">
-                  <label class="flabel">Mês estimado da contemplação</label>
-                  <input class="finput" id="sim-mes-contempl" type="number" step="1" placeholder="ex: 24" oninput="calcLanceSim()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Redutor de parcela (lance embutido)</label>
-                  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-                    <button id="btn-red-0" onclick="setRedutor(0)" class="btn btn-o" style="font-size:11px;padding:3px 10px">Sem redutor</button>
-                    <button id="btn-red-25" onclick="setRedutor(25)" class="btn btn-g" style="font-size:11px;padding:3px 10px">25%</button>
-                    <button id="btn-red-30" onclick="setRedutor(30)" class="btn btn-g" style="font-size:11px;padding:3px 10px">30%</button>
-                    <button id="btn-red-50" onclick="setRedutor(50)" class="btn btn-g" style="font-size:11px;padding:3px 10px">50%</button>
-                    <input class="finput" id="sim-redutor-custom" type="number" step="1" min="0" max="99" placeholder="%" style="width:60px;padding:3px 8px;font-size:11px" oninput="setRedutorCustom(this.value)">
-                  </div>
-                </div>
-                <div class="fg">
-                  <label class="flabel">Assembleias já realizadas (grupo em andamento)</label>
-                  <input class="finput" id="sim-assem-passadas" type="number" step="1" min="0" placeholder="0 = novo grupo" oninput="calcLanceSim()">
-                </div>
-                <div class="fg" id="sim-parc-auto-wrap">
-                  <label class="flabel">Parcela calculada automaticamente</label>
-                  <input class="finput" id="sim-parc-ate-contempl" readonly style="background:var(--bg3);color:var(--green);font-weight:600;font-family:DM Mono,monospace">
-                </div>
-                <div class="fg" id="sim-parc-rs-wrap" style="display:none">
-                  <label class="flabel">Parcela reduzida (R$)</label>
-                  <input class="finput" id="sim-parc-rs-manual" type="number" step="0.01" placeholder="ex: 800.00" oninput="calcLanceSim()">
-                </div>
-                <div class="fg" id="sim-parc-pct-wrap" style="display:none">
-                  <label class="flabel">Parcela reduzida (% da carta / mês)</label>
-                  <input class="finput" id="sim-parc-pct-manual" type="number" step="0.01" placeholder="ex: 0.50" oninput="calcLanceSim()">
-                  <div style="font-size:10px;color:var(--text3);margin-top:4px">Ex: 0,5% de R$200.000 = R$1.000/mês</div>
-                </div>
-              </div>
-              <div id="sim-parc-contempl-info" style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6;min-height:16px"></div>
-            </div>
-
-            <!-- Resultado -->
-            <div id="sim-lance-resultado" style="background:var(--bg3);border-radius:10px;padding:16px 18px;font-size:13px;color:var(--text);line-height:1.9;font-family:DM Mono,monospace;white-space:pre-wrap"></div>
-
-            <!-- Sugestão automática -->
-            <div id="sim-sugestao" style="display:none;margin-top:14px;background:rgba(48,209,88,.07);border:1px solid rgba(48,209,88,.2);border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.8"></div>
-          </div>
-        </div>
-
-        <!-- Recalcular pos-contemplacao -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-hd">
-            <div class="card-title">🔄 Recalcular Pós-Contemplação</div>
-            <button class="btn btn-g" style="font-size:11px" onclick="preencherRecalculo()">⬆ Usar simulação atual</button>
-          </div>
-          <div style="padding:18px 22px">
-
-            <!-- Sub-abas -->
-            <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap">
-              <button id="rec-tab-normal" onclick="setRecTab('normal')" class="btn btn-o" style="font-size:12px;padding:5px 14px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Contemplação normal</button>
-              <button id="rec-tab-andamento" onclick="setRecTab('andamento')" class="btn btn-g" style="font-size:12px;padding:5px 14px">🔄 Grupo em andamento</button>
-            </div>
-
-            <!-- Tab: Contemplação normal -->
-            <div id="rec-panel-normal">
-              <div class="fgrid" style="gap:12px;margin-bottom:14px">
-                <div class="fg">
-                  <label class="flabel">Carta de Crédito (R$)</label>
-                  <input class="finput" id="rec-carta" type="number" step="1000" oninput="calcRecalculo()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Lance Próprio pago (R$)</label>
-                  <input class="finput" id="rec-lance-proprio" type="number" step="100" oninput="calcRecalculo()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Lance Embutido (R$)</label>
-                  <input class="finput" id="rec-lance-embutido" type="number" step="100" oninput="calcRecalculo()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Parcelas pagas até contemplação</label>
-                  <input class="finput" id="rec-parc-pagas" type="number" step="1" oninput="calcRecalculo()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Prazo original (meses)</label>
-                  <input class="finput" id="rec-prazo" type="number" step="1" oninput="calcRecalculo()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Taxa total (%)</label>
-                  <input class="finput" id="rec-taxa" type="number" step="0.01" oninput="calcRecalculo()">
-                </div>
-              </div>
-              <button class="btn btn-o" onclick="calcRecalculo()">▶ Calcular</button>
-              <div id="rec-resultado" style="margin-top:16px;display:none"></div>
-            </div>
-
-            <!-- Tab: Grupo em andamento -->
-            <div id="rec-panel-andamento" style="display:none">
-              <div style="background:rgba(255,214,10,.07);border:1px solid rgba(255,214,10,.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7">
-                💡 O cliente entra em um grupo que já tem assembleias realizadas. Ele precisa pagar as <b>cotas atrasadas</b> (assembleias já pagas pelos demais membros) antes ou no ato da adesão, além do lance.
-              </div>
-
-              <div class="fgrid" style="gap:12px;margin-bottom:14px">
-                <div class="fg">
-                  <label class="flabel">Carta de Crédito (R$)</label>
-                  <input class="finput" id="and-carta" type="number" step="1000" oninput="calcAndamento()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Prazo original do grupo (meses)</label>
-                  <input class="finput" id="and-prazo" type="number" step="1" oninput="calcAndamento()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Taxa total (%)</label>
-                  <input class="finput" id="and-taxa" type="number" step="0.01" oninput="calcAndamento()">
-                </div>
-                <div class="fg">
-                  <label class="flabel">Assembleias já realizadas</label>
-                  <input class="finput" id="and-assem-pagas" type="number" step="1" placeholder="ex: 24" oninput="calcAndamento()">
-                </div>
-              </div>
-
-              <!-- Cotas atrasadas -->
-              <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-                <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:10px">⚠️ Cotas Atrasadas (assembleias já pagas)</div>
-                <div class="fgrid" style="gap:10px;margin-bottom:10px">
-                  <div class="fg">
-                    <label class="flabel">Qtd. assembleias a pagar</label>
-                    <input class="finput" id="and-assem-dev" type="number" step="1" placeholder="ex: 12" oninput="calcAndamento()">
-                  </div>
-                  <div class="fg">
-                    <label class="flabel">Valor por assembleia (R$)</label>
-                    <input class="finput" id="and-val-assem" type="number" step="0.01" placeholder="calculado auto" oninput="calcAndamento()">
-                    <div style="font-size:10px;color:var(--text3);margin-top:4px">Deixe em branco para calcular automaticamente</div>
-                  </div>
-                  <div class="fg">
-                    <label class="flabel">Total cotas atrasadas (R$)</label>
-                    <input class="finput" id="and-total-atrasado" readonly style="background:var(--bg3);color:var(--red);font-weight:700;font-family:DM Mono,monospace">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Lance -->
-              <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-                <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> Lance (opcional)</div>
-                <div class="fgrid" style="gap:10px">
-                  <div class="fg">
-                    <label class="flabel">Lance (% da carta)</label>
-                    <input class="finput" id="and-lance-pct" type="number" step="0.5" placeholder="ex: 20" oninput="syncAndLanceRs()">
-                  </div>
-                  <div class="fg">
-                    <label class="flabel">Lance (R$)</label>
-                    <input class="finput" id="and-lance-rs" type="number" step="100" oninput="syncAndLancePct()">
-                  </div>
-                  <div class="fg">
-                    <label class="flabel">Tipo</label>
-                    <select class="finput" id="and-lance-tipo" onchange="calcAndamento()">
-                      <option value="proprio">Próprio</option>
-                      <option value="embutido">Embutido</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Parcela pós-contemplação -->
-              <div style="background:rgba(48,209,88,.07);border:1px solid rgba(48,209,88,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-                <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:10px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Parcela Pós-Contemplação</div>
-                <div class="fgrid" style="gap:10px">
-                  <div class="fg">
-                    <label class="flabel">Modo</label>
-                    <div style="display:flex;gap:6px;margin-top:6px">
-                      <button id="and-parc-btn-auto" onclick="setAndParcelaMode('auto')" class="btn btn-o" style="font-size:11px;padding:3px 10px">Auto</button>
-                      <button id="and-parc-btn-rs" onclick="setAndParcelaMode('rs')" class="btn btn-g" style="font-size:11px;padding:3px 10px">R$</button>
-                      <button id="and-parc-btn-pct" onclick="setAndParcelaMode('pct')" class="btn btn-g" style="font-size:11px;padding:3px 10px">%</button>
-                    </div>
-                  </div>
-                  <div class="fg" id="and-parc-rs-wrap" style="display:none">
-                    <label class="flabel">Parcela pós (R$)</label>
-                    <input class="finput" id="and-parc-rs" type="number" step="0.01" oninput="calcAndamento()">
-                  </div>
-                  <div class="fg" id="and-parc-pct-wrap" style="display:none">
-                    <label class="flabel">Parcela pós (% da carta/mês)</label>
-                    <input class="finput" id="and-parc-pct" type="number" step="0.01" oninput="calcAndamento()">
-                  </div>
-                </div>
-              </div>
-
-              <button class="btn btn-o" onclick="calcAndamento()">▶ Calcular</button>
-              <div id="and-resultado" style="margin-top:16px;display:none"></div>
-            </div>
-
-          </div>
-        </div>
-
-<!-- Tabela de parcelas -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-hd">
-            <div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Composição da Parcela</div>
-          </div>
-          <div id="sim-parcela-detalhe" style="padding:0 0 8px"></div>
-        </div>
-
-        
-
-        <!-- Gráfico visual -->
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-hd"><div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Evolução do Saldo Devedor</div></div>
-          <div id="sim-grafico" style="padding:16px 20px 8px"></div>
-        </div>
-
-        <!-- Botões ação -->
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-          <button class="btn btn-o" onclick="simParaProposta()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Gerar Proposta PDF</button>
-          <button class="btn btn-g" onclick="simParaWhatsapp()">📱 Enviar por WhatsApp</button>
-          <button class="btn btn-g" onclick="salvarSimulacao()">💾 Salvar Simulação</button>
-        </div>
-
-        <!-- Histórico de simulações salvas -->
-        <div class="card" id="sim-historico-card" style="display:none">
-          <div class="card-hd">
-            <div class="card-title">🗂 Simulações Salvas</div>
-            <button class="btn btn-g" style="font-size:11px" onclick="limparHistorico()">🗑 Limpar</button>
-          </div>
-          <div id="sim-historico"></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
 
   <!-- COMUNICAÇÃO -->
   <div class="page" id="page-comunicacao">
@@ -2293,87 +1829,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         </div>
       </div>
 
-      <!-- PROPOSTA PDF -->
-      <div class="card" style="margin-bottom:16px">
-        <div class="card-hd">
-          <div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Gerar Proposta Personalizada</div>
-        </div>
-        <div style="padding:18px 22px">
-          <div class="fgrid" style="gap:12px;margin-bottom:14px">
-            <div class="fg">
-              <label class="flabel">Cliente</label>
-              <input class="finput" id="prop-cli" placeholder="Nome do cliente">
-            </div>
-            <div class="fg">
-              <label class="flabel">Administradora</label>
-              <input class="finput" id="prop-adm" placeholder="Ex: Embracon">
-            </div>
-            <div class="fg">
-              <label class="flabel">Carta de Crédito (R$)</label>
-              <input class="finput" id="prop-carta" type="number" step="1000" placeholder="ex: 200000">
-            </div>
-            <div class="fg">
-              <label class="flabel">Prazo (meses)</label>
-              <input class="finput" id="prop-prazo" type="number" placeholder="ex: 180">
-            </div>
-            <div class="fg">
-              <label class="flabel">Taxa Admin. (%)</label>
-              <input class="finput" id="prop-taxa" type="number" step="0.01" placeholder="ex: 18">
-            </div>
-            <div class="fg">
-              <label class="flabel">Vendedora</label>
-              <select class="finput" id="prop-vend"></select>
-            </div>
-          </div>
-          <div class="fgrid" style="gap:12px;margin-bottom:4px">
-            <div class="fg">
-              <label class="flabel">Parcela Mensal (R$) — opcional</label>
-              <input class="finput" id="prop-parcela" type="number" step="0.01" placeholder="Deixe em branco para calcular auto">
-              <div style="font-size:10px;color:var(--text3);margin-top:4px">Se vazio, calcula automaticamente pela carta × taxa ÷ prazo</div>
-            </div>
-            <div class="fg">
-              <label class="flabel">Entrada / Lance (R$) — opcional</label>
-              <input class="finput" id="prop-entrada" type="number" step="100" placeholder="ex: 30000">
-              <div style="font-size:10px;color:var(--text3);margin-top:4px">Será exibida na proposta como redução no saldo inicial</div>
-            </div>
-          </div>
 
-          <!-- Comparativo toggle + campos manuais -->
-          <div style="background:var(--bg3);border-radius:10px;padding:12px 16px;margin-bottom:14px">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-              <div>
-                <div style="font-size:13px;font-weight:500">Incluir comparativo Consórcio vs Financiamento</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">Opcional — preencha os valores ou deixe automático</div>
-              </div>
-              <label style="position:relative;display:inline-block;width:42px;height:24px;cursor:pointer">
-                <input type="checkbox" id="prop-comparativo" checked style="opacity:0;width:0;height:0;position:absolute" onchange="togglePropComp(this)">
-                <span id="prop-comp-track" style="position:absolute;inset:0;border-radius:999px;background:var(--accent);border:1px solid var(--border);transition:.3s">
-                  <span style="position:absolute;left:2px;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.3s;transform:translateX(18px)" id="prop-comp-thumb"></span>
-                </span>
-              </label>
-            </div>
-            <div id="prop-comp-fields" class="fgrid" style="gap:10px">
-              <div class="fg">
-                <label class="flabel">Parcela financiamento (R$) — opcional</label>
-                <input class="finput" id="prop-comp-parcela" type="number" step="0.01" placeholder="Calculado auto (~1,65%/mês)">
-              </div>
-              <div class="fg">
-                <label class="flabel">Taxa financiamento (ex: 18% a.a.)</label>
-                <input class="finput" id="prop-comp-taxa" placeholder="ex: 18% a.a." value="18% a.a.">
-              </div>
-            </div>
-          </div>
-
-          <div class="fg full" style="margin-bottom:14px">
-            <label class="flabel">Observações / Diferenciais</label>
-            <textarea class="finput" id="prop-obs" rows="3" placeholder="Ex: Sem juros, contemplação por lance, menor parcela do mercado…" style="resize:vertical;font-family:inherit"></textarea>
-          </div>
-          <button class="btn btn-o" onclick="gerarPropostaPDF()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> Gerar Proposta PDF</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
 
   <!-- CONTEMPLAÇÕES -->
   <div class="page" id="page-contempl">
@@ -2827,7 +2283,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   <div class="modal" style="max-width:360px;text-align:center">
     <div style="font-size:40px;margin-bottom:14px">🔒</div>
     <div class="modal-title" style="text-align:center">Área Restrita</div>
-    <div class="modal-sub" style="text-align:center;margin-bottom:20px">Digite a senha para acessar Minhas Comissões</div>
+    <div class="modal-sub" style="text-align:center;margin-bottom:20px">Digite a senha para acessar esta área</div>
     <div class="fgrid" style="grid-template-columns:1fr">
       <div class="fg">
         <label class="flabel">Senha</label>
@@ -3221,7 +2677,7 @@ function stats(){
 }
 
 // ═══════════════════════════════ NAVIGATE ════════════════════════════════════
-const TITLES={dashboard:'Dashboard',crm:'CRM Inteligente',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',simulador:'Simulador de Consórcio',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
+const TITLES={dashboard:'Dashboard',crm:'CRM Inteligente',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
@@ -3239,8 +2695,8 @@ function hashSimples(s){
 let SENHA_CORRETA='laranja123'; // Troque aqui ou pela opção 🔑 Mudar Senha
 
 function nav(p){
-  // Interceptar acesso à aba de comissões se não desbloqueada
-  if(p==='comissoes'&&!comissaoDesbloqueada){
+  // Interceptar acesso às abas protegidas por senha
+  if((p==='comissoes'||p==='diario')&&!comissaoDesbloqueada){
     _pendingNav=p;
     abrirSenha();
     return;
@@ -3359,7 +2815,6 @@ function render(p){
     canceladas:()=>renderCanceladas(),
     metas:()=>renderMetas(),
     contempl:()=>renderContempl(),
-    simulador:()=>renderSimulador(),
     comunicacao:()=>renderComunicacao(),
     presenca:()=>renderPresenca(),
     funil:()=>renderFunil(),
@@ -3903,7 +3358,7 @@ function renderSupDash(){
         '<div style="flex:1"><div style="font-size:13px;font-weight:600">'+sup+'</div>'+
         '<div style="font-size:11px;color:var(--text3)">'+vends.length+' vendedor(es) · '+qtd+' venda(s)</div></div>'+
         '<div style="text-align:right"><div style="font-size:11px;color:var(--text2)">Vol: '+fmtK(vol)+'</div>'+
-        '<div style="font-size:14px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">'+fmt(com)+'</div></div></div>';
+        '<div style="font-size:14px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">'+fmtCom(com)+'</div></div></div>';
     }).join('');
     compEl.innerHTML=rows||'<div style="color:var(--text3);font-size:13px">Sem dados.</div>';
   } else if(compCard) compCard.style.display='none';
@@ -4023,9 +3478,15 @@ function renderFunilTaxas(allRows,rows,tots,CAMPOS,LABELS,ICONS){
 }
 
 function populateConvSelects(allRows, CAMPOS, LABELS, ICONS){
-  // Guardar contexto global para uso no comparativo
   window._convCtx={allRows,CAMPOS,LABELS,ICONS};
-  const tipo=document.getElementById('conv-tipo')?.value||'semana';
+
+  // Popular select de tipo se ainda vazio
+  const tipoSel=document.getElementById('conv-tipo');
+  if(tipoSel&&!tipoSel.options.length){
+    tipoSel.innerHTML=`<option value="semana">Por semana</option><option value="mes">Por mês</option>`;
+  }
+
+  const tipo=tipoSel?.value||'semana';
   const selA=document.getElementById('conv-a');
   const selB=document.getElementById('conv-b');
   if(!selA||!selB) return;
@@ -4034,15 +3495,21 @@ function populateConvSelects(allRows, CAMPOS, LABELS, ICONS){
   if(tipo==='semana'){
     const sems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();
     opts=sems.map(s=>{
-      const d=new Date(s+'T12:00:00');
+      // s é no formato YYYY-MM-DD (início da semana)
+      const parts=s.split('-');
+      const d=new Date(+parts[0],+parts[1]-1,+parts[2]);
       const fim=new Date(d);fim.setDate(d.getDate()+5);
-      const lbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const fmt2=dt=>dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+      const fmtY=dt=>dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const lbl=fmt2(d)+' a '+fmtY(fim);
       return {val:s,lbl};
     });
   } else {
     const meses=[...new Set(allRows.map(r=>r.sem?.slice(0,7)).filter(Boolean))].sort().reverse();
     opts=meses.map(m=>{
-      const lbl=new Date(m+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      const parts=m.split('-');
+      const d=new Date(+parts[0],+parts[1]-1,1);
+      const lbl=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
       return {val:m,lbl};
     });
   }
@@ -4051,7 +3518,6 @@ function populateConvSelects(allRows, CAMPOS, LABELS, ICONS){
   const html=opts.map(o=>`<option value="${o.val}">${o.lbl}</option>`).join('');
   selA.innerHTML=html;
   selB.innerHTML='<option value="">— Comparar com —</option>'+html;
-  // Restaurar seleção ou default: A=mais recente, B=segundo mais recente
   if(curA&&opts.find(o=>o.val===curA)) selA.value=curA;
   else if(opts[0]) selA.value=opts[0].val;
   if(curB&&opts.find(o=>o.val===curB)) selB.value=curB;
@@ -4087,10 +3553,13 @@ function renderFunilTaxasComparativo(){
   const fmtLabel=val=>{
     if(!val) return '';
     if(tipo==='semana'){
-      const d=new Date(val+'T12:00:00');
-      return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const p=val.split('-');
+      const d=new Date(+p[0],+p[1]-1,+p[2]);
+      const fim=new Date(d);fim.setDate(d.getDate()+5);
+      return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
     }
-    return new Date(val+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+    const p=val.split('-');
+    return new Date(+p[0],+p[1]-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
   };
 
   el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -5285,22 +4754,28 @@ function crmOpenEdit(idx){
     const horaEl=document.getElementById('f-crm-hora');if(horaEl)horaEl.value=r.hora||'';
     document.getElementById('f-crm-vend').value=r.vendedor||'';
     document.getElementById('f-crm-cliente').value=r.cliente||'';
+    // Popular canal antes de setar valores
+    const selCanal=document.getElementById('f-crm-canal');
+    if(selCanal){
+      selCanal.innerHTML='<option value="">Selecione o canal…</option>'+crmGetMotivos('canal').map(m=>`<option value="${m}">${m}</option>`).join('');
+      selCanal.value=r.canal||'';
+    }
+    const telCli=document.getElementById('f-crm-tel-cliente');if(telCli)telCli.value=r.telCliente||'';
+    document.getElementById('f-crm-obs').value=r.obs||'';
+    // Setar tipo e status por último para não serem sobrescritos
+    crmSetTipo(r.tipo||'lead');
     crmSetStatus(r.status||'', true);
     document.getElementById('f-crm-motivo-nc').value=r.motivoNc||'';
     crmSetResultado(r.resultado||'');
     document.getElementById('f-crm-motivo-perda').value=r.motivoPerda||'';
-    setTimeout(()=>{ crmSetTipo(r.tipo||'lead'); },40);
     const vinId=document.getElementById('f-crm-vinculo-id');if(vinId)vinId.value=r.vinculoId||'';
     if(r.vinculoId){
       const orig=crmDB.find(x=>String(x.id)===String(r.vinculoId));
       const lbl=document.getElementById('f-crm-vinculo-label');
       if(lbl&&orig){lbl.style.display='';lbl.textContent='✓ Vinculado a: '+orig.cliente+' ('+orig.data+')';}
     }
-    const canalEl=document.getElementById('f-crm-canal');if(canalEl)canalEl.value=r.canal||'';
-    const telCli=document.getElementById('f-crm-tel-cliente');if(telCli)telCli.value=r.telCliente||'';
-    document.getElementById('f-crm-obs').value=r.obs||'';
     crmOnVendChange();
-  },30);
+  },80);
 }
 
 function crmDeletar(idx){
@@ -6457,7 +5932,7 @@ function renderAdes(data){
     const hoje0=new Date().toISOString().slice(0,10);
     const ontem=new Date(Date.now()-864e5).toISOString().slice(0,10);
     const isNovo=r.data_contrato===hoje0||r.data_contrato===ontem;
-    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.15);color:var(--purple);border:1px solid rgba(191,90,242,.35);font-weight:600;white-space:nowrap">${r.supervisor} · ${fmt(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
+    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.15);color:var(--purple);border:1px solid rgba(191,90,242,.35);font-weight:600;white-space:nowrap">${r.supervisor} · ${fmtCom(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
     return`<tr class="tr-expand" id="tr-${uid}" onclick="toggleRowDetail('${uid}',event)">
       <td class="mono">${fmtD(r.data_contrato)}</td>
       <td>${r.vendedor}</td><td style="font-weight:500">${r.cliente}${isNovo?'<span class="badge-novo">Novo</span>':''}</td>
@@ -6495,7 +5970,7 @@ function renderAdes(data){
           <div class="detail-item"><span class="detail-label">Data Contrato</span><span class="detail-val mono">${fmtD(r.data_contrato)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Pagamento</span><span class="detail-val mono">${fmtD(r.data_pagamento)}</span></div>
           <div class="detail-item"><span class="detail-label">Status</span><span class="detail-val">${r.status||'—'}</span></div>
-          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
+          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmtCom(r.com_sup)}</span></div>`:''}
           ${r.obs?`<div class="detail-item" style="grid-column:1/-1"><span class="detail-label">Obs.</span><span class="detail-val" style="color:var(--text2)">${r.obs}</span></div>`:''}
         </div>
         <div class="detail-actions">
@@ -6535,7 +6010,7 @@ function renderLin(data){
     const hoje0=new Date().toISOString().slice(0,10);
     const ontem=new Date(Date.now()-864e5).toISOString().slice(0,10);
     const isNovo=r.data_contrato===hoje0||r.data_contrato===ontem;
-    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.15);color:var(--purple);border:1px solid rgba(191,90,242,.35);font-weight:600;white-space:nowrap">${r.supervisor} · ${fmt(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
+    const supTag=r.supervisor&&r.com_sup>0?`<span style="font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(191,90,242,.15);color:var(--purple);border:1px solid rgba(191,90,242,.35);font-weight:600;white-space:nowrap">${r.supervisor} · ${fmtCom(r.com_sup)}</span>`:'<span style="color:var(--text3);font-size:11px">—</span>';
     return`<tr class="tr-expand" id="tr-${uid}" onclick="toggleRowDetail('${uid}',event)">
       <td class="mono">${fmtD(r.data_contrato)}</td>
       <td>${r.vendedor}</td><td style="font-weight:500">${r.cliente}${isNovo?'<span class="badge-novo">Novo</span>':''}</td>
@@ -6573,7 +6048,7 @@ function renderLin(data){
           <div class="detail-item"><span class="detail-label">Com. M3</span><span class="detail-val" style="color:var(--accent)">${fmtPctCom(r.pct_m3)} = ${fmtCom(r.com_m3)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Contrato</span><span class="detail-val mono">${fmtD(r.data_contrato)}</span></div>
           <div class="detail-item"><span class="detail-label">Status</span><span class="detail-val">${r.status||'—'}</span></div>
-          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
+          ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmtCom(r.com_sup)}</span></div>`:''}
           ${r.obs?`<div class="detail-item" style="grid-column:1/-1"><span class="detail-label">Obs.</span><span class="detail-val" style="color:var(--text2)">${r.obs}</span></div>`:''}
         </div>
         <div class="detail-actions">
@@ -6737,7 +6212,7 @@ function renderComVend(){
           <td style="font-size:11px;color:var(--text3)">${r.tabela||'—'}</td>
           <td class="mono">${fmt(r.bruto)}</td>
           <td class="mono val-g">${fmt(r.liq)}</td>
-          <td class="mono val-o">${com?fmt(com):'—'}</td>
+          <td class="mono val-o">${fmtCom(com)}</td>
           <td class="mono">${r.p1?fmtP(r.p1):'—'}</td>
           <td class="mono">${r.p2?fmtP(r.p2):'—'}</td>
           <td class="mono">${r.p3?fmtP(r.p3):'—'}</td>
@@ -8354,7 +7829,8 @@ function openModal(type='ades'){
     setTimeout(()=>{
       const selCanal=document.getElementById('f-crm-canal');
       if(selCanal) selCanal.innerHTML='<option value="">Selecione o canal…</option>'+crmGetMotivos('canal').map(m=>`<option value="${m}">${m}</option>`).join('');
-      crmSetTipo('lead');
+      // Só resetar para 'lead' se não estiver editando
+      if(crmEditIdx===null) crmSetTipo('lead');
     },30);
     form=`
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
@@ -11023,7 +10499,6 @@ const SHORTCUTS = {
   'p': 'presenca',
   'o': 'portal',
   'k': 'cadastro',
-  's': 'simulador',
   'z': 'comunicacao',
   'e': 'contempl',
 };
@@ -11082,7 +10557,7 @@ function showShortcutsHelp(){
   const pairs=[
     ['D','Dashboard'],['U','Supervisora'],['A','Adesionada'],['L','Linear'],
     ['M','Resumo Mensal'],['C','Comissões'],['G','Metas'],['P','Presença'],
-    ['O','Portal'],['K','Cadastros'],['S','Simulador'],['Z','Comunicação'],
+    ['O','Portal'],['K','Cadastros'],['Z','Comunicação'],
     ['N','Nova entrada (na aba atual)'],['?','Esta ajuda'],['Esc','Fechar / Recolher linhas'],
   ];
   div.innerHTML='<div style="background:var(--card);border:1px solid var(--border2);border-radius:20px;padding:28px;width:480px;max-width:92vw;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg)">'+
