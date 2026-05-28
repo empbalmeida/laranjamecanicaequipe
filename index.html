@@ -4363,10 +4363,12 @@ function crmVerFicha(idx){
     </div>
   </div>`;
 
-  document.getElementById('m-title').innerHTML='👤 '+r.cliente;
+    document.getElementById('m-title').innerHTML='👤 '+r.cliente;
   document.getElementById('m-sub').innerHTML='Ficha completa do cliente';
-  document.getElementById('m-form').innerHTML=html;
-  document.getElementById('modal-save-btn').style.display='none';
+  const mForm=document.getElementById('m-form');
+  if(mForm){mForm.style.cssText='display:block!important;grid-template-columns:none';mForm.innerHTML=html;}
+  const mSaveBtn=document.getElementById('m-save');if(mSaveBtn)mSaveBtn.style.display='none';
+  const mSaveCom=document.getElementById('m-save-com');if(mSaveCom)mSaveCom.style.display='none';
   document.getElementById('overlay').classList.add('open');
 }
 
@@ -4856,7 +4858,7 @@ function crmOpenEdit(idx){
     document.getElementById('f-crm-data').value=r.data||'';
     document.getElementById('f-crm-vend').value=r.vendedor||'';
     document.getElementById('f-crm-cliente').value=r.cliente||'';
-    crmSetStatus(r.status||'');
+    crmSetStatus(r.status||'', true);
     document.getElementById('f-crm-motivo-nc').value=r.motivoNc||'';
     crmSetResultado(r.resultado||'');
     document.getElementById('f-crm-motivo-perda').value=r.motivoPerda||'';
@@ -4882,10 +4884,10 @@ function crmDeletar(idx){
   toast('Lead removido.');
 }
 
-function crmSetStatus(v){
+function crmSetStatus(v, forceSet=false){
   const cur=document.getElementById('f-crm-status')?.value||'';
-  // Toggle: clicar no mesmo botão desmarca
-  const newVal = cur===v ? '' : v;
+  // Toggle só quando usuário clica — forceSet pula toggle (usado no edit)
+  const newVal = forceSet ? v : (cur===v ? '' : v);
   if(document.getElementById('f-crm-status')) document.getElementById('f-crm-status').value=newVal;
 
   // Estilo dos 3 botões
@@ -6996,6 +6998,7 @@ function openModal(type='ades'){
   modalType=type;
   // Restaurar botão salvar (pode ter sido oculto por crmVerFicha)
   const _ms=document.getElementById('m-save');if(_ms)_ms.style.display='';
+  const mFormEl=document.getElementById('m-form');if(mFormEl){mFormEl.style.display='';mFormEl.style.gridTemplateColumns='';}
   const vOpts=vendedores().map(v=>`<option>${v}</option>`).join('');
   const tOpts=DB.tabelas.map(t=>`<option>${t.nome}</option>`).join('');
   const statusOpts=getStatusOpts();
@@ -7788,7 +7791,8 @@ function openModal(type='ades'){
     <div class="fg"><label class="flabel">Dia (índice: 0=seg, 1=ter…)</label><input class="finput" id="f-didx" type="number" value="0" min="0"></div>
     <div class="fg full"><label class="flabel">Status</label><select class="finput" id="f-pstat"><option>PRESENTE</option><option>FALTA</option><option>FERIADO</option><option>Palestra</option><option>Treinamento</option><option value=""> </option></select></div>`;
   } else if(type==='crm-reg'){
-    crmEditIdx=null;
+    if(crmEditIdx===null) { /* novo registro — crmEditIdx já é null */ }
+    // Não resetar crmEditIdx aqui — crmOpenEdit já o setou antes de chamar openModal
     const vOpts=vendedores().map(v=>`<option value="${v}">${v}</option>`).join('');
     const motivosNC=crmGetMotivos('nc').map(m=>`<option value="${m}">${m}</option>`).join('');
     const motivosPerda=crmGetMotivos('perda').map(m=>`<option value="${m}">${m}</option>`).join('');
@@ -8012,7 +8016,11 @@ function calcSupLin(){
 
 function closeModal(e){
   if(e&&e.target!==document.getElementById('overlay'))return;
-  editType=null; editIdx=null;
+  editType=null; editIdx=null; crmEditIdx=null;
+  // Restaurar m-form e botão salvar (podem ter sido alterados por crmVerFicha)
+  const mf=document.getElementById('m-form');if(mf){mf.style.cssText='';}
+  const ms=document.getElementById('m-save');if(ms)ms.style.display='';
+  const msc=document.getElementById('m-save-com');if(msc)msc.style.display='';
   document.getElementById('overlay').classList.remove('open');
 }
 
