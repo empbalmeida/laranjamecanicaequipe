@@ -4429,14 +4429,25 @@ function crmEnviarAlertasDiario(){
 
 
 function crmLimparDadosSujos(){
-  // Corrige registros antigos que tinham motivoPerda salvo incorretamente
   let mudou=false;
   crmDB.forEach(r=>{
+    // Limpar motivoPerda quando não se aplica ao registro principal
     if(r.motivoPerda && r.resultado!=='nao_fechou' && r.status!=='nao_compareceu'){
       r.motivoPerda=''; mudou=true;
     }
     if(r.motivoNc && r.status!=='nao_compareceu'){
       r.motivoNc=''; mudou=true;
+    }
+    // Limpar também no histórico
+    if(r.historico && r.historico.length){
+      r.historico.forEach(h=>{
+        if(h.motivoPerda && h.resultado!=='nao_fechou' && h.status!=='nao_compareceu'){
+          h.motivoPerda=''; mudou=true;
+        }
+        if(h.motivoNc && h.status!=='nao_compareceu'){
+          h.motivoNc=''; mudou=true;
+        }
+      });
     }
   });
   if(mudou) crmSave();
@@ -4640,13 +4651,15 @@ function crmFiltrarPeriodo(rows){
   const seg=new Date(now); seg.setDate(now.getDate()-(dow===0?6:dow-1));
   const segStr=seg.toISOString().slice(0,10);
   const mes=hoje.slice(0,7);
-  if(crmPeriodo==='hoje')   return rows.filter(r=>r.data===hoje);
-  if(crmPeriodo==='semana') return rows.filter(r=>r.data>=segStr&&r.data<=hoje);
-  if(crmPeriodo==='mes')    return rows.filter(r=>r.data?.startsWith(mes));
+  // Usar dataAtual (reagendamento) quando disponível
+  const d=r=>r.dataAtual||r.data;
+  if(crmPeriodo==='hoje')   return rows.filter(r=>d(r)===hoje);
+  if(crmPeriodo==='semana') return rows.filter(r=>d(r)>=segStr&&d(r)<=hoje);
+  if(crmPeriodo==='mes')    return rows.filter(r=>d(r)?.startsWith(mes));
   if(crmPeriodo==='custom'){
     const ini=document.getElementById('crm-data-ini')?.value||'';
     const fim=document.getElementById('crm-data-fim')?.value||hoje;
-    return rows.filter(r=>(!ini||r.data>=ini)&&r.data<=fim);
+    return rows.filter(r=>(!ini||d(r)>=ini)&&d(r)<=fim);
   }
   return rows;
 }
@@ -4831,7 +4844,12 @@ function crmRenderTabela(){
   if(fR) rows=rows.filter(r=>r.resultado===fR);
   if(fTipo) rows=rows.filter(r=>(r.tipo||'lead')===fTipo);
   if(busca) rows=rows.filter(r=>(r.cliente||'').toLowerCase().includes(busca)||(r.vendedor||'').toLowerCase().includes(busca));
-  rows.sort((a,b)=>(a[crmSortCol]||'').toString().localeCompare((b[crmSortCol]||'').toString())*crmSortDir);
+  rows.sort((a,b)=>{
+    // Para coluna data, usar dataAtual quando disponível
+    const va=crmSortCol==='data'?(a.dataAtual||a.data||''):(a[crmSortCol]||'');
+    const vb=crmSortCol==='data'?(b.dataAtual||b.data||''):(b[crmSortCol]||'');
+    return va.toString().localeCompare(vb.toString())*crmSortDir;
+  });
 
   const tbody=document.getElementById('crm-tbl-body');
   if(!tbody) return;
