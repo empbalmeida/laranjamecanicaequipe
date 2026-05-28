@@ -934,7 +934,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <!-- Volume em destaque: Hoje · Semana · Mês -->
       <div id="vol-destaque" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px;overflow:hidden"></div>
 
-      <div class="grid2" style="margin-bottom:20px">
+      <!-- Lembrete: Agendamentos de hoje -->
+      <div id="dash-agendamentos-hoje" style="display:none;margin-bottom:18px"></div>
         <div class="kpi">
           <div class="kpi-accent" style="background:var(--accent)"></div>
           <div class="kpi-label">Clientes <span id="kpi-ano-label" style="color:var(--accent);font-size:9px"></span></div>
@@ -4800,7 +4801,7 @@ function crmEnviarWpp(tipo, r){
   const tel=crmGetTelVend(r.vendedor); if(!tel) return;
   const dtLong=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}):'data não informada';
   const dtShort=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'data marcada';
-  const dt=tipo==='alerta'?dtLong:dtShort;
+  const dt=tipo==='alerta'?dtLong+(r.hora?' às '+r.hora:''):dtShort+(r.hora?' às '+r.hora:'');
   const msg=crmFillTemplate(crmGetTemplate(tipo),r,dt);
   window.open('https://wa.me/55'+tel+'?text='+encodeURIComponent(msg),'_blank');
 }
@@ -4905,7 +4906,7 @@ function crmRenderTabela(){
     const vinculados=[...vinculadosInt.map(h=>({...h,_fonte:'int'})),...vinculadosExt.map(h=>({...h,_fonte:'ext'}))];
     return `<tr>
       <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">
-        ${dt}${r.dataAtual&&r.dataAtual!==r.data?'<br><span style="font-size:9px;color:var(--blue)">🔄 reag.</span>':''}
+        ${dt}${r.hora?'<br><span style="font-size:10px;color:var(--accent);font-weight:600">⏰ '+r.hora+'</span>':''}${r.dataAtual&&r.dataAtual!==r.data?'<br><span style="font-size:9px;color:var(--blue)">🔄 reag.</span>':''}
       </td>
       <td style="font-weight:600;font-size:13px">${r.vendedor||'—'}</td>
       <td style="font-size:12px;cursor:pointer;color:var(--accent);text-decoration:underline dotted" onclick="crmVerFicha(${r._i})" title="Ver ficha completa">${r.cliente||'—'}</td>
@@ -4944,6 +4945,7 @@ function crmOpenEdit(idx){
   setTimeout(()=>{
     const r=crmDB[idx];
     document.getElementById('f-crm-data').value=r.data||'';
+    const horaEl=document.getElementById('f-crm-hora');if(horaEl)horaEl.value=r.hora||'';
     document.getElementById('f-crm-vend').value=r.vendedor||'';
     document.getElementById('f-crm-cliente').value=r.cliente||'';
     crmSetStatus(r.status||'', true);
@@ -5028,11 +5030,12 @@ function crmEnviarLembreteModal(tipo){
   const cliente=document.getElementById('f-crm-cliente')?.value||'(sem nome)';
   const data=document.getElementById('f-crm-data')?.value;
   const canal=document.getElementById('f-crm-canal')?.value||'';
+  const hora=document.getElementById('f-crm-hora')?.value||'';
   const vendObj=DB.vendedores.find(v=>v.nome===vend);
   const tel=vendObj?.telefone?.replace(/\D/g,'');
   if(!tel){toast('⚠ Telefone do vendedor não cadastrado. Cadastre em Cadastros → Vendedor.');return;}
-  const dt=data?new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}):'data não informada';
-  const dtCurto=data?new Date(data+'T12:00:00').toLocaleDateString('pt-BR'):'data marcada';
+  const dt=data?new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})+(hora?' às '+hora:''):'data não informada';
+  const dtCurto=data?new Date(data+'T12:00:00').toLocaleDateString('pt-BR')+(hora?' às '+hora:''):'data marcada';
   let msg='';
   if(tipo==='alerta'){
     msg=`🔔 *LEMBRETE DE AGENDAMENTO*\n\nOi ${vend}! Você tem um cliente agendado:\n\n👤 *${cliente}*\n📅 ${dt}${canal?'\n📡 Canal: '+canal:''}\n\nConfirme o atendimento e me avise! 🍊`;
@@ -5079,6 +5082,7 @@ function crmSalvar(){
   const rec={
     id:crmEditIdx!==null?crmDB[crmEditIdx].id:Date.now(),
     data:document.getElementById('f-crm-data').value,
+    hora:document.getElementById('f-crm-hora')?.value||'',
     vendedor:vend,cliente,status,
     motivoNc:status==='nao_compareceu'?document.getElementById('f-crm-motivo-nc')?.value||'':'',
     resultado,
@@ -5113,8 +5117,64 @@ function crmExportarCSV(){
 // ══════════════════════════════════════════════════════════════════════════════
 
 
+function renderAgendamentosHoje(){
+  const el=document.getElementById('dash-agendamentos-hoje');
+  if(!el) return;
+  const hoje=new Date().toISOString().slice(0,10);
+  const d=r=>r.dataAtual||r.data;
+  // Clientes agendados para hoje (status agendado ou sem status ainda)
+  const agHoje=crmDB.filter(r=>{
+    const dataR=d(r);
+    if(dataR!==hoje) return false;
+    const hist=r.historico||[];
+    const ultimo=hist.length?hist[hist.length-1]:null;
+    const statusAtual=ultimo?.status||r.status||'';
+    // Mostrar se agendado, sem status ainda, ou com status vazio
+    return !statusAtual||statusAtual==='agendado';
+  }).sort((a,b)=>(a.hora||'99:99').localeCompare(b.hora||'99:99'));
+
+  if(!agHoje.length){el.style.display='none';return;}
+  el.style.display='';
+
+  const total=agHoje.length;
+  const porVend={};
+  agHoje.forEach(r=>{porVend[r.vendedor]=(porVend[r.vendedor]||0)+1;});
+  const resumoVend=Object.entries(porVend).map(([v,n])=>v+' ('+n+')').join(' · ');
+
+  el.innerHTML=`<div style="background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.3);border-radius:14px;padding:14px 18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px">📅</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">
+            ${total} cliente${total>1?'s':''} agendado${total>1?'s':''} para hoje
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${resumoVend}</div>
+        </div>
+      </div>
+      <button class="btn btn-g" style="font-size:11px;padding:4px 12px" onclick="nav('crm');setTimeout(()=>crmSetPeriodo('hoje'),100)">Ver no CRM →</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${agHoje.map(r=>{
+        const vendObj=DB.vendedores.find(v=>v.nome===r.vendedor);
+        const temTel=!!vendObj?.telefone;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+          ${r.hora?`<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);min-width:44px">⏰ ${r.hora}</span>`:'<span style="min-width:44px;color:var(--text3);font-size:11px;font-family:var(--mono)">—</span>'}
+          <span style="font-size:13px;font-weight:600;flex:1">${r.cliente}</span>
+          <span style="font-size:11px;color:var(--text3)">${r.vendedor}</span>
+          ${r.canal?`<span style="font-size:10px;color:var(--text3);font-family:var(--mono);padding:2px 6px;background:var(--bg3);border-radius:4px;border:1px solid var(--border)">${r.canal}</span>`:''}
+          ${temTel?`<button class="btn btn-g" style="font-size:10px;padding:2px 7px;color:#25d366" onclick="crmWppAlerta(crmDB.find(x=>x.id==${r.id}))" title="Lembrete ao vendedor">🔔</button>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function renderDash(){
   try{
+
+  // Agendamentos de hoje (CRM)
+  renderAgendamentosHoje();
 
   // ── Hero compacto ────────────────────────────────────────────────────────
   {
@@ -7959,8 +8019,9 @@ function openModal(type='ades'){
       crmSetTipo('lead');
     },30);
     form=`
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
       <div class="fg"><label class="flabel">Data do Agendamento</label><input class="finput" type="date" id="f-crm-data" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="fg"><label class="flabel">Horário</label><input class="finput" type="time" id="f-crm-hora" placeholder="ex: 14:00"></div>
       <div class="fg"><label class="flabel">Vendedor</label>
         <select class="finput" id="f-crm-vend" onchange="crmOnVendChange()">
           <option value="">Selecione…</option>${vOpts}
