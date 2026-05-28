@@ -621,10 +621,126 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 @media(max-width:480px){
   body.compact .card-hd{flex-wrap:wrap;gap:4px;}
 }
+
+/* ── AUTH SYSTEM ── */
+#auth-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:0;
+}
+.auth-box{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:36px 32px;width:min(420px,calc(100vw - 32px));
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+.auth-logo-dot{width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.auth-logo-name{font-family:var(--font);font-weight:800;font-size:18px;letter-spacing:-.02em;}
+.auth-title{font-family:var(--font);font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:6px;}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:24px;}
+.auth-fg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+.auth-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--text3);}
+.auth-input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:var(--body);outline:none;transition:border-color .2s;width:100%;}
+.auth-input:focus{border-color:var(--accent);}
+.auth-btn{width:100%;padding:12px;border-radius:8px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .15s;margin-top:6px;}
+.auth-btn-o{background:var(--accent);color:#fff;}
+.auth-btn-o:hover{filter:brightness(1.1);}
+.auth-btn-g{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.auth-btn-g:hover{border-color:var(--border2);}
+.auth-err{font-size:12px;color:var(--red);text-align:center;margin-top:8px;min-height:18px;font-family:var(--mono);}
+.auth-switch{font-size:12px;color:var(--text3);text-align:center;margin-top:16px;}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+/* Online indicator */
+#online-indicator{
+  position:fixed;bottom:16px;right:16px;z-index:500;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:12px;
+  padding:8px 12px;font-size:11px;font-family:var(--mono);
+  display:flex;align-items:center;gap:6px;cursor:pointer;
+  box-shadow:var(--shadow-md);
+}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);}
+/* Painel de aprovação */
+#auth-admin-panel{
+  position:fixed;top:64px;right:16px;z-index:500;width:320px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:12px;
+  box-shadow:var(--shadow-md);display:none;
+}
+#auth-admin-panel.open{display:block;}
+.auth-panel-hd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.auth-panel-body{padding:10px;max-height:400px;overflow-y:auto;}
+.auth-req-item{padding:10px 12px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);margin-bottom:6px;}
+.auth-req-name{font-weight:700;font-size:13px;margin-bottom:2px;}
+.auth-req-email{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;}
+.auth-req-btns{display:flex;gap:6px;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-box" id="auth-box-login">
+    <div class="auth-logo">
+      <div class="auth-logo-dot">🍊</div>
+      <span class="auth-logo-name">Laranja Mecânica</span>
+    </div>
+    <div class="auth-title">Bem-vinda de volta</div>
+    <div class="auth-sub">Entre com seu e-mail e senha para acessar</div>
+    <div class="auth-fg"><label class="auth-label">E-mail</label><input class="auth-input" type="email" id="auth-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')authLogin()"></div>
+    <div class="auth-fg"><label class="auth-label">Senha</label><input class="auth-input" type="password" id="auth-senha" placeholder="••••••••" onkeydown="if(event.key==='Enter')authLogin()"></div>
+    <div class="auth-err" id="auth-err"></div>
+    <button class="auth-btn auth-btn-o" onclick="authLogin()">Entrar</button>
+    <div class="auth-switch">Não tem acesso? <a onclick="authShowSolicitar()">Solicitar acesso</a></div>
+  </div>
+
+  <div class="auth-box" id="auth-box-solicitar" style="display:none">
+    <div class="auth-logo">
+      <div class="auth-logo-dot">🍊</div>
+      <span class="auth-logo-name">Laranja Mecânica</span>
+    </div>
+    <div class="auth-title">Solicitar Acesso</div>
+    <div class="auth-sub">Preencha seus dados. A supervisora irá aprovar seu acesso.</div>
+    <div class="auth-fg"><label class="auth-label">Nome completo</label><input class="auth-input" type="text" id="auth-sol-nome" placeholder="Seu nome"></div>
+    <div class="auth-fg"><label class="auth-label">E-mail</label><input class="auth-input" type="email" id="auth-sol-email" placeholder="seu@email.com"></div>
+    <div class="auth-fg"><label class="auth-label">Senha desejada</label><input class="auth-input" type="password" id="auth-sol-senha" placeholder="mínimo 6 caracteres"></div>
+    <div class="auth-err" id="auth-sol-err"></div>
+    <button class="auth-btn auth-btn-o" onclick="authSolicitar()">Enviar solicitação</button>
+    <button class="auth-btn auth-btn-g" style="margin-top:6px" onclick="authShowLogin()">← Voltar ao login</button>
+  </div>
+
+  <div class="auth-box" id="auth-box-aguardando" style="display:none">
+    <div style="text-align:center;padding:12px 0">
+      <div style="font-size:48px;margin-bottom:16px">⏳</div>
+      <div class="auth-title">Solicitação enviada!</div>
+      <div class="auth-sub">A supervisora foi notificada e irá aprovar seu acesso em breve. Esta tela entrará automaticamente quando aprovada.</div>
+      <div style="margin-top:16px;font-size:11px;color:var(--text3);font-family:var(--mono)" id="auth-aguard-status">Verificando aprovação…</div>
+      <button class="auth-btn auth-btn-g" style="margin-top:16px" onclick="authShowLogin()">← Voltar ao login</button>
+    </div>
+  </div>
+</div>
+
+<!-- INDICADOR ONLINE -->
+<div id="online-indicator" style="display:none" onclick="authTogglePanel()">
+  <div class="online-dot"></div>
+  <span id="online-label">Online</span>
+  <span id="online-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:20px;font-weight:700;margin-left:2px">0</span>
+</div>
+
+<!-- PAINEL ADMIN (solicitações + quem está online) -->
+<div id="auth-admin-panel">
+  <div class="auth-panel-hd">
+    <span style="font-weight:700;font-size:13px">🔐 Acesso & Online</span>
+    <button onclick="authTogglePanel()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">✕</button>
+  </div>
+  <div class="auth-panel-body">
+    <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px">Quem está online agora</div>
+    <div id="auth-online-list" style="margin-bottom:14px"></div>
+    <div style="font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--text3);margin-bottom:6px">Solicitações pendentes <span id="auth-req-count" style="color:var(--red)"></span></div>
+    <div id="auth-req-list"></div>
+  </div>
+</div>
+
 
 <!-- NAVBAR -->
 <nav class="navbar">
@@ -3109,6 +3225,7 @@ const TITLES={dashboard:'Dashboard',crm:'CRM Inteligente',ia:'Assistente IA',dia
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
+let _pendingNav='comissoes';
 
 function hashSimples(s){
   // djb2 hash simples, suficiente para proteção leve no front-end
@@ -3124,6 +3241,7 @@ let SENHA_CORRETA='laranja123'; // Troque aqui ou pela opção 🔑 Mudar Senha
 function nav(p){
   // Interceptar acesso à aba de comissões se não desbloqueada
   if(p==='comissoes'&&!comissaoDesbloqueada){
+    _pendingNav=p;
     abrirSenha();
     return;
   }
@@ -3184,7 +3302,9 @@ function confirmarSenha(){
   if(val===SENHA_CORRETA){
     comissaoDesbloqueada=true;
     document.getElementById('overlay-senha').classList.remove('open');
-    _navExecutar('comissoes');
+    // Re-renderizar para revelar comissões na aba atual
+    render(activePage);
+    _navExecutar(_pendingNav||'comissoes');
   } else {
     document.getElementById('senha-erro').textContent='Senha incorreta. Tente novamente.';
     document.getElementById('senha-input').value='';
@@ -3655,7 +3775,7 @@ function renderSupDash(){
 
   const kpiEl=document.getElementById('sup-kpis');
   if(kpiEl) kpiEl.innerHTML=
-    '<div class="kpi-card"><div class="kpi-label">Comissão Supervisão</div><div class="kpi-val" style="color:var(--green)">'+fmt(totalComSup)+'</div></div>'+
+    '<div class="kpi-card"><div class="kpi-label">Comissão Supervisão</div><div class="kpi-val" style="color:var(--green)">'+fmtCom(totalComSup)+'</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Volume do Grupo</div><div class="kpi-val" style="color:var(--accent)">'+fmtK(totalVolGrupo)+'</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Vendas do Grupo</div><div class="kpi-val">'+totalVendasGrupo+'</div></div>'+
     '<div class="kpi-card"><div class="kpi-label">Vendedores ativos</div><div class="kpi-val">'+(new Set(activeSups.flatMap(s=>supVendedores[s]||[]))).size+'</div></div>';
@@ -3687,11 +3807,11 @@ function renderSupDash(){
           '<div style="font-size:11px;color:var(--text3)">'+qtd+' venda'+( qtd!==1?'s':'')+' · Vol: '+fmtK(vol)+'</div></div>'+
           '<div style="text-align:right">'+
             '<div style="font-size:11px;color:var(--text2)">Taxa: <span style="font-family:DM Mono,monospace">'+pctSup+'</span></div>'+
-            '<div style="font-size:15px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">'+fmt(comSup)+'</div>'+
+            '<div style="font-size:15px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">'+fmtCom(comSup)+'</div>'+
           '</div></div>');
       });
     });
-    comEl.innerHTML=rows.length?rows.join('')+'<div style="display:flex;justify-content:space-between;padding:10px 22px;border-top:2px solid var(--border2)"><span style="font-size:13px;font-weight:600">Total comissão supervisão</span><span style="font-size:15px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">'+fmt(totalComSup)+'</span></div>':'<div style="padding:20px 22px;color:var(--text3);font-size:13px">Sem comissões de supervisão neste mês.</div>';
+    comEl.innerHTML=rows.length?rows.join('')+'<div style="display:flex;justify-content:space-between;padding:10px 22px;border-top:2px solid var(--border2)"><span style="font-size:13px;font-weight:600">Total comissão supervisão</span><span style="font-size:15px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">'+fmtCom(totalComSup)+'</span></div>':'<div style="padding:20px 22px;color:var(--text3);font-size:13px">Sem comissões de supervisão neste mês.</div>';
   }
 
   // ── Meta do grupo ─────────────────────────────────────────────────────────
@@ -3730,7 +3850,7 @@ function renderSupDash(){
     const medals=['p1','p2','p3'];
     rankEl.innerHTML=dados.length?dados.map((d,i)=>'<div class="rank-row">'+
       '<div class="rank-pos '+(medals[i]||'')+'>'+(i+1)+'</div>'+
-      '<div class="rank-name">'+d.v+'<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">'+d.qtd+' venda'+(d.qtd!==1?'s':'')+' · Sup: '+fmt(d.comSup)+'</div></div>'+
+      '<div class="rank-name">'+d.v+'<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">'+d.qtd+' venda'+(d.qtd!==1?'s':'')+' · Sup: '+fmtCom(d.comSup)+'</div></div>'+
       '<div class="rank-bar"><div class="rank-bar-fill" style="width:'+(d.vol/mx*100).toFixed(1)+'%"></div></div>'+
       '<div class="rank-val">'+fmtK(d.vol)+'</div>'+
     '</div>').join(''):'<div style="color:var(--text3);font-size:13px">Sem vendas neste mês.</div>';
@@ -5398,7 +5518,8 @@ function renderDash(){
     const _n=new Date(),_h=_n.getHours();
     const _g=_h<12?'Bom dia':_h<18?'Boa tarde':'Boa noite';
     const _gr=document.getElementById('dash-greeting');
-    if(_gr) _gr.textContent=_g+', Bia.';
+    const _nome=authUser?._nome||'Bia';
+    if(_gr) _gr.textContent=_g+', '+_nome+'.';
     const _de=document.getElementById('dash-hero-date');
     if(_de) _de.textContent=_n.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
     const _su=document.getElementById('dash-hero-sub');
@@ -6346,8 +6467,8 @@ function renderAdes(data){
       <td>${r.tabela||'—'}</td>
       <td class="mono">${fmt(r.valor_bruto)}</td>
       <td class="mono val-g">${fmt(r.valor_liq)}</td>
-      <td class="mono">${fmtP(r.pct_com)}</td>
-      <td class="mono val-o">${fmt(r.com_rs)}</td>
+      <td class="mono">${fmtPctCom(r.pct_com)}</td>
+      <td class="mono val-o">${fmtCom(r.com_rs)}</td>
       <td>${supTag}</td>
       <td class="mono">${fmtD(r.data_pagamento)}</td>
       <td><span class="badge-clickable" onclick="quickFilterStatus('ades','${r.status}')" title="Filtrar por ${r.status}">${badge(r.status)}</span></td>
@@ -6370,7 +6491,7 @@ function renderAdes(data){
           <div class="detail-item"><span class="detail-label">Valor Bruto</span><span class="detail-val" style="color:var(--text2)">${fmt(r.valor_bruto)}</span></div>
           <div class="detail-item"><span class="detail-label">Valor Líquido</span><span class="detail-val" style="color:var(--green)">${fmt(r.valor_liq)}</span></div>
           <div class="detail-item"><span class="detail-label">% Comissão</span><span class="detail-val mono">${fmtP(r.pct_com)}</span></div>
-          <div class="detail-item"><span class="detail-label">Comissão (R$)</span><span class="detail-val" style="color:var(--accent)">${fmt(r.com_rs)}</span></div>
+          <div class="detail-item"><span class="detail-label">Comissão (R$)</span><span class="detail-val" style="color:var(--accent)">${fmtCom(r.com_rs)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Contrato</span><span class="detail-val mono">${fmtD(r.data_contrato)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Pagamento</span><span class="detail-val mono">${fmtD(r.data_pagamento)}</span></div>
           <div class="detail-item"><span class="detail-label">Status</span><span class="detail-val">${r.status||'—'}</span></div>
@@ -6424,9 +6545,9 @@ function renderLin(data){
       <td>${r.tabela||'—'}</td>
       <td class="mono">${fmt(r.valor_bruto)}</td>
       <td class="mono val-g">${fmt(r.valor_liq)}</td>
-      <td class="mono">${fmtP(r.pct_m1)}</td><td class="mono val-o">${r.com_m1?fmt(r.com_m1):'—'}</td>
-      <td class="mono">${fmtP(r.pct_m2)}</td><td class="mono val-o">${r.com_m2?fmt(r.com_m2):'—'}</td>
-      <td class="mono">${fmtP(r.pct_m3)}</td><td class="mono val-o">${r.com_m3?fmt(r.com_m3):'—'}</td>
+      <td class="mono">${fmtPctCom(r.pct_m1)}</td><td class="mono val-o">${fmtCom(r.com_m1)}</td>
+      <td class="mono">${fmtPctCom(r.pct_m2)}</td><td class="mono val-o">${fmtCom(r.com_m2)}</td>
+      <td class="mono">${fmtPctCom(r.pct_m3)}</td><td class="mono val-o">${fmtCom(r.com_m3)}</td>
       <td>${supTag}</td>
       <td class="mono">${fmtD(r.data_pagamento)}</td>
       <td><span class="badge-clickable" onclick="quickFilterStatus('lin','${r.status}')" title="Filtrar por ${r.status}">${badge(r.status)}</span></td>
@@ -6447,9 +6568,9 @@ function renderLin(data){
           <div class="detail-item"><span class="detail-label">Grupo / Cota</span><span class="detail-val mono">${r.grupo||'—'} / ${r.cota||'—'}</span></div>
           <div class="detail-item"><span class="detail-label">Tabela</span><span class="detail-val">${r.tabela||'—'}</span></div>
           <div class="detail-item"><span class="detail-label">Valor Líquido</span><span class="detail-val" style="color:var(--green)">${fmt(r.valor_liq)}</span></div>
-          <div class="detail-item"><span class="detail-label">Com. M1</span><span class="detail-val" style="color:var(--accent)">${fmtP(r.pct_m1)} = ${fmt(r.com_m1)}</span></div>
-          <div class="detail-item"><span class="detail-label">Com. M2</span><span class="detail-val" style="color:var(--accent)">${fmtP(r.pct_m2)} = ${fmt(r.com_m2)}</span></div>
-          <div class="detail-item"><span class="detail-label">Com. M3</span><span class="detail-val" style="color:var(--accent)">${fmtP(r.pct_m3)} = ${fmt(r.com_m3)}</span></div>
+          <div class="detail-item"><span class="detail-label">Com. M1</span><span class="detail-val" style="color:var(--accent)">${fmtPctCom(r.pct_m1)} = ${fmtCom(r.com_m1)}</span></div>
+          <div class="detail-item"><span class="detail-label">Com. M2</span><span class="detail-val" style="color:var(--accent)">${fmtPctCom(r.pct_m2)} = ${fmtCom(r.com_m2)}</span></div>
+          <div class="detail-item"><span class="detail-label">Com. M3</span><span class="detail-val" style="color:var(--accent)">${fmtPctCom(r.pct_m3)} = ${fmtCom(r.com_m3)}</span></div>
           <div class="detail-item"><span class="detail-label">Data Contrato</span><span class="detail-val mono">${fmtD(r.data_contrato)}</span></div>
           <div class="detail-item"><span class="detail-label">Status</span><span class="detail-val">${r.status||'—'}</span></div>
           ${r.supervisor?`<div class="detail-item"><span class="detail-label">Supervisora</span><span class="detail-val sup-val" style="color:var(--purple)">${r.supervisor} · ${fmt(r.com_sup)}</span></div>`:''}
@@ -11468,13 +11589,13 @@ tr:nth-child(even) td{background:#fafafa}
 <div class="section">
   <h2><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Vendas Adesionada — ${mesStr}</h2>
   <table><thead><tr><th>Data</th><th>Vendedora</th><th>Cliente</th><th>Contrato</th><th>Líquido</th><th>Comissão</th><th>Status</th></tr></thead>
-  <tbody>${aMes.map(r=>'<tr><td>'+fmtD(r.data_contrato)+'</td><td>'+r.vendedor+'</td><td>'+r.cliente+'</td><td>'+( r.contrato||'—')+'</td><td style="color:#16a34a">'+fmt(r.valor_liq)+'</td><td style="color:#f97316">'+fmt(r.com_rs)+'</td><td>'+r.status+'</td></tr>').join('')||'<tr><td colspan="7" style="text-align:center;color:#9ca3af">Sem vendas</td></tr>'}</tbody></table>
+  <tbody>${aMes.map(r=>'<tr><td>'+fmtD(r.data_contrato)+'</td><td>'+r.vendedor+'</td><td>'+r.cliente+'</td><td>'+( r.contrato||'—')+'</td><td style="color:#16a34a">'+fmt(r.valor_liq)+'</td><td style="color:#f97316">'+fmtCom(r.com_rs)+'</td><td>'+r.status+'</td></tr>').join('')||'<tr><td colspan="7" style="text-align:center;color:#9ca3af">Sem vendas</td></tr>'}</tbody></table>
 </div>
 
 <div class="section">
   <h2><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg> Vendas Linear — ${mesStr}</h2>
   <table><thead><tr><th>Data</th><th>Vendedora</th><th>Cliente</th><th>Contrato</th><th>Líquido</th><th>Com. M1</th><th>Com. M2</th><th>Com. M3</th><th>Status</th></tr></thead>
-  <tbody>${lMes.map(r=>'<tr><td>'+fmtD(r.data_contrato)+'</td><td>'+r.vendedor+'</td><td>'+r.cliente+'</td><td>'+(r.contrato||'—')+'</td><td style="color:#16a34a">'+fmt(r.valor_liq)+'</td><td style="color:#f97316">'+fmt(r.com_m1)+'</td><td style="color:#f97316">'+fmt(r.com_m2)+'</td><td style="color:#f97316">'+fmt(r.com_m3)+'</td><td>'+r.status+'</td></tr>').join('')||'<tr><td colspan="9" style="text-align:center;color:#9ca3af">Sem vendas</td></tr>'}</tbody></table>
+  <tbody>${lMes.map(r=>'<tr><td>'+fmtD(r.data_contrato)+'</td><td>'+r.vendedor+'</td><td>'+r.cliente+'</td><td>'+(r.contrato||'—')+'</td><td style="color:#16a34a">'+fmt(r.valor_liq)+'</td><td style="color:#f97316">'+fmtCom(r.com_m1)+'</td><td style="color:#f97316">'+fmtCom(r.com_m2)+'</td><td style="color:#f97316">'+fmtCom(r.com_m3)+'</td><td>'+r.status+'</td></tr>').join('')||'<tr><td colspan="9" style="text-align:center;color:#9ca3af">Sem vendas</td></tr>'}</tbody></table>
 </div>
 
 <div class="footer">Laranja Mecânica 🍊 · Relatório gerado automaticamente em ${dataStr}<br><em>Documento confidencial — uso interno</em></div>
@@ -11539,6 +11660,297 @@ function toggleTheme(){
 // ═══════════════════════════════ TOAST ═══════════════════════════════════════
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
+// ══════════════════════════════ AUTH SYSTEM ══════════════════════════════════
+
+const AUTH_ADMIN_EMAIL = 'empbalmeida@gmail.com'; // e-mail da supervisora (você)
+const SEU_WHATSAPP = '5575998874100';
+
+let authUser = null;
+let authOnlineChannel = null;
+let authOnlineUsers = {};
+
+// Mostrar/ocultar telas
+function authShowLogin(){ 
+  document.getElementById('auth-box-login').style.display='';
+  document.getElementById('auth-box-solicitar').style.display='none';
+  document.getElementById('auth-box-aguardando').style.display='none';
+}
+function authShowSolicitar(){
+  document.getElementById('auth-box-login').style.display='none';
+  document.getElementById('auth-box-solicitar').style.display='';
+  document.getElementById('auth-box-aguardando').style.display='none';
+}
+function authShowAguardando(email, senha){
+  document.getElementById('auth-box-login').style.display='none';
+  document.getElementById('auth-box-solicitar').style.display='none';
+  document.getElementById('auth-box-aguardando').style.display='';
+  // Polling: verificar aprovação a cada 5s e entrar automaticamente
+  let tentativas=0;
+  const poll=setInterval(async()=>{
+    tentativas++;
+    const statusEl=document.getElementById('auth-aguard-status');
+    if(statusEl) statusEl.textContent='Verificando… ('+tentativas+')';
+    const sb=getSupabase();
+    const {data}=await sb.from('auth_users').select('status').eq('email',email).single();
+    if(data?.status==='aprovado'){
+      clearInterval(poll);
+      if(statusEl) statusEl.textContent='✓ Aprovado! Entrando…';
+      // Tentar login automático
+      const {data:sess,error}=await sb.auth.signInWithPassword({email,password:senha});
+      if(!error&&sess){
+        authUser=sess.user;
+        const {data:perfil}=await sb.from('auth_users').select('*').eq('email',email).single();
+        authUser._nome=perfil?.nome||email.split('@')[0];
+        authUser._role=perfil?.role||'vendedor';
+        await authEntrou();
+        await loadData();
+        render(activePage);
+      }
+    } else if(data?.status==='rejeitado'){
+      clearInterval(poll);
+      if(statusEl) statusEl.textContent='✕ Acesso negado.';
+      setTimeout(()=>authShowLogin(),2000);
+    }
+    if(tentativas>120) clearInterval(poll); // para após 10min
+  },5000);
+}
+
+// Login
+async function authLogin(){
+  const email=document.getElementById('auth-email').value.trim();
+  const senha=document.getElementById('auth-senha').value;
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  if(!email||!senha){errEl.textContent='Preencha e-mail e senha.';return;}
+  
+  errEl.textContent='Entrando…';
+  const sb=getSupabase();
+  if(!sb){errEl.textContent='Erro de conexão.';return;}
+  
+  const {data,error}=await sb.auth.signInWithPassword({email,password:senha});
+  if(error){
+    errEl.textContent=error.message.includes('Invalid')?'E-mail ou senha incorretos.':error.message;
+    return;
+  }
+  
+  // Verificar se está aprovado
+  const {data:perfil}=await sb.from('auth_users').select('*').eq('email',email).single();
+  if(perfil&&perfil.status==='pendente'){
+    await sb.auth.signOut();
+    errEl.textContent='Seu acesso ainda não foi aprovado. Aguarde a supervisora.';
+    return;
+  }
+  if(perfil&&perfil.status==='rejeitado'){
+    await sb.auth.signOut();
+    errEl.textContent='Seu acesso foi negado. Entre em contato com a supervisora.';
+    return;
+  }
+  
+  authUser=data.user;
+  authUser._nome=perfil?.nome||email.split('@')[0];
+  authUser._role=perfil?.role||'vendedor';
+  await authEntrou();
+}
+
+// Após login bem-sucedido
+async function authEntrou(){
+  document.getElementById('auth-overlay').style.display='none';
+  document.getElementById('online-indicator').style.display='flex';
+  document.getElementById('online-label').textContent=authUser._nome;
+  
+  // Registrar presença online
+  authIniciarPresenca();
+  
+  // Se for admin, verificar solicitações
+  if(authUser.email===AUTH_ADMIN_EMAIL||authUser._role==='admin'){
+    authVerificarSolicitacoes();
+    setInterval(authVerificarSolicitacoes, 30000);
+  }
+  
+  toast('✓ Bem-vinda, '+authUser._nome+'! 🍊');
+}
+
+// Solicitar acesso
+async function authSolicitar(){
+  const nome=document.getElementById('auth-sol-nome').value.trim();
+  const email=document.getElementById('auth-sol-email').value.trim();
+  const senha=document.getElementById('auth-sol-senha').value;
+  const errEl=document.getElementById('auth-sol-err');
+  errEl.textContent='';
+  
+  if(!nome||!email||!senha){errEl.textContent='Preencha todos os campos.';return;}
+  if(senha.length<6){errEl.textContent='Senha deve ter mínimo 6 caracteres.';return;}
+  
+  errEl.textContent='Enviando solicitação…';
+  const sb=getSupabase();
+  
+  // Criar conta no Supabase Auth (vai ficar pendente)
+  const {data,error}=await sb.auth.signUp({email,password:senha});
+  if(error&&!error.message.includes('already registered')){
+    errEl.textContent=error.message;return;
+  }
+  
+  // Salvar na tabela de usuários pendentes
+  await sb.from('auth_users').upsert({
+    email,nome,status:'pendente',
+    role:'vendedor',created_at:new Date().toISOString()
+  });
+  
+  // Notificação no site (painel em tempo real) + email via Supabase
+  try{
+    const sb2=getSupabase();
+    // Inserir notificação na tabela para aparecer no painel
+    await sb2.from('auth_notif').insert({
+      tipo:'solicitacao',nome,email,
+      created_at:new Date().toISOString(),lida:false
+    });
+  }catch(e){}
+  authShowAguardando(email, senha);
+}
+
+// Verificar solicitações pendentes (só para admin)
+async function authVerificarSolicitacoes(){
+  const sb=getSupabase();
+  const {data}=await sb.from('auth_users').select('*').eq('status','pendente').order('created_at');
+  if(!data) return;
+  // Marcar notificações como lidas ao abrir o painel
+  try{ await sb.from('auth_notif').update({lida:true}).eq('lida',false); }catch(e){}
+  
+  const badge=document.getElementById('online-badge');
+  const count=document.getElementById('auth-req-count');
+  if(data.length>0){
+    badge.style.display='';badge.textContent=data.length;
+    count.textContent='('+data.length+')';
+  } else {
+    badge.style.display='none';count.textContent='';
+  }
+  
+  const list=document.getElementById('auth-req-list');
+  if(!list) return;
+  
+  if(!data.length){list.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">Nenhuma pendente.</div>';return;}
+  
+  list.innerHTML=data.map(u=>`
+    <div class="auth-req-item">
+      <div class="auth-req-name">${u.nome}</div>
+      <div class="auth-req-email">${u.email}</div>
+      <div class="auth-req-btns">
+        <button class="btn btn-o" style="font-size:11px;padding:4px 12px" onclick="authAprovar('${u.email}','${u.nome}')">✓ Aprovar</button>
+        <button class="btn btn-g" style="font-size:11px;padding:4px 12px;color:var(--red)" onclick="authRejeitar('${u.email}','${u.nome}')">✕ Rejeitar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function authAprovar(email, nome){
+  const sb=getSupabase();
+  await sb.from('auth_users').update({status:'aprovado'}).eq('email',email);
+  toast('✓ '+nome+' aprovado!');
+  authVerificarSolicitacoes();
+}
+
+async function authRejeitar(email, nome){
+  if(!confirm('Rejeitar acesso de '+nome+'?')) return;
+  const sb=getSupabase();
+  await sb.from('auth_users').update({status:'rejeitado'}).eq('email',email);
+  toast('Acesso de '+nome+' rejeitado.');
+  authVerificarSolicitacoes();
+}
+
+// Presença online em tempo real
+function authIniciarPresenca(){
+  const sb=getSupabase();
+  if(!sb||!authUser) return;
+  
+  authOnlineChannel=sb.channel('presenca_online',{
+    config:{presence:{key:authUser.id}}
+  });
+  
+  authOnlineChannel
+    .on('presence','sync',()=>{
+      const state=authOnlineChannel.presenceState();
+      authOnlineUsers={};
+      Object.values(state).flat().forEach(u=>{
+        authOnlineUsers[u.user_id]={nome:u.nome,email:u.email,entrou:u.entrou};
+      });
+      authRenderOnline();
+    })
+    .subscribe(async(status)=>{
+      if(status==='SUBSCRIBED'){
+        await authOnlineChannel.track({
+          user_id:authUser.id,
+          nome:authUser._nome,
+          email:authUser.email,
+          entrou:new Date().toISOString()
+        });
+      }
+    });
+}
+
+function authRenderOnline(){
+  const users=Object.values(authOnlineUsers);
+  const list=document.getElementById('auth-online-list');
+  if(!list) return;
+  
+  if(!users.length){
+    list.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">Ninguém online.</div>';
+    return;
+  }
+  
+  list.innerHTML=users.map(u=>{
+    const entrou=u.entrou?new Date(u.entrou).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:var(--bg3);margin-bottom:4px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px var(--green)"></div>
+      <span style="font-size:12px;font-weight:600;flex:1">${u.nome}</span>
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${entrou}</span>
+    </div>`;
+  }).join('');
+}
+
+function authTogglePanel(){
+  document.getElementById('auth-admin-panel').classList.toggle('open');
+  if(document.getElementById('auth-admin-panel').classList.contains('open')){
+    authVerificarSolicitacoes();
+    authRenderOnline();
+  }
+}
+
+// Verificar sessão ao carregar
+async function authVerificarSessao(){
+  const sb=getSupabase();
+  if(!sb) return false;
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) return false;
+  
+  const {data:perfil}=await sb.from('auth_users').select('*').eq('email',session.user.email).single();
+  if(!perfil||perfil.status!=='aprovado') return false;
+  
+  authUser=session.user;
+  authUser._nome=perfil.nome||session.user.email.split('@')[0];
+  authUser._role=perfil.role||'vendedor';
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ══════════════════ PROTEÇÃO DE COMISSÕES ══════════════════════════════════
+
+function comOk(){ return comissaoDesbloqueada; }
+
+// Formata valor de comissão — mostra •••• se bloqueado
+function fmtCom(v){
+  if(!comOk()) return '<span style="color:var(--text3);letter-spacing:2px">••••</span>';
+  if(!v&&v!==0) return '—';
+  return 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtPctCom(v){
+  if(!comOk()) return '<span style="color:var(--text3)">••</span>';
+  if(!v&&v!==0) return '—';
+  return (v*100).toFixed(2).replace('.',',')+'%';
+}
+
+// Re-renderizar quando senha for confirmada para atualizar valores mascarados
+const _origSenhaOk = window.confirmarSenha;
+
 // ═══════════════════════════════ INIT ════════════════════════════════════════
 (async function init(){
   // Carregar cor personalizada
@@ -11553,6 +11965,21 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
       const icon=document.getElementById('theme-icon');if(icon)icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
     }
   }catch(e){}
+
+  // Verificar sessão existente
+  const temSessao = await authVerificarSessao();
+  if(temSessao){
+    // Já estava logado — ocultar overlay e entrar direto
+    document.getElementById('auth-overlay').style.display='none';
+    document.getElementById('online-indicator').style.display='flex';
+    document.getElementById('online-label').textContent=authUser._nome;
+    authIniciarPresenca();
+    if(authUser.email===AUTH_ADMIN_EMAIL||authUser._role==='admin'){
+      authVerificarSolicitacoes();
+      setInterval(authVerificarSolicitacoes,30000);
+    }
+  }
+  // Se não tem sessão, o auth-overlay já está visível — usuário precisa logar
 
   // Carregar dados (Supabase com fallback para localStorage)
   await loadData();
