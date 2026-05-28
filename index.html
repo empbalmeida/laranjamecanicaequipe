@@ -4485,8 +4485,8 @@ function crmRenderAlertas(){
   // Regra 2: motivo 3+ vezes
   const motivos={};
   crmDB.forEach(r=>{
-    if(r.motivoPerda) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1;
-    if(r.motivoNc) motivos[r.motivoNc]=(motivos[r.motivoNc]||0)+1;
+    if(r.motivoPerda && (r.resultado==='nao_fechou'||r.status==='nao_compareceu')) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1;
+    if(r.motivoNc && r.status==='nao_compareceu') motivos[r.motivoNc]=(motivos[r.motivoNc]||0)+1;
   });
   Object.entries(motivos).forEach(([m,c])=>{
     if(c>=3) novos.push({nivel:'warn',icon:'⚠️',title:'Motivo recorrente: "'+m+'"',desc:c+'x detectado',key:'mot_'+m});
@@ -4586,7 +4586,7 @@ function crmRenderInsights(){
 
   // Motivos
   const motivos={};
-  crmDB.forEach(r=>{ if(r.motivoPerda) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1; });
+  crmDB.forEach(r=>{ if(r.motivoPerda && (r.resultado==='nao_fechou'||r.status==='nao_compareceu')) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1; });
   const mList=Object.entries(motivos).sort((a,b)=>b[1]-a[1]);
   const maxM=mList[0]?.[1]||1;
   const elM=document.getElementById('crm-insight-motivos');
@@ -4604,7 +4604,9 @@ function crmRenderInsights(){
     let seq=0;for(const r of vR){if(r.status==='nao_compareceu')seq++;else break;}
     if(seq>=3) pats.push({e:'🔴',t:v+': '+seq+' NC seguidos',c:seq,cor:'var(--red)'});
   });
-  Object.entries(motivos).filter(([,ct])=>ct>=3).forEach(([m,ct])=>pats.push({e:'📌',t:m,c:ct,cor:'var(--yellow)'}));
+  const motivosPerda3={};
+  crmDB.forEach(r=>{ if(r.motivoPerda && (r.resultado==='nao_fechou'||r.status==='nao_compareceu')) motivosPerda3[r.motivoPerda]=(motivosPerda3[r.motivoPerda]||0)+1; });
+  Object.entries(motivosPerda3).filter(([,ct])=>ct>=3).forEach(([m,ct])=>pats.push({e:'📌',t:m,c:ct,cor:'var(--yellow)'}));
   const sumindo=crmDB.filter(r=>r.motivoNc==='Sumiu após agendamento'||r.motivoNc==='Contato pelo WhatsApp sumiu').length;
   if(sumindo>=3) pats.push({e:'👻',t:'Clientes sumindo',c:sumindo,cor:'var(--red)'});
   const elP=document.getElementById('crm-insight-patterns');
@@ -4859,11 +4861,21 @@ function crmRenderTabela(){
   };
 
   tbody.innerHTML=rows.map(r=>{
-    const temp=crmCalcTemp(r);
-    const dt=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
+    // Usar dados mais recentes: dataAtual sobrepõe data original quando há reagendamento
+    const dataExib=r.dataAtual||r.data;
+    // Se há histórico, pegar status/resultado do último evento
+    const hist=r.historico||[];
+    const ultimo=hist.length?hist[hist.length-1]:null;
+    const statusExib=ultimo?.status||r.status;
+    const resultadoExib=ultimo?.resultado||r.resultado;
+    const motivoNcExib=ultimo?.motivoNc||r.motivoNc;
+    const motivoPerdaExib=ultimo?.motivoPerda||r.motivoPerda;
+
+    const temp=crmCalcTemp({...r,status:statusExib,resultado:resultadoExib});
+    const dt=dataExib?new Date(dataExib+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—';
     const mot=(()=>{
-      if(r.status==='nao_compareceu') return r.motivoNc||r.motivoPerda||'—';
-      if(r.resultado==='nao_fechou') return r.motivoPerda||'—';
+      if(statusExib==='nao_compareceu') return motivoNcExib||motivoPerdaExib||'—';
+      if(resultadoExib==='nao_fechou') return motivoPerdaExib||'—';
       return '—';
     })();
         const hasWppVend=!!(DB.vendedores.find(v=>v.nome===r.vendedor)?.telefone);
@@ -4874,14 +4886,16 @@ function crmRenderTabela(){
     const vinculadosInt=r.historico||[];
     const vinculados=[...vinculadosInt.map(h=>({...h,_fonte:'int'})),...vinculadosExt.map(h=>({...h,_fonte:'ext'}))];
     return `<tr>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${dt}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">
+        ${dt}${r.dataAtual&&r.dataAtual!==r.data?'<br><span style="font-size:9px;color:var(--blue)">🔄 reag.</span>':''}
+      </td>
       <td style="font-weight:600;font-size:13px">${r.vendedor||'—'}</td>
       <td style="font-size:12px;cursor:pointer;color:var(--accent);text-decoration:underline dotted" onclick="crmVerFicha(${r._i})" title="Ver ficha completa">${r.cliente||'—'}</td>
       <td style="white-space:nowrap">${tipoBadge(r.tipo)}</td>
       <td style="font-size:11px;color:var(--text3)">${r.canal||'—'}</td>
       <td>${tempBadge(temp)}</td>
-      <td>${statusBadge(r.status)}</td>
-      <td>${resultBadge(r.resultado)}</td>
+      <td>${statusBadge(statusExib)}</td>
+      <td>${resultBadge(resultadoExib)}</td>
       <td style="color:var(--text3);font-size:11px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${mot}">${mot}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-g" title="🔔 Lembrete de agendamento"
@@ -5356,8 +5370,8 @@ function renderDiarioAlertasCRM(){
   // Regra 2: motivo repetido 3+ vezes
   const motivos={};
   crmDB.forEach(r=>{
-    if(r.motivoPerda) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1;
-    if(r.motivoNc) motivos[r.motivoNc]=(motivos[r.motivoNc]||0)+1;
+    if(r.motivoPerda && (r.resultado==='nao_fechou'||r.status==='nao_compareceu')) motivos[r.motivoPerda]=(motivos[r.motivoPerda]||0)+1;
+    if(r.motivoNc && r.status==='nao_compareceu') motivos[r.motivoNc]=(motivos[r.motivoNc]||0)+1;
   });
   Object.entries(motivos).forEach(([m,c])=>{
     if(c>=3) alertas.push({nivel:'warn',icon:'⚠️',title:'Motivo recorrente: "'+m+'"',desc:c+'x detectado',vend:null});
