@@ -2552,7 +2552,10 @@ body.compact .tbl-wrap{max-height:55vh!important;}
             Alertas do Sistema
             <span id="crm-alert-badge" style="display:none;background:var(--red);color:#fff;font-size:10px;font-family:var(--mono);padding:1px 7px;border-radius:20px;font-weight:700;margin-left:6px">0</span>
           </div>
-          <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="crmLimparAlertas()">Limpar</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="crmEnviarAlertasDiario()">📋 → Diário</button>
+            <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="crmLimparAlertas()">Limpar</button>
+          </div>
         </div>
         <div id="crm-alerts-list" style="padding:12px 16px;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto">
           <div id="crm-no-alerts" style="color:var(--text3);font-size:12px;font-family:var(--mono);padding:12px 0">Nenhum alerta. Sistema monitorando…</div>
@@ -2581,11 +2584,17 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
       <!-- Filtros -->
       <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
-          <button id="crm-per-todos"  onclick="crmSetPeriodo('todos')"  class="btn btn-g" style="border-radius:0;border:none;font-size:11px;padding:5px 12px;background:var(--accent);color:#fff">Todos</button>
-          <button id="crm-per-hoje"   onclick="crmSetPeriodo('hoje')"   class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 12px">Hoje</button>
-          <button id="crm-per-semana" onclick="crmSetPeriodo('semana')" class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 12px">Esta semana</button>
-          <button id="crm-per-mes"    onclick="crmSetPeriodo('mes')"    class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 12px">Este mês</button>
+        <div style="display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <button id="crm-per-todos"  onclick="crmSetPeriodo('todos')"  class="btn btn-g" style="border-radius:0;border:none;font-size:11px;padding:5px 10px;background:var(--accent);color:#fff">Todos</button>
+          <button id="crm-per-hoje"   onclick="crmSetPeriodo('hoje')"   class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 10px">Hoje</button>
+          <button id="crm-per-semana" onclick="crmSetPeriodo('semana')" class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 10px">Semana</button>
+          <button id="crm-per-mes"    onclick="crmSetPeriodo('mes')"    class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 10px">Mês</button>
+          <button id="crm-per-custom" onclick="crmSetPeriodo('custom')" class="btn btn-g" style="border-radius:0;border:none;border-left:1px solid var(--border);font-size:11px;padding:5px 10px">📅 Período</button>
+        </div>
+        <div id="crm-custom-range" style="display:none;align-items:center;gap:6px;flex-wrap:wrap">
+          <input type="date" id="crm-data-ini" onchange="crmRenderTabela()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text);outline:none">
+          <span style="font-size:11px;color:var(--text3)">até</span>
+          <input type="date" id="crm-data-fim" onchange="crmRenderTabela()" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text);outline:none">
         </div>
         <div style="position:relative;flex:1;min-width:150px">
           <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -4324,6 +4333,86 @@ function crmCalcTemp(r){
   return 'frio';
 }
 
+function crmVerFicha(idx){
+  const r=crmDB[idx];
+  if(!r) return;
+  const hist=r.historico||[];
+  const dtFmt=d=>d?new Date(d+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+  const tipoBadgeFn=t=>t==='reagendamento'?'🔄 Reag.':t==='segunda_visita'?'🔁 2ª visita':'🆕 Novo';
+
+  const html=`<div style="padding:4px 0">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Vendedor</div><div style="font-size:14px;font-weight:700">${r.vendedor||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Data</div><div style="font-size:14px;font-weight:700">${dtFmt(r.data)}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Canal</div><div style="font-size:13px">${r.canal||'—'}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">Tel. cliente</div><div style="font-size:13px;font-family:var(--mono)">${r.telCliente||'—'}</div></div>
+    </div>
+    ${r.obs?`<div style="margin-bottom:14px"><div style="font-size:10px;color:var(--accent);font-family:var(--mono);text-transform:uppercase;font-weight:700;margin-bottom:5px">📝 Anotações</div><div style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;background:var(--bg3);padding:10px 14px;border-radius:8px;border:1px solid var(--border)">${r.obs}</div></div>`:''}
+    ${hist.length?`<div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;font-weight:600;margin-bottom:8px">Histórico (${hist.length})</div>`+
+    hist.map(h=>`<div style="display:flex;gap:10px;padding:7px 10px;background:var(--bg3);border-radius:6px;margin-bottom:5px;border:1px solid var(--border);font-size:12px;align-items:center">
+      <span style="font-family:var(--mono);color:var(--text3);min-width:60px">${dtFmt(h.data)}</span>
+      <span style="color:var(--blue)">${tipoBadgeFn(h.tipo)}</span>
+      <span style="color:var(--text2)">${h.status||'—'}</span>
+      <span style="color:var(--text3)">${h.motivoNc||h.motivoPerda||''}</span>
+      ${h.obs?`<span style="color:var(--text3);font-style:italic;margin-left:auto">${h.obs}</span>`:''}
+    </div>`).join('')+'</div>':''}
+    <div style="display:flex;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+      <button class="btn btn-g" style="font-size:11px" onclick="crmOpenEdit(${idx});document.getElementById('overlay').classList.remove('open')">✎ Editar ficha</button>
+      <button class="btn btn-o" style="font-size:11px" onclick="document.getElementById('overlay').classList.remove('open');setTimeout(()=>{openModal('crm-reg');setTimeout(()=>{document.getElementById('f-crm-cliente').value='${r.cliente}';document.getElementById('f-crm-vend').value='${r.vendedor}';document.getElementById('f-crm-tel-cliente').value='${r.telCliente||''}';crmSelecionarVinculo('${r.id}','${r.cliente}','${r.data||''}');crmSetTipo('reagendamento');},40);},100)">🔄 Reagendar</button>
+      <button class="btn btn-g" style="font-size:11px" onclick="document.getElementById('overlay').classList.remove('open');setTimeout(()=>{openModal('crm-reg');setTimeout(()=>{document.getElementById('f-crm-cliente').value='${r.cliente}';document.getElementById('f-crm-vend').value='${r.vendedor}';document.getElementById('f-crm-tel-cliente').value='${r.telCliente||''}';crmSelecionarVinculo('${r.id}','${r.cliente}','${r.data||''}');crmSetTipo('segunda_visita');},40);},100)">🔁 2ª Visita</button>
+    </div>
+  </div>`;
+
+  document.getElementById('m-title').innerHTML='👤 '+r.cliente;
+  document.getElementById('m-sub').innerHTML='Ficha completa do cliente';
+  document.getElementById('m-form').innerHTML=html;
+  document.getElementById('modal-save-btn').style.display='none';
+  document.getElementById('overlay').classList.add('open');
+}
+
+function crmMenuEditarMsg(){
+  const tipo=prompt('Qual mensagem editar?\n1 = 🔔 Lembrete de agendamento\n2 = ❓ Por que não veio\n3 = 📋 Solicitar resumo\n\nDigite 1, 2 ou 3:');
+  const map={'1':'alerta','2':'nc','3':'resumo'};
+  if(map[tipo]) crmEditarMensagem(map[tipo]);
+}
+
+function crmEnviarAlertasDiario(){
+  // Envia alertas do CRM para o diário da semana atual de cada vendedor afetado
+  if(!crmAlertas.length){toast('Sem alertas para enviar ao diário.');return;}
+  const agora=new Date();
+  const seg=new Date(agora);
+  const dow=agora.getDay();
+  seg.setDate(agora.getDate()-(dow===0?6:dow-1));
+  const sem=seg.toISOString().slice(0,10);
+
+  const porVendedor={};
+  crmAlertas.forEach(a=>{
+    // Extrair nome do vendedor do título se possível
+    const match=a.title.match(/:\s*([A-Za-záàãâéèêíìîóòõôúùûç]+)/i);
+    const vend=match?match[1]:null;
+    if(vend){
+      if(!porVendedor[vend]) porVendedor[vend]=[];
+      porVendedor[vend].push(a.icon+' '+a.title+': '+a.desc);
+    }
+  });
+
+  let count=0;
+  Object.entries(porVendedor).forEach(([vend,msgs])=>{
+    const existing=DB.diario.find(d=>d.vend===vend&&d.sem===sem);
+    const textoAlerta='[CRM] '+msgs.join(' | ');
+    if(existing){
+      existing.gargalos=(existing.gargalos?existing.gargalos+'\n':'')+textoAlerta;
+    } else {
+      DB.diario.push({vend,sem,gargalos:textoAlerta,ts:Date.now()});
+    }
+    count++;
+  });
+
+  if(count>0){ saveData(); toast('✓ '+count+' alerta(s) enviado(s) ao Diário da Equipe!'); }
+  else{ toast('Alertas sem vendedor identificado — verifique manualmente.'); }
+}
+
+
 function renderCRM(){
   crmRenderKPIs();
   crmRenderAlertas();
@@ -4501,12 +4590,14 @@ let crmPeriodo='todos';
 
 function crmSetPeriodo(p){
   crmPeriodo=p;
-  ['todos','hoje','semana','mes'].forEach(x=>{
+  ['todos','hoje','semana','mes','custom'].forEach(x=>{
     const btn=document.getElementById('crm-per-'+x);
     if(!btn) return;
     btn.style.background=x===p?'var(--accent)':'';
     btn.style.color=x===p?'#fff':'';
   });
+  const customRange=document.getElementById('crm-custom-range');
+  if(customRange) customRange.style.display=p==='custom'?'flex':'none';
   crmRenderTabela();
 }
 
@@ -4520,6 +4611,11 @@ function crmFiltrarPeriodo(rows){
   if(crmPeriodo==='hoje')   return rows.filter(r=>r.data===hoje);
   if(crmPeriodo==='semana') return rows.filter(r=>r.data>=segStr&&r.data<=hoje);
   if(crmPeriodo==='mes')    return rows.filter(r=>r.data?.startsWith(mes));
+  if(crmPeriodo==='custom'){
+    const ini=document.getElementById('crm-data-ini')?.value||'';
+    const fim=document.getElementById('crm-data-fim')?.value||hoje;
+    return rows.filter(r=>(!ini||r.data>=ini)&&r.data<=fim);
+  }
   return rows;
 }
 
@@ -4580,42 +4676,26 @@ function crmGetTelVend(nomeVend){
   return tel;
 }
 
-// 🔔 Alerta: lembrete de agendamento
-function crmWppAlerta(r){
-  const tel=crmGetTelVend(r.vendedor); if(!tel) return;
-  const dt=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}):'data não informada';
-  const msg=`🔔 *LEMBRETE DE AGENDAMENTO*
+// Templates de mensagem — personalizáveis
+const CRM_MSG_DEFAULTS = {
+  alerta:`🔔 *LEMBRETE DE AGENDAMENTO*
 
-Oi ${r.vendedor}! Você tem um cliente agendado:
+Oi {{vendedor}}! Você tem um cliente agendado:
 
-👤 *${r.cliente}*
-📅 ${dt}${r.canal?'\n📡 Canal: '+r.canal:''}
+👤 *{{cliente}}*
+📅 {{data}}{{canal}}
 
-Confirme o atendimento e me avise! 🍊`;
-  window.open('https://wa.me/55'+tel+'?text='+encodeURIComponent(msg),'_blank');
-}
+Confirme o atendimento e me avise! 🍊`,
+  nc:`❓ *ATUALIZAÇÃO DE LEAD*
 
-// ❓ Perguntar por que não veio
-function crmWppPqNaoVeio(r){
-  const tel=crmGetTelVend(r.vendedor); if(!tel) return;
-  const dt=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'data marcada';
-  const msg=`❓ *ATUALIZAÇÃO DE LEAD*
-
-Oi ${r.vendedor}! O cliente *${r.cliente}* tinha atendimento em ${dt} e não apareceu.
+Oi {{vendedor}}! O cliente *{{cliente}}* tinha atendimento em {{data}} e não apareceu.
 
 Você sabe o que aconteceu? Qual o motivo?
 
-📝 Me manda um retorno para atualizar o CRM! 🍊`;
-  window.open('https://wa.me/55'+tel+'?text='+encodeURIComponent(msg),'_blank');
-}
+📝 Me manda um retorno para atualizar o CRM! 🍊`,
+  resumo:`📋 *RESUMO DO ATENDIMENTO*
 
-// 📋 Solicitar resumo do atendimento
-function crmWppResumo(r){
-  const tel=crmGetTelVend(r.vendedor); if(!tel) return;
-  const dt=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'hoje';
-  const msg=`📋 *RESUMO DO ATENDIMENTO*
-
-Oi ${r.vendedor}! Preciso do resumo do cliente *${r.cliente}* (${dt}).
+Oi {{vendedor}}! Preciso do resumo do cliente *{{cliente}}* ({{data}}).
 
 Me responde:
 ✅ Compareceu?
@@ -4623,11 +4703,42 @@ Me responde:
 ❌ Se não fechou, qual o motivo?
 📌 Próximo passo?
 
-Obrigada! 🍊`;
+Obrigada! 🍊`
+};
+
+function crmGetTemplate(tipo){
+  try{ return localStorage.getItem('crm_msg_'+tipo)||CRM_MSG_DEFAULTS[tipo]; }catch(e){ return CRM_MSG_DEFAULTS[tipo]; }
+}
+function crmSaveTemplate(tipo, txt){ localStorage.setItem('crm_msg_'+tipo, txt); }
+function crmFillTemplate(tpl, r, dtFmt){
+  return tpl
+    .replace(/{{vendedor}}/g, r.vendedor||'')
+    .replace(/{{cliente}}/g, r.cliente||'')
+    .replace(/{{data}}/g, dtFmt||r.data||'')
+    .replace(/{{canal}}/g, r.canal?'\n📡 Canal: '+r.canal:'');
+}
+
+function crmEditarMensagem(tipo){
+  const tpl=crmGetTemplate(tipo);
+  const labels={alerta:'🔔 Lembrete de Agendamento',nc:'❓ Por que não veio?',resumo:'📋 Solicitar Resumo'};
+  const novo=prompt('Editar template "'+labels[tipo]+'":\n\nVariáveis: {{vendedor}} {{cliente}} {{data}} {{canal}}\n\n', tpl);
+  if(novo===null) return;
+  if(!novo.trim()){crmSaveTemplate(tipo,'');toast('Template restaurado ao padrão.');}
+  else{crmSaveTemplate(tipo,novo.trim());toast('✓ Template salvo!');}
+}
+
+function crmEnviarWpp(tipo, r){
+  const tel=crmGetTelVend(r.vendedor); if(!tel) return;
+  const dtLong=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'}):'data não informada';
+  const dtShort=r.data?new Date(r.data+'T12:00:00').toLocaleDateString('pt-BR'):'data marcada';
+  const dt=tipo==='alerta'?dtLong:dtShort;
+  const msg=crmFillTemplate(crmGetTemplate(tipo),r,dt);
   window.open('https://wa.me/55'+tel+'?text='+encodeURIComponent(msg),'_blank');
 }
 
-// Compatibilidade com botão antigo na tabela
+function crmWppAlerta(r){ crmEnviarWpp('alerta',r); }
+function crmWppPqNaoVeio(r){ crmEnviarWpp('nc',r); }
+function crmWppResumo(r){ crmEnviarWpp('resumo',r); }
 function crmWppVendedor(r){ crmWppAlerta(r); }
 
 function crmToggleHistorico(idx, btn){
@@ -4700,11 +4811,14 @@ function crmRenderTabela(){
         const hasWppVend=!!(DB.vendedores.find(v=>v.nome===r.vendedor)?.telefone);
     const hasWppCli=!!r.telCliente;
     // Registros vinculados (reagend/2ª visita que referenciam este como origem)
-    const vinculados=(r.tipo==='lead'||!r.tipo)?crmDB.filter(x=>String(x.vinculoId)===String(r.id)):[];
+    // Histórico: registros vinculados + historico[] interno
+    const vinculadosExt=(r.tipo==='lead'||!r.tipo)?crmDB.filter(x=>String(x.vinculoId)===String(r.id)):[];
+    const vinculadosInt=r.historico||[];
+    const vinculados=[...vinculadosInt.map(h=>({...h,_fonte:'int'})),...vinculadosExt.map(h=>({...h,_fonte:'ext'}))];
     return `<tr>
       <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${dt}</td>
       <td style="font-weight:600;font-size:13px">${r.vendedor||'—'}</td>
-      <td style="font-size:12px">${r.cliente||'—'}</td>
+      <td style="font-size:12px;cursor:pointer;color:var(--accent);text-decoration:underline dotted" onclick="crmVerFicha(${r._i})" title="Ver ficha completa">${r.cliente||'—'}</td>
       <td style="white-space:nowrap">${tipoBadge(r.tipo)}</td>
       <td style="font-size:11px;color:var(--text3)">${r.canal||'—'}</td>
       <td>${tempBadge(temp)}</td>
@@ -4721,6 +4835,7 @@ function crmRenderTabela(){
         <button class="btn btn-g" title="📋 Solicitar resumo"
           style="font-size:11px;padding:3px 7px;${hasWppVend?'color:var(--blue)':'opacity:.3'}"
           onclick="crmWppResumo(crmDB[${r._i}])">📋</button>
+        <button class="btn btn-g" title="Editar mensagens" style="font-size:10px;padding:2px 5px;color:var(--text3)" onclick="crmMenuEditarMsg()">✏️</button>
       </td>
       <td style="white-space:nowrap">
         ${vinculados.length?'<button class="btn btn-g" style="font-size:10px;padding:3px 7px;color:var(--blue);margin-right:3px" onclick="crmToggleHistorico('+r._i+',this)" title="Ver histórico ('+vinculados.length+' reg.)">📂 '+vinculados.length+'</button>':'' }
@@ -4794,7 +4909,7 @@ function crmSetStatus(v){
   const perda=document.getElementById('f-crm-cond-perda');
   if(nc) nc.style.display=newVal==='nao_compareceu'?'':'none';
   if(res) res.style.display=newVal==='compareceu'?'':'none';
-  if(perda&&newVal!=='compareceu') perda.style.display='none';
+  if(perda) perda.style.display=(newVal==='nao_compareceu'||newVal==='compareceu'&&document.getElementById('f-crm-resultado')?.value==='nao_fechou')?'':'none';
   if(newVal!=='compareceu') crmSetResultado('');
 }
 function crmSetResultado(v){
@@ -4842,24 +4957,51 @@ function crmEnviarLembreteModal(tipo){
 function crmSalvar(){
   const vend=document.getElementById('f-crm-vend')?.value;
   const cliente=document.getElementById('f-crm-cliente')?.value.trim();
-  const status=document.getElementById('f-crm-status')?.value;
-  if(!vend||!cliente||!status){toast('⚠ Preencha vendedor, cliente e status.');return;}
+  if(!vend||!cliente){toast('⚠ Preencha vendedor e nome do cliente.');return;}
+  const status=document.getElementById('f-crm-status')?.value||'';
+  const resultado=status==='compareceu'?(document.getElementById('f-crm-resultado')?.value||''):'nao_se_aplica';
+  const tipo=document.getElementById('f-crm-tipo')?.value||'lead';
+  const vinculoId=document.getElementById('f-crm-vinculo-id')?.value||'';
+
+  // Reagendamento / 2ª visita vinculado: só atualiza data no original e cria entrada de histórico
+  if(tipo!=='lead' && vinculoId){
+    const origIdx=crmDB.findIndex(x=>String(x.id)===String(vinculoId));
+    if(origIdx>=0){
+      // Salva a nova data no original
+      const novaData=document.getElementById('f-crm-data').value;
+      crmDB[origIdx].dataAtual=novaData;
+      if(!crmDB[origIdx].historico) crmDB[origIdx].historico=[];
+      crmDB[origIdx].historico.push({
+        tipo,data:novaData,status,resultado,
+        motivoNc:document.getElementById('f-crm-motivo-nc')?.value||'',
+        motivoPerda:(resultado==='nao_fechou'||status==='nao_compareceu')?document.getElementById('f-crm-motivo-perda')?.value||'':'',
+        obs:document.getElementById('f-crm-obs')?.value.trim()||'',
+        ts:Date.now()
+      });
+      crmSave();
+      document.getElementById('overlay').classList.remove('open');
+      renderCRM();
+      toast('✓ '+(tipo==='reagendamento'?'Reagendamento':'2ª visita')+' registrado na ficha!');
+      return;
+    }
+  }
+
   const rec={
     id:crmEditIdx!==null?crmDB[crmEditIdx].id:Date.now(),
     data:document.getElementById('f-crm-data').value,
     vendedor:vend,cliente,status,
-    motivoNc:document.getElementById('f-crm-motivo-nc').value,
-    resultado:status==='compareceu'?document.getElementById('f-crm-resultado').value:'nao_se_aplica',
-    motivoPerda:document.getElementById('f-crm-motivo-perda').value,
-    tipo:document.getElementById('f-crm-tipo')?.value||'lead',
-    vinculoId:document.getElementById('f-crm-vinculo-id')?.value||'',
+    motivoNc:status==='nao_compareceu'?document.getElementById('f-crm-motivo-nc')?.value||'':'',
+    resultado,
+    motivoPerda:(resultado==='nao_fechou'||status==='nao_compareceu')?document.getElementById('f-crm-motivo-perda')?.value||'':'',
+    tipo,vinculoId,
     canal:document.getElementById('f-crm-canal')?.value||'',
-    telCliente:document.getElementById('f-crm-tel-cliente')?.value.trim()||'',
-    obs:document.getElementById('f-crm-obs').value.trim(),
+    telCliente:document.getElementById('f-crm-tel-cliente')?.value?.trim()||'',
+    obs:document.getElementById('f-crm-obs')?.value.trim()||'',
+    historico:crmEditIdx!==null?crmDB[crmEditIdx].historico||[]:[], // preservar histórico ao editar
     ts:Date.now()
   };
-  if(crmEditIdx!==null){crmDB[crmEditIdx]=rec;toast('✓ Lead atualizado!');}
-  else{crmDB.push(rec);toast('✓ Lead registrado!');}
+  if(crmEditIdx!==null){crmDB[crmEditIdx]=rec;toast('✓ Cliente atualizado!');}
+  else{crmDB.push(rec);toast('✓ Cliente registrado!');}
   crmEditIdx=null;
   crmSave();
   document.getElementById('overlay').classList.remove('open');
@@ -6852,6 +6994,8 @@ function getStatusOpts(){return DB.statusList.map(s=>`<option value="${s.nome}">
 let modalType='ades';
 function openModal(type='ades'){
   modalType=type;
+  // Restaurar botão salvar (pode ter sido oculto por crmVerFicha)
+  const _ms=document.getElementById('m-save');if(_ms)_ms.style.display='';
   const vOpts=vendedores().map(v=>`<option>${v}</option>`).join('');
   const tOpts=DB.tabelas.map(t=>`<option>${t.nome}</option>`).join('');
   const statusOpts=getStatusOpts();
@@ -6980,7 +7124,7 @@ function openModal(type='ades'){
       </div>
       <div class="step-nav">
         <button class="btn btn-g step-nav-back" onclick="stepGo('lin',2)">← Voltar</button>
-        <button class="btn btn-o step-nav-next" onclick="saveModal()">✓ Salvar Venda</button>
+        <button class="btn btn-o step-nav-next" onclick="saveModal()" id="modal-save-btn">✓ Salvar Venda</button>
       </div>
     </div>`;
   } else if(type==='com'){
@@ -7706,10 +7850,17 @@ function openModal(type='ades'){
     <div id="f-crm-wpp-vend-box" style="display:none;background:rgba(37,211,102,.07);border:1px solid rgba(37,211,102,.25);border-radius:8px;padding:10px 14px;margin-bottom:4px">
       <div style="font-size:11px;font-weight:600;color:#25d366;margin-bottom:6px;font-family:var(--mono)">📲 ALERTA AO VENDEDOR VIA WHATSAPP</div>
       <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Enviar lembrete sobre este cliente agora?</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button type="button" class="btn btn-g" style="font-size:11px;padding:4px 10px;color:#25d366;border-color:rgba(37,211,102,.3)" onclick="crmEnviarLembreteModal('alerta')">🔔 Lembrete de agendamento</button>
-        <button type="button" class="btn btn-g" style="font-size:11px;padding:4px 10px;color:var(--yellow)" onclick="crmEnviarLembreteModal('nc')">❓ Por que não veio?</button>
-        <button type="button" class="btn btn-g" style="font-size:11px;padding:4px 10px;color:var(--blue)" onclick="crmEnviarLembreteModal('resumo')">📋 Pedir resumo</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        <button type="button" class="btn btn-g" style="font-size:11px;padding:4px 10px;color:#25d366;border-color:rgba(37,211,102,.3)" onclick="crmEnviarLembreteModal('alerta')">🔔 Lembrete</button>
+        <button type="button" class="btn btn-g" style="font-size:11px;padding:4px 10px;color:var(--yellow)" onclick="crmEnviarLembreteModal('nc')">❓ Não veio?</button>
+        <button type="button" class="btn btn-g" style="font-size:11px;padding:4px 10px;color:var(--blue)" onclick="crmEnviarLembreteModal('resumo')">📋 Resumo</button>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button type="button" onclick="crmEditarMensagem('alerta')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0 4px">✏️ Editar lembrete</button>
+        <span style="color:var(--border);font-size:10px">|</span>
+        <button type="button" onclick="crmEditarMensagem('nc')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0 4px">✏️ Editar "não veio"</button>
+        <span style="color:var(--border);font-size:10px">|</span>
+        <button type="button" onclick="crmEditarMensagem('resumo')" style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:0 4px">✏️ Editar resumo</button>
       </div>
     </div>
 
@@ -7762,7 +7913,7 @@ function openModal(type='ades'){
     <!-- Motivo não fechou -->
     <div class="fg" id="f-crm-cond-perda" style="display:none">
       <label class="flabel" style="display:flex;align-items:center;justify-content:space-between">
-        Por que não fechou?
+        Motivo da perda
         <button type="button" onclick="crmAddMotivo('perda')" style="font-size:10px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600">+ Novo motivo</button>
       </label>
       <select class="finput" id="f-crm-motivo-perda">${motivosPerda}</select>
