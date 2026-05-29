@@ -11723,7 +11723,7 @@ async function authCarregarUsuarios(){
             <td style="padding:10px 16px;font-weight:600">${u.nome||'—'}</td>
             <td style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--text2)">${u.email}</td>
             <td style="padding:10px 16px">
-              '+buildRoleSelect(u.email, u.role)+'
+              ${buildRoleSelect(u.email, u.role)}
             </td>
             <td style="padding:10px 16px;font-size:11px;color:var(--text3)">${acessoMap[u.role]||'Padrão'}</td>
             <td style="padding:10px 16px">
