@@ -2103,6 +2103,26 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         </div>
       </div>
 
+      <!-- Gerenciamento de Usuários -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd">
+          <div class="card-title">👥 Gerenciamento de Usuários</div>
+          <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="authCarregarUsuarios()">↺ Atualizar</button>
+        </div>
+        <div id="auth-users-list" style="padding:0 0 4px">
+          <div style="padding:16px 20px;color:var(--text3);font-size:12px;font-family:var(--mono)">Carregando usuários…</div>
+        </div>
+      </div>
+
+      <!-- Funções e Permissões -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd">
+          <div class="card-title">🔑 Funções e Permissões</div>
+          <button class="btn btn-o" style="font-size:11px;padding:3px 12px" onclick="abrirModalFuncao()">+ Nova Função</button>
+        </div>
+        <div id="funcoes-list" style="padding:0 0 4px"></div>
+      </div>
+
       <!-- Gemini IA Config -->
       <div class="card" style="margin-bottom:14px">
         <div class="card-hd"><div class="card-title">🤖 Inteligência Artificial (Groq/Llama)</div></div>
@@ -2698,11 +2718,20 @@ function hashSimples(s){
 let SENHA_CORRETA='laranja123'; // Troque aqui ou pela opção 🔑 Mudar Senha
 
 function nav(p){
-  // Interceptar acesso às abas protegidas por senha
-  if((p==='comissoes'||p==='diario')&&!comissaoDesbloqueada){
+  // Verificar permissão de acesso à aba
+  if(!podeAcessarAba(p)){
+    toast('⚠ Sua função não tem acesso a esta aba.');
+    return;
+  }
+  // Senha de comissões — só para quem não tem acesso direto
+  if((p==='comissoes'||p==='diario')&&!comissaoDesbloqueada&&!podeVerComissoesSemSenha()){
     _pendingNav=p;
     abrirSenha();
     return;
+  }
+  // Admin e funções com semSenhaComissoes=true entram direto
+  if((p==='comissoes'||p==='diario')&&podeVerComissoesSemSenha()){
+    comissaoDesbloqueada=true;
   }
   _navExecutar(p);
 }
@@ -2825,7 +2854,7 @@ function render(p){
     diario:()=>renderDiario(),
     crm:()=>renderCRM(),
     portal:()=>renderPortal(),
-    cadastro:()=>renderCad(),
+    cadastro:()=>{ renderCad(); authCarregarUsuarios(); renderFuncoes(); },
   };
   if(fns[p]){
     try{ fns[p](); }
@@ -4113,6 +4142,35 @@ function renderDashMeta(){
 
 
 // ══════════════════════════════ CRM INTELIGENTE ══════════════════════════════
+
+// ══════════════════════════════ SISTEMA DE FUNÇÕES ═══════════════════════════
+
+const ABAS_SISTEMA = {
+  dashboard:'Dashboard', crm:'CRM Inteligente', funil:'Funil de Vendas',
+  diario:'Diário da Equipe', mensal:'Resumo Mensal', 'vendas-mensais':'Vendas Mensais',
+  adesionada:'Venda Adesionada', linear:'Venda Linear', comissoes:'Comissões',
+  metas:'Metas & Indicações', contempl:'Contemplações', comunicacao:'Comunicação',
+  canceladas:'Canceladas', presenca:'Lista de Presença', portal:'Portal de Clientes',
+  cadastro:'Cadastros', ia:'Assistente IA', 'sup-dash':'Painel Supervisora',
+};
+
+const FUNCOES_DEFAULT = {
+  admin:{nome:'Admin',cor:'#f97316',abas:Object.keys(ABAS_SISTEMA),semSenhaComissoes:true,descricao:'Acesso total ao sistema'},
+  vendedor:{nome:'Vendedor',cor:'#3b82f6',abas:['dashboard','crm','funil','adesionada','linear','metas','contempl','comunicacao','canceladas','presenca','portal'],semSenhaComissoes:false,descricao:'Vendas, CRM e acompanhamento'},
+  supervisora:{nome:'Supervisora',cor:'#8b5cf6',abas:['dashboard','crm','funil','diario','mensal','vendas-mensais','adesionada','linear','comissoes','metas','contempl','comunicacao','canceladas','presenca','portal','ia','sup-dash'],semSenhaComissoes:true,descricao:'Supervisão e relatórios'},
+};
+
+let _funcoes = null;
+function getFuncoes(){ if(_funcoes) return _funcoes; try{ _funcoes=JSON.parse(localStorage.getItem('lm_funcoes')||'null'); }catch(e){} if(!_funcoes) _funcoes=JSON.parse(JSON.stringify(FUNCOES_DEFAULT)); return _funcoes; }
+function saveFuncoes(){ localStorage.setItem('lm_funcoes',JSON.stringify(getFuncoes())); const sb=getSupabase(); if(sb) sb.from('lm_config').upsert({id:'funcoes',payload:JSON.stringify(getFuncoes())}).then(()=>{}); }
+function getUserRole(){ return authUser?._role||'vendedor'; }
+function getUserFuncao(){ const r=getUserRole(); const f=getFuncoes(); return f[r]||f['vendedor']||FUNCOES_DEFAULT.vendedor; }
+function podeAcessarAba(aba){ if(getUserRole()==='admin') return true; return (getUserFuncao().abas||[]).includes(aba); }
+function podeVerComissoesSemSenha(){ if(getUserRole()==='admin') return true; return !!(getUserFuncao().semSenhaComissoes); }
+async function carregarFuncoesSupabase(){ const sb=getSupabase(); if(!sb) return; try{ const {data}=await sb.from('lm_config').select('payload').eq('id','funcoes').single(); if(data?.payload){ _funcoes=JSON.parse(data.payload); localStorage.setItem('lm_funcoes',data.payload); }}catch(e){} }
+
+// ══════════════════════════════════════════════════════════════════════════════
+
 
 let crmDB = JSON.parse(localStorage.getItem('crm_lm_v1')||'[]');
 
@@ -8276,6 +8334,9 @@ function saveModal(){
       Object.assign(DB.metaFunilVend[mfVend], recMF);
     }
     setTimeout(()=>{if(activePage==='funil')renderFunil();},50);
+  } else if(modalType==='funcao-edit'){
+    salvarFuncao();
+    return;
   } else if(modalType==='crm-reg'){
     crmSalvar();
     return;
@@ -11308,7 +11369,13 @@ async function authEntrou(){
   document.getElementById('auth-overlay').style.display='none';
   document.getElementById('online-indicator').style.display='flex';
   document.getElementById('online-label').textContent=authUser._nome;
-  
+
+  // Carregar funções e permissões
+  await carregarFuncoesSupabase();
+
+  // Admin sem senha de comissões
+  if(podeVerComissoesSemSenha()) comissaoDesbloqueada=true;
+
   // Registrar presença online
   authIniciarPresenca();
   
@@ -11501,6 +11568,190 @@ function authTogglePanel(){
     authVerificarSolicitacoes();
     authRenderOnline();
   }
+}
+
+// ══════════════════════════════ GESTÃO DE FUNÇÕES ════════════════════════════
+
+function renderFuncoes(){
+  const el=document.getElementById('funcoes-list');
+  if(!el) return;
+  const funcoes=getFuncoes();
+  const keys=Object.keys(funcoes);
+
+  el.innerHTML=keys.map(key=>{
+    const f=funcoes[key];
+    const isDefault=['admin','vendedor'].includes(key);
+    return `<div style="border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+      <div style="width:10px;height:10px;border-radius:50%;background:${f.cor||'var(--accent)'};margin-top:4px;flex-shrink:0"></div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
+          ${f.nome}
+          ${isDefault?'<span style="font-size:10px;font-family:var(--mono);color:var(--text3);background:var(--bg3);padding:1px 6px;border-radius:4px">padrão</span>':''}
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${f.descricao||''}</div>
+        <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+          ${(f.abas||[]).map(aba=>`<span style="font-size:10px;font-family:var(--mono);padding:2px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text2)">${ABAS_SISTEMA[aba]||aba}</span>`).join('')}
+        </div>
+        ${f.semSenhaComissoes?'<div style="font-size:10px;color:var(--green);margin-top:4px">✓ Vê comissões sem senha</div>':'<div style="font-size:10px;color:var(--text3);margin-top:4px">🔒 Comissões pedem senha</div>'}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-g" style="font-size:11px;padding:3px 10px" onclick="abrirModalFuncao('${key}')">✎ Editar</button>
+        ${!isDefault?`<button class="btn btn-g" style="font-size:11px;padding:3px 10px;color:var(--red)" onclick="deletarFuncao('${key}')">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let _editandoFuncao=null;
+
+function abrirModalFuncao(key=null){
+  _editandoFuncao=key;
+  const funcoes=getFuncoes();
+  const f=key?funcoes[key]:{nome:'',cor:'#3b82f6',abas:[],semSenhaComissoes:false,descricao:''};
+
+  const abasHtml=Object.entries(ABAS_SISTEMA).map(([id,nome])=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 0;cursor:pointer">
+      <input type="checkbox" value="${id}" ${(f.abas||[]).includes(id)?'checked':''} style="accent-color:var(--accent)">
+      ${nome}
+    </label>`).join('');
+
+  const html=`
+    <div style="margin-bottom:12px"><label class="flabel">Nome da Função</label>
+      <input class="finput" id="fn-nome" value="${f.nome}" placeholder="Ex: Trainee"></div>
+    <div style="margin-bottom:12px"><label class="flabel">Descrição</label>
+      <input class="finput" id="fn-desc" value="${f.descricao||''}" placeholder="Descreva o nível de acesso"></div>
+    <div style="margin-bottom:12px"><label class="flabel">Cor</label>
+      <input type="color" id="fn-cor" value="${f.cor||'#3b82f6'}" style="width:48px;height:32px;border-radius:6px;border:1px solid var(--border);cursor:pointer;padding:2px"></div>
+    <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <label class="flabel" style="margin-bottom:0">Vê comissões sem senha</label>
+      <input type="checkbox" id="fn-sem-senha" ${f.semSenhaComissoes?'checked':''} style="accent-color:var(--accent);width:16px;height:16px">
+    </div>
+    <div style="margin-bottom:6px"><label class="flabel">Abas com Acesso</label></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--bg3);border-radius:8px;padding:10px;max-height:260px;overflow-y:auto">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:4px;cursor:pointer;grid-column:1/-1;font-weight:700;color:var(--text3)">
+        <input type="checkbox" id="fn-sel-todos" onchange="document.querySelectorAll('#fn-abas input').forEach(el=>el.checked=this.checked)"> Selecionar todas
+      </label>
+      <div id="fn-abas" style="display:contents">${abasHtml}</div>
+    </div>`;
+
+  modalType='funcao-edit';
+  document.getElementById('m-title').innerHTML='🔑 '+(key?'Editar Função':'Nova Função');
+  document.getElementById('m-sub').innerHTML=key?'Edite as permissões desta função':'Configure uma nova função de acesso';
+  document.getElementById('m-form').innerHTML=html;
+  const ms=document.getElementById('m-save');if(ms){ms.textContent='Salvar Função';ms.style.display='';}
+  document.getElementById('overlay').classList.add('open');
+}
+
+function salvarFuncao(){
+  const nome=document.getElementById('fn-nome')?.value?.trim();
+  if(!nome){toast('⚠ Informe o nome da função.');return;}
+  const key=_editandoFuncao||nome.toLowerCase().replace(/\s+/g,'_');
+  const abas=[...document.querySelectorAll('#fn-abas input:checked')].map(el=>el.value);
+  const funcoes=getFuncoes();
+  funcoes[key]={
+    nome,
+    descricao:document.getElementById('fn-desc')?.value?.trim()||'',
+    cor:document.getElementById('fn-cor')?.value||'#3b82f6',
+    abas,
+    semSenhaComissoes:document.getElementById('fn-sem-senha')?.checked||false,
+  };
+  _funcoes=funcoes;
+  saveFuncoes();
+  document.getElementById('overlay').classList.remove('open');
+  renderFuncoes();
+  // Atualizar select de usuários
+  authCarregarUsuarios();
+  toast('✓ Função "'+nome+'" salva!');
+}
+
+function deletarFuncao(key){
+  if(!confirm('Remover a função "'+getFuncoes()[key]?.nome+'"?')) return;
+  const funcoes=getFuncoes();
+  delete funcoes[key];
+  _funcoes=funcoes;
+  saveFuncoes();
+  renderFuncoes();
+  toast('Função removida.');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+
+function buildRoleSelect(email, currentRole){
+  const funcoes=getFuncoes();
+  const opts=Object.entries(funcoes).map(([key,f])=>`<option value="${key}" ${currentRole===key?'selected':''}>${f.nome}</option>`).join('');
+  return `<select style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" onchange="authAlterarRole('${email}',this.value)">${opts}</select>`;
+}
+
+async function authCarregarUsuarios(){
+  const sb=getSupabase();
+  const el=document.getElementById('auth-users-list');
+  if(!el) return;
+  if(!sb){el.innerHTML='<div style="padding:16px 20px;color:var(--text3);font-size:12px;font-family:var(--mono)">Supabase não conectado.</div>';return;}
+  await carregarFuncoesSupabase();
+  renderFuncoes();
+
+  el.innerHTML='<div style="padding:16px 20px;color:var(--text3);font-size:12px;font-family:var(--mono)">Carregando…</div>';
+
+  const {data,error}=await sb.from('auth_users').select('*').order('created_at');
+  if(error||!data){el.innerHTML='<div style="padding:16px 20px;color:var(--red);font-size:12px">Erro ao carregar usuários.</div>';return;}
+
+  const acessoMap={
+    admin:'Tudo (Admin)',
+    vendedor:'Vendas, CRM, Funil, Metas'
+  };
+  const statusColor={aprovado:'var(--green)',pendente:'var(--yellow)',rejeitado:'var(--red)'};
+  const statusLabel={aprovado:'✓ Aprovado',pendente:'⏳ Pendente',rejeitado:'✕ Rejeitado'};
+
+  if(!data.length){el.innerHTML='<div style="padding:16px 20px;color:var(--text3);font-size:12px;font-family:var(--mono)">Nenhum usuário cadastrado.</div>';return;}
+
+  el.innerHTML=`<div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);background:var(--bg3)">
+          <th style="text-align:left;padding:8px 16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Nome</th>
+          <th style="text-align:left;padding:8px 16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">E-mail</th>
+          <th style="text-align:left;padding:8px 16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Função</th>
+          <th style="text-align:left;padding:8px 16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Acesso</th>
+          <th style="text-align:left;padding:8px 16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Status</th>
+          <th style="text-align:left;padding:8px 16px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)">Cadastro</th>
+          <th style="padding:8px 16px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(u=>`
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:10px 16px;font-weight:600">${u.nome||'—'}</td>
+            <td style="padding:10px 16px;font-family:var(--mono);font-size:11px;color:var(--text2)">${u.email}</td>
+            <td style="padding:10px 16px">
+              '+buildRoleSelect(u.email, u.role)+'
+            </td>
+            <td style="padding:10px 16px;font-size:11px;color:var(--text3)">${acessoMap[u.role]||'Padrão'}</td>
+            <td style="padding:10px 16px">
+              <span style="font-size:11px;font-weight:600;color:${statusColor[u.status]||'var(--text3)'}">${statusLabel[u.status]||u.status}</span>
+            </td>
+            <td style="padding:10px 16px;font-size:11px;color:var(--text3);font-family:var(--mono)">${u.created_at?new Date(u.created_at).toLocaleDateString('pt-BR'):'—'}</td>
+            <td style="padding:10px 16px;white-space:nowrap">
+              ${u.status==='pendente'?`<button class="btn btn-g" style="font-size:10px;padding:3px 8px;color:var(--green);margin-right:4px" onclick="authAprovar('${u.email}','${u.nome||''}')">✓ Aprovar</button>`:''}
+              ${u.status==='aprovado'&&u.email!=='empbalmeida@gmail.com'?`<button class="btn btn-g" style="font-size:10px;padding:3px 8px;color:var(--yellow)" onclick="authRevogar('${u.email}','${u.nome||''}')">⊘ Revogar</button>`:''}
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+async function authAlterarRole(email, role){
+  const sb=getSupabase(); if(!sb) return;
+  await sb.from('auth_users').update({role}).eq('email',email);
+  toast('✓ Função de '+email+' alterada para '+role+'.');
+}
+
+async function authRevogar(email, nome){
+  if(!confirm('Revogar acesso de '+nome+'?')) return;
+  const sb=getSupabase(); if(!sb) return;
+  await sb.from('auth_users').update({status:'rejeitado'}).eq('email',email);
+  toast('Acesso revogado: '+nome);
+  authCarregarUsuarios();
 }
 
 // Verificar sessão ao carregar
