@@ -11411,30 +11411,68 @@ async function authRejeitar(email, nome){
 function authIniciarPresenca(){
   const sb=getSupabase();
   if(!sb||!authUser) return;
-  
-  authOnlineChannel=sb.channel('presenca_online',{
-    config:{presence:{key:authUser.id}}
-  });
-  
-  authOnlineChannel
-    .on('presence','sync',()=>{
-      const state=authOnlineChannel.presenceState();
-      authOnlineUsers={};
-      Object.values(state).flat().forEach(u=>{
-        authOnlineUsers[u.user_id]={nome:u.nome,email:u.email,entrou:u.entrou};
-      });
-      authRenderOnline();
-    })
-    .subscribe(async(status)=>{
-      if(status==='SUBSCRIBED'){
-        await authOnlineChannel.track({
-          user_id:authUser.id,
-          nome:authUser._nome,
-          email:authUser.email,
-          entrou:new Date().toISOString()
-        });
-      }
+
+  // Registrar presença via tabela (mais confiável que Realtime Presence)
+  authRegistrarPresencaTabela();
+  setInterval(authRegistrarPresencaTabela, 30000); // heartbeat a cada 30s
+  setInterval(authCarregarPresencas, 10000); // atualizar lista a cada 10s
+  authCarregarPresencas(); // carregar imediatamente
+
+  // Tentar Realtime Presence também (quando disponível)
+  try{
+    authOnlineChannel=sb.channel('presenca_online',{
+      config:{presence:{key:String(authUser.id)}}
     });
+    authOnlineChannel
+      .on('presence','sync',()=>{
+        const state=authOnlineChannel.presenceState();
+        Object.values(state).flat().forEach(u=>{
+          authOnlineUsers[u.user_id]={nome:u.nome,email:u.email,entrou:u.entrou};
+        });
+        authRenderOnline();
+      })
+      .subscribe(async(status)=>{
+        if(status==='SUBSCRIBED'){
+          await authOnlineChannel.track({
+            user_id:String(authUser.id),
+            nome:authUser._nome,
+            email:authUser.email,
+            entrou:new Date().toISOString()
+          });
+        }
+      });
+  }catch(e){ console.log('Realtime presence não disponível, usando tabela.'); }
+
+  // Remover presença ao sair
+  window.addEventListener('beforeunload',()=>{
+    const sb2=getSupabase();
+    if(sb2&&authUser) sb2.from('presenca_online').delete().eq('user_id',String(authUser.id)).then(()=>{});
+  });
+}
+
+async function authRegistrarPresencaTabela(){
+  const sb=getSupabase(); if(!sb||!authUser) return;
+  try{
+    await sb.from('presenca_online').upsert({
+      user_id:String(authUser.id),
+      nome:authUser._nome,
+      email:authUser.email,
+      ultima_vez:new Date().toISOString()
+    });
+  }catch(e){}
+}
+
+async function authCarregarPresencas(){
+  const sb=getSupabase(); if(!sb) return;
+  try{
+    // Considerar online quem atualizou nos últimos 2 minutos
+    const limite=new Date(Date.now()-2*60*1000).toISOString();
+    const {data}=await sb.from('presenca_online').select('*').gte('ultima_vez',limite);
+    if(!data) return;
+    authOnlineUsers={};
+    data.forEach(u=>{ authOnlineUsers[u.user_id]={nome:u.nome,email:u.email,entrou:u.ultima_vez}; });
+    authRenderOnline();
+  }catch(e){}
 }
 
 function authRenderOnline(){
