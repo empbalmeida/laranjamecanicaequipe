@@ -2237,6 +2237,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <option value="segunda_visita">Segunda visita</option>
         </select>
         <button class="btn btn-o" onclick="openModal('crm-reg')" style="font-size:12px">+ Adicionar Cliente</button>
+        <button class="btn btn-g" onclick="crmSincronizar()" style="font-size:12px" title="Recarregar dados do servidor">↺ Sincronizar</button>
         <button class="btn btn-g" onclick="crmExportarCSV()" style="font-size:12px">↓ CSV</button>
       </div>
 
@@ -4114,6 +4115,52 @@ function renderDashMeta(){
 // ══════════════════════════════ CRM INTELIGENTE ══════════════════════════════
 
 let crmDB = JSON.parse(localStorage.getItem('crm_lm_v1')||'[]');
+
+// ── CRM SUPABASE SYNC ────────────────────────────────────────────────────────
+async function crmLoadFromSupabase(){
+  const sb=getSupabase(); if(!sb) return;
+  try{
+    // Migrar dados locais para Supabase se houver dados locais e Supabase vazio
+    const {data,error}=await sb.from('crm_leads').select('*').order('id',{ascending:true});
+    if(error) return;
+    if(data&&data.length===0&&crmDB.length>0){
+      // Upload dados locais para Supabase
+      for(const rec of crmDB){ await crmSaveToSupabase(rec); }
+      toast('✓ Dados do CRM migrados para a nuvem!');
+      return;
+    }
+    if(!data||!data.length) return;
+    // Converter snake_case → camelCase
+    crmDB=data.map(r=>({
+      id:r.id, data:r.data, hora:r.hora, vendedor:r.vendedor, cliente:r.cliente,
+      status:r.status, resultado:r.resultado, tipo:r.tipo, canal:r.canal,
+      motivoNc:r.motivo_nc, motivoPerda:r.motivo_perda, telCliente:r.tel_cliente,
+      obs:r.obs, vinculoId:r.vinculo_id, dataAtual:r.data_atual,
+      historico:r.historico||[], ts:r.id
+    }));
+    localStorage.setItem('crm_lm_v1',JSON.stringify(crmDB));
+  }catch(e){ console.warn('CRM load error:',e); }
+}
+
+async function crmSaveToSupabase(rec){
+  const sb=getSupabase(); if(!sb) return;
+  try{
+    await sb.from('crm_leads').upsert({
+      id:rec.id, data:rec.data, hora:rec.hora||null, vendedor:rec.vendedor,
+      cliente:rec.cliente, status:rec.status||null, resultado:rec.resultado||null,
+      tipo:rec.tipo||'lead', canal:rec.canal||null,
+      motivo_nc:rec.motivoNc||null, motivo_perda:rec.motivoPerda||null,
+      tel_cliente:rec.telCliente||null, obs:rec.obs||null,
+      vinculo_id:rec.vinculoId||null, data_atual:rec.dataAtual||null,
+      historico:rec.historico||[], updated_at:new Date().toISOString()
+    });
+  }catch(e){ console.warn('CRM save error:',e); }
+}
+
+async function crmDeleteFromSupabase(id){
+  const sb=getSupabase(); if(!sb) return;
+  try{ await sb.from('crm_leads').delete().eq('id',id); }catch(e){}
+}
 let crmSortCol = 'data', crmSortDir = -1;
 let crmAlertas = [], crmEditIdx = null;
 
@@ -4147,7 +4194,12 @@ function crmAddMotivo(tipo){
   toast('✓ "'+novo.trim()+'" adicionado!');
 }
 
-function crmSave(){ localStorage.setItem('crm_lm_v1', JSON.stringify(crmDB)); }
+function crmSave(recs){ 
+  localStorage.setItem('crm_lm_v1', JSON.stringify(crmDB));
+  // Sincronizar registros alterados com Supabase
+  if(recs) [].concat(recs).forEach(r=>crmSaveToSupabase(r));
+  else crmDB.forEach(r=>crmSaveToSupabase(r));
+}
 
 function crmCalcTemp(r){
   if(r.resultado==='fechou') return 'quente';
@@ -4237,6 +4289,16 @@ function crmEnviarAlertasDiario(){
 }
 
 
+function crmSincronizar(){
+  window._crmLoaded=false;
+  toast('Sincronizando…');
+  crmLoadFromSupabase().then(()=>{
+    crmLimparDadosSujos();
+    crmRenderKPIs();crmRenderAlertas();crmRenderInsights();crmRenderTabela();
+    toast('✓ Dados sincronizados!');
+  });
+}
+
 function crmLimparDadosSujos(){
   let mudou=false;
   crmDB.forEach(r=>{
@@ -4263,6 +4325,16 @@ function crmLimparDadosSujos(){
 }
 
 function renderCRM(){
+  // Carregar do Supabase na primeira vez ou quando forçado
+  if(!window._crmLoaded){
+    window._crmLoaded=true;
+    crmLoadFromSupabase().then(()=>{
+      crmLimparDadosSujos();
+      crmRenderKPIs();crmRenderAlertas();crmRenderInsights();crmRenderTabela();
+      renderDiarioAlertasCRM();
+    });
+    return;
+  }
   crmLimparDadosSujos();
   crmRenderKPIs();
   crmRenderAlertas();
@@ -4782,8 +4854,10 @@ function crmOpenEdit(idx){
 
 function crmDeletar(idx){
   if(!confirm('Remover este lead?')) return;
+  const id=crmDB[idx]?.id;
   crmDB.splice(idx,1);
-  crmSave();
+  localStorage.setItem('crm_lm_v1',JSON.stringify(crmDB));
+  if(id) crmDeleteFromSupabase(id);
   renderCRM();
   toast('Lead removido.');
 }
@@ -4885,7 +4959,7 @@ function crmSalvar(){
         obs:document.getElementById('f-crm-obs')?.value.trim()||'',
         ts:Date.now()
       });
-      crmSave();
+      crmSave(crmDB[origIdx]);
       document.getElementById('overlay').classList.remove('open');
       renderCRM();
       toast('✓ '+(tipo==='reagendamento'?'Reagendamento':'2ª visita')+' registrado na ficha!');
@@ -4911,7 +4985,7 @@ function crmSalvar(){
   if(crmEditIdx!==null){crmDB[crmEditIdx]=rec;toast('✓ Cliente atualizado!');}
   else{crmDB.push(rec);toast('✓ Cliente registrado!');}
   crmEditIdx=null;
-  crmSave();
+  crmSave(rec);
   document.getElementById('overlay').classList.remove('open');
   renderCRM();
 }
