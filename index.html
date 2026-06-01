@@ -527,6 +527,11 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 
 /* ── RESPONSIVE ── */
 .sidebar{display:none;}
+@media(min-width:901px){
+  .sidebar{display:flex;flex-direction:column;position:fixed;top:54px;left:0;bottom:0;width:220px;background:var(--bg);border-right:1px solid var(--border);padding:12px 8px;overflow-y:auto;z-index:100;}
+  .main-with-sidebar{margin-left:220px;}
+  .nav-hamburger{display:none!important;}
+}
 .sidebar-link{
   display:flex; align-items:center; gap:10px;
   padding:9px 12px; border-radius:10px; cursor:pointer;
@@ -7156,7 +7161,22 @@ function getStatusOpts(){return DB.statusList.map(s=>`<option value="${s.nome}">
 
 // ═══════════════════════════════ MODAL ═══════════════════════════════════════
 let modalType='ades';
-function openModal(type='ades'){
+let _genericCallback=null;
+function openModal(type='ades', genericTitle, genericForm, genericCb){
+  // Suporte ao modo 'generic': openModal('generic', title, formHTML, callback)
+  if(type==='generic'){
+    modalType='generic';
+    _genericCallback=genericCb||null;
+    document.getElementById('m-title').innerHTML=genericTitle||'';
+    document.getElementById('m-sub').innerHTML='';
+    document.getElementById('m-form').innerHTML=genericForm||'';
+    document.getElementById('overlay').classList.add('open');
+    const btnSave=document.getElementById('m-save');
+    const btnCom=document.getElementById('m-save-com');
+    if(btnSave){btnSave.style.display='';btnSave.textContent='Salvar';}
+    if(btnCom) btnCom.style.display='none';
+    return;
+  }
   modalType=type;
   // Restaurar botão salvar (pode ter sido oculto por crmVerFicha)
   const _ms=document.getElementById('m-save');if(_ms)_ms.style.display='';
@@ -8191,6 +8211,13 @@ function closeModal(e){
 function saveModal(){
   const g=id=>document.getElementById(id)?.value||'';
   const gn=id=>parseFloat(document.getElementById(id)?.value)||0;
+
+  // Modo genérico
+  if(modalType==='generic'||_genericCallback){
+    if(_genericCallback){_genericCallback();_genericCallback=null;}
+    document.getElementById('overlay').classList.remove('open');
+    return;
+  }
 
   if(modalType==='ades'){
     if(!g('f-cli').trim()){alert('Informe o nome do cliente.');return;}
