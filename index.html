@@ -526,9 +526,7 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
 /* ── RESPONSIVE ── */
-.sidebar{display:none!important;}
-.main-with-sidebar{margin-left:0!important;}
-.nav-hamburger{display:flex!important;}
+.sidebar{display:none;}
 .sidebar-link{
   display:flex; align-items:center; gap:10px;
   padding:9px 12px; border-radius:10px; cursor:pointer;
@@ -595,7 +593,7 @@ th.sortable.desc .sort-icon{opacity:1;color:var(--accent);}
 body.compact .hero{display:none!important;}
 body.compact .sidebar{width:52px!important;}
 body.compact .sidebar-link span,.body.compact .sidebar-section,.body.compact .sidebar-link{font-size:0!important;}
-body.compact .main-with-sidebar{margin-left:0!important;}
+body.compact .main-with-sidebar{margin-left:52px!important;}
 body.compact .section-sm{padding:10px 10px!important;}
 body.compact .section{padding:10px 10px!important;}
 body.compact .card{margin-bottom:8px!important;border-radius:8px!important;}
@@ -1462,7 +1460,13 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         </div>
         <div class="tbl-outer">
           <div class="tbl-wrap">
-            <table id="tbl-funil">
+            <table id="tbl-funil" style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:18%"><col style="width:11%">
+                <col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%"><col style="width:8.5%">
+                <col style="width:8.5%"><col style="width:9%"><col style="width:7.5%"><col style="width:7.5%">
+                <col style="width:5%">
+              </colgroup>
               <thead><tr>
                 <th>Semana</th><th>Vendedor</th>
                 <th>Anúncios</th><th>Números</th><th>Retornos</th><th>Discadas</th>
@@ -3435,7 +3439,24 @@ function renderVolDestaque(){
     </div>`).join('');
 }
 
-function toggleFunilGrp(id){const el=document.getElementById(id);const ico=document.getElementById(id+'-ico');if(!el)return;const h=el.style.display==='none';el.style.display=h?'':'none';if(ico)ico.textContent=h?'▾':'▸';}
+function toggleFunilGrp(id){
+  const ico=document.getElementById(id+'-ico');
+  const rows=document.querySelectorAll('.frow-'+id);
+  if(!rows.length)return;
+  const isHidden=rows[0].style.display==='none';
+  rows.forEach(r=>{ r.style.display=isHidden?'':'none'; });
+  if(ico)ico.textContent=isHidden?'▾':'▸';
+  // Se está colapsando um mês, colapsar também as semanas filhas
+  if(!isHidden&&id.startsWith('fm-')){
+    rows.forEach(r=>{
+      const childId=r.dataset.id;
+      if(childId){
+        document.querySelectorAll('.frow-'+childId).forEach(cr=>cr.style.display='none');
+        const ci=document.getElementById(childId+'-ico'); if(ci)ci.textContent='▸';
+      }
+    });
+  }
+}
 function renderFunilSemana(){renderFunil();}
 function funil_onPeriodo(){renderFunil();}
 
@@ -3774,7 +3795,59 @@ function renderFunilHeatmapMensal(){
     +labelMap[campo]+' por mês · borda laranja = mês atual</div>';
 }
 
-function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){const tbody=document.querySelector('#tbl-funil tbody');if(!tbody)return;const filtered=DB.funil.filter(r=>(!vFil||r.vend===vFil)&&(!busca||(r.vend||'').toLowerCase().includes(busca)));const byW={};filtered.forEach(r=>{if(!byW[r.sem])byW[r.sem]=[];byW[r.sem].push(r);});Object.keys(byW).forEach(s=>{if(!byW[s].some(r=>CAMPOS.some(c=>r[c]>0)))delete byW[s];});if(!Object.keys(byW).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro.</td></tr>';return;}const byM={};Object.entries(byW).forEach(([sem,recs])=>{const m=sem.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push([sem,recs]);});const now3=new Date();now3.setHours(0,0,0,0);const dow3=now3.getDay();const seg3=new Date(now3);seg3.setDate(now3.getDate()-(dow3===0?6:dow3-1));tbody.innerHTML=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mId='fm-'+mes.replace('-','');const mT={};CAMPOS.forEach(c=>{mT[c]=semanas.reduce((s,[,r])=>s+r.reduce((ss,rr)=>ss+(rr[c]||0),0),0);});let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mId+'"><td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px"><span id="'+mId+'-ico">▾</span> 📆 '+mLbl+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:12px;font-weight:700">'+mT[c]+'</td>').join('')+'<td></td></tr><tr id="'+mId+'"><td colspan="11" style="padding:0"><table style="width:100%">';semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{const d=new Date(sem+'T12:00:00');const fin=new Date(d);fin.setDate(d.getDate()+5);const sLbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fin.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const isN=d>=seg3&&d<=new Date(seg3.getTime()+6*864e5);const wT={};CAMPOS.forEach(c=>{wT[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});const gId='fg-'+mes+wi;h+='<tr style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+gId+'"><td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+gId+'-ico">'+(isN?'▾':'▸')+'</span> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> '+sLbl+(isN?' <span class="badge-novo">Atual</span>':'')+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;font-size:11px;color:var(--text3)">'+wT[c]+'</td>').join('')+'<td></td></tr><tr id="'+gId+'"'+(isN?'':' style="display:none"')+'><td colspan="11" style="padding:0"><table style="width:100%">';recs.forEach(r=>{const idx=DB.funil.findIndex(x=>x.vend===r.vend&&x.sem===r.sem&&x.ts===r.ts);h+='<tr><td style="width:40px"></td><td style="font-size:12px;padding:6px 14px 6px 32px;color:var(--text2)">'+r.vend+'</td>'+CAMPOS.map(c=>'<td class="mono" style="text-align:center;padding:6px 4px">'+(r[c]||0)+'</td>').join('')+'<td style="white-space:nowrap;padding:4px"><button class="btn btn-g" style="padding:2px 7px;font-size:11px" onclick="editFunilBtn(this)" data-sem="'+r.sem+'" data-vend="'+r.vend+'">✏</button> <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';});h+='</table></td></tr>';});h+='</table></td></tr>';return h;}).join('');}
+function renderFunilHistorico(rows,CAMPOS,LABELS,busca,vFil){
+  const tbody=document.querySelector('#tbl-funil tbody');
+  if(!tbody)return;
+  const filtered=DB.funil.filter(r=>(!vFil||r.vend===vFil)&&(!busca||(r.vend||'').toLowerCase().includes(busca)));
+  const byW={};
+  filtered.forEach(r=>{if(!byW[r.sem])byW[r.sem]=[];byW[r.sem].push(r);});
+  Object.keys(byW).forEach(s=>{if(!byW[s].some(r=>CAMPOS.some(c=>r[c]>0)))delete byW[s];});
+  if(!Object.keys(byW).length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3)">Nenhum registro.</td></tr>';return;}
+  const byM={};
+  Object.entries(byW).forEach(([sem,recs])=>{const m=sem.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push([sem,recs]);});
+  const now3=new Date();now3.setHours(0,0,0,0);
+  const dow3=now3.getDay();
+  const seg3=new Date(now3);seg3.setDate(now3.getDate()-(dow3===0?6:dow3-1));
+
+  const cell=(v,extra='')=>'<td class="mono" style="text-align:center;'+extra+'">'+v+'</td>';
+
+  tbody.innerHTML=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,semanas])=>{
+    const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    const mId='fm-'+mes.replace('-','');
+    const mT={};CAMPOS.forEach(c=>{mT[c]=semanas.reduce((s,[,r])=>s+r.reduce((ss,rr)=>ss+(rr[c]||0),0),0);});
+
+    // Linha do MÊS
+    let h='<tr style="background:var(--bg2);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mId+'">'+
+      '<td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px"><span id="'+mId+'-ico">▾</span> 📆 '+mLbl+'</td>'+
+      CAMPOS.map(c=>cell(mT[c],'font-size:12px;font-weight:700')).join('')+'<td></td></tr>';
+
+    // Container das semanas (linhas diretas, sem sub-tabela)
+    semanas.sort((a,b)=>b[0].localeCompare(a[0])).forEach(([sem,recs],wi)=>{
+      const d=new Date(sem+'T12:00:00');
+      const fin=new Date(d);fin.setDate(d.getDate()+5);
+      const sLbl=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fin.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      const isN=d>=seg3&&d<=new Date(seg3.getTime()+6*864e5);
+      const wT={};CAMPOS.forEach(c=>{wT[c]=recs.reduce((s,r)=>s+(r[c]||0),0);});
+      const gId='fg-'+mes+wi;
+
+      // Linha da SEMANA
+      h+='<tr class="frow-'+mId+'" style="background:var(--bg3);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+gId+'">'+
+        '<td colspan="2" style="padding:7px 14px 7px 24px;font-weight:700;font-size:12px;color:var(--accent)"><span id="'+gId+'-ico">'+(isN?'▾':'▸')+'</span> 📅 '+sLbl+(isN?' <span class="badge-novo">Atual</span>':'')+'</td>'+
+        CAMPOS.map(c=>cell(wT[c],'font-size:11px;color:var(--text3)')).join('')+'<td></td></tr>';
+
+      // Linhas dos VENDEDORES
+      recs.forEach(r=>{
+        const idx=DB.funil.findIndex(x=>x.vend===r.vend&&x.sem===r.sem&&x.ts===r.ts);
+        h+='<tr class="frow-'+gId+'"'+(isN?'':' style="display:none"')+'>'+
+          '<td></td>'+
+          '<td style="font-size:12px;padding:6px 14px;color:var(--text2)">'+r.vend+'</td>'+
+          CAMPOS.map(c=>cell(r[c]||0,'padding:6px 4px')).join('')+
+          '<td style="white-space:nowrap;padding:4px;text-align:center"><button class="btn btn-g" style="padding:2px 6px;font-size:10px" onclick="editFunilBtn(this)" data-sem="'+r.sem+'" data-vend="'+r.vend+'">✏</button> <button class="btn" style="padding:2px 6px;font-size:10px;background:rgba(239,68,68,.08);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delFunil('+idx+')">✕</button></td></tr>';
+      });
+    });
+    return h;
+  }).join('');
+}
 
 // ── Formatadores (definidos acima como const) ───────────────────────────────
 
@@ -7158,22 +7231,7 @@ function getStatusOpts(){return DB.statusList.map(s=>`<option value="${s.nome}">
 
 // ═══════════════════════════════ MODAL ═══════════════════════════════════════
 let modalType='ades';
-let _genericCallback=null;
-function openModal(type='ades', genericTitle, genericForm, genericCb){
-  // Suporte ao modo 'generic': openModal('generic', title, formHTML, callback)
-  if(type==='generic'){
-    modalType='generic';
-    _genericCallback=genericCb||null;
-    document.getElementById('m-title').innerHTML=genericTitle||'';
-    document.getElementById('m-sub').innerHTML='';
-    document.getElementById('m-form').innerHTML=genericForm||'';
-    document.getElementById('overlay').classList.add('open');
-    const btnSave=document.getElementById('m-save');
-    const btnCom=document.getElementById('m-save-com');
-    if(btnSave){btnSave.style.display='';btnSave.textContent='Salvar';}
-    if(btnCom) btnCom.style.display='none';
-    return;
-  }
+function openModal(type='ades'){
   modalType=type;
   // Restaurar botão salvar (pode ter sido oculto por crmVerFicha)
   const _ms=document.getElementById('m-save');if(_ms)_ms.style.display='';
@@ -8208,13 +8266,6 @@ function closeModal(e){
 function saveModal(){
   const g=id=>document.getElementById(id)?.value||'';
   const gn=id=>parseFloat(document.getElementById(id)?.value)||0;
-
-  // Modo genérico
-  if(modalType==='generic'||_genericCallback){
-    if(_genericCallback){_genericCallback();_genericCallback=null;}
-    document.getElementById('overlay').classList.remove('open');
-    return;
-  }
 
   if(modalType==='ades'){
     if(!g('f-cli').trim()){alert('Informe o nome do cliente.');return;}
