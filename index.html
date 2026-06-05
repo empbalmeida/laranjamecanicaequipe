@@ -2938,20 +2938,15 @@ Formato: texto limpo, sem markdown pesado, sem asteriscos excessivos, sem emojis
   textoEl.textContent = 'Gerando sua pauta...';
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await response.json();
-    const texto = data.content?.map(i => i.text || '').join('') || 'Erro ao gerar pauta.';
+    const texto = await _iaCall(prompt);
     textoEl.textContent = texto;
   } catch(err) {
-    textoEl.textContent = 'Erro de conexão. Tente novamente.';
+    const key = getGeminiKey();
+    if(!key) {
+      textoEl.textContent = '⚠️ Configure a chave Groq em Cadastros → Inteligência Artificial para usar esta função.';
+    } else {
+      textoEl.textContent = 'Erro: ' + err.message;
+    }
   }
 
   btn.textContent = '✨ Gerar Pauta';
