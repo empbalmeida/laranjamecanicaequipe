@@ -1235,7 +1235,6 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-g" onclick="gerarPDFDiario()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> PDF Reunião</button>
           <button class="btn btn-g" onclick="openModal('diario-gestao')">👔 Reunião c/ Gestão</button>
-          <button class="btn btn-g" onclick="abrirGeradorPauta()" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none">📋 Gerar Pauta</button>
           <button class="btn btn-g" onclick="iaAnalisarDiario()" style="background:linear-gradient(135deg,#4285f4,#a855f7);color:#fff;border:none">✨ Analisar com IA</button>
           <button class="btn btn-o" onclick="openModal('diario-reg')">+ Registrar Semana</button>
         </div>
@@ -2308,62 +2307,6 @@ body.compact .tbl-wrap{max-height:55vh!important;}
   </div>
 </div>
 
-<!-- MODAL GERADOR DE PAUTA -->
-<div class="overlay" id="overlay-pauta" onclick="fecharPauta(event)">
-  <div class="modal" style="max-width:580px">
-    <div class="modal-title">📋 Gerar Pauta de Reunião</div>
-    <div class="modal-sub">Configure e gere uma pauta pronta para usar</div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <button type="button" id="pauta-btn-grupo" onclick="setPautaTipo('grupo')" style="flex:1;padding:9px;border-radius:8px;border:2px solid var(--accent);background:rgba(249,115,22,.1);font-size:12px;font-weight:600;cursor:pointer;color:var(--accent);font-family:inherit">👥 Grupo</button>
-      <button type="button" id="pauta-btn-individual" onclick="setPautaTipo('individual')" style="flex:1;padding:9px;border-radius:8px;border:2px solid var(--border);background:var(--bg3);font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);font-family:inherit">👤 Individual</button>
-    </div>
-    <input type="hidden" id="pauta-tipo" value="grupo">
-    <div id="pauta-vend-row" style="display:none;margin-bottom:14px">
-      <label class="flabel">Com quem?</label>
-      <select class="finput" id="pauta-vend"><option value="Beatriz">Beatriz</option><option value="Rafael">Rafael</option><option value="Isaac">Isaac</option></select>
-    </div>
-    <div class="fgrid" style="margin-bottom:14px">
-      <div class="fg"><label class="flabel">Duração prevista</label><select class="finput" id="pauta-duracao"><option value="10 minutos">10 min</option><option value="15 minutos">15 min</option><option value="20 minutos" selected>20 min</option><option value="30 minutos">30 min</option></select></div>
-      <div class="fg"><label class="flabel">Objetivo principal</label><select class="finput" id="pauta-objetivo"><option value="acompanhar números">Números</option><option value="alinhar estratégia">Estratégia</option><option value="resolver problema">Problema</option><option value="os três">Misto</option></select></div>
-    </div>
-    <div style="margin-bottom:14px">
-      <label class="flabel">Números da semana (opcional)</label>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px">
-        <div><div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:4px">Anúncios</div><input class="finput" id="pauta-anuncios" type="number" placeholder="—" style="text-align:center;padding:8px 4px"></div>
-        <div><div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:4px">Ligações</div><input class="finput" id="pauta-ligacoes" type="number" placeholder="—" style="text-align:center;padding:8px 4px"></div>
-        <div><div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:4px">Agend.</div><input class="finput" id="pauta-agend" type="number" placeholder="—" style="text-align:center;padding:8px 4px"></div>
-        <div><div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:4px">Visitas</div><input class="finput" id="pauta-visitas" type="number" placeholder="—" style="text-align:center;padding:8px 4px"></div>
-        <div><div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:4px">Fecham.</div><input class="finput" id="pauta-fecham" type="number" placeholder="—" style="text-align:center;padding:8px 4px"></div>
-      </div>
-    </div>
-    <div style="margin-bottom:14px">
-      <label class="flabel">Tom da reunião</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
-        <div id="pauta-tom-motivador" onclick="setPautaTom('motivador')" style="padding:10px 12px;border-radius:10px;border:2px solid var(--accent);background:rgba(249,115,22,.1);cursor:pointer"><div style="font-size:18px;margin-bottom:2px">🔥</div><div style="font-size:12px;font-weight:700;color:var(--text)">Motivador</div><div style="font-size:11px;color:var(--text3)">Energizar e engajar</div></div>
-        <div id="pauta-tom-direto" onclick="setPautaTom('direto')" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><div style="font-size:18px;margin-bottom:2px">🎯</div><div style="font-size:12px;font-weight:700;color:var(--text)">Direto</div><div style="font-size:11px;color:var(--text3)">Objetivo e sem rodeio</div></div>
-        <div id="pauta-tom-corretivo" onclick="setPautaTom('corretivo')" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><div style="font-size:18px;margin-bottom:2px">⚠️</div><div style="font-size:12px;font-weight:700;color:var(--text)">Corretivo</div><div style="font-size:11px;color:var(--text3)">Feedback e ajuste</div></div>
-        <div id="pauta-tom-estrategico" onclick="setPautaTom('estratégico')" style="padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);cursor:pointer"><div style="font-size:18px;margin-bottom:2px">📐</div><div style="font-size:12px;font-weight:700;color:var(--text)">Estratégico</div><div style="font-size:11px;color:var(--text3)">Próximos passos</div></div>
-      </div>
-      <input type="hidden" id="pauta-tom" value="motivador">
-    </div>
-    <div style="margin-bottom:16px">
-      <label class="flabel">Contexto ou situação (opcional)</label>
-      <textarea class="finput" id="pauta-situacao" rows="2" placeholder="Ex: Rafael não bateu meta 3 dias seguidos..." style="resize:none;font-family:inherit"></textarea>
-    </div>
-    <div id="pauta-resultado" style="display:none;margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <label class="flabel" style="margin:0">Sua pauta</label>
-        <button onclick="copiarPauta()" class="btn btn-g" style="font-size:11px;padding:3px 12px">Copiar</button>
-      </div>
-      <div id="pauta-texto" style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;min-height:100px"></div>
-    </div>
-    <div class="mfoot">
-      <button class="btn btn-g" onclick="fecharPauta()">Fechar</button>
-      <button class="btn btn-o" id="pauta-btn-gerar" onclick="gerarPauta()">✨ Gerar Pauta</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL SENHA -->
 <div class="overlay" id="overlay-senha" onclick="fecharSenha(event)">
   <div class="modal" style="max-width:360px;text-align:center">
@@ -2834,130 +2777,6 @@ function _navExecutar(p){
   }
   render(p);
 }
-
-
-// ── GERADOR DE PAUTA ─────────────────────────────────────────────────────────
-function abrirGeradorPauta(){
-  // Pré-preencher com dados da semana atual do vendedor selecionado no diário
-  const vend = document.getElementById('diario-vend')?.value || '';
-  const sem = document.getElementById('diario-semana')?.value || '';
-  if(vend && sem){
-    const fr = DB.funil.filter(r => r.vend === vend && r.sem === sem);
-    const set = (id, v) => { const el = document.getElementById(id); if(el && v) el.value = v; };
-    set('pauta-anuncios', fr.reduce((s,r) => s+(r.anuncios||0), 0)||'');
-    set('pauta-ligacoes', fr.reduce((s,r) => s+(r.discadas||0), 0)||'');
-    set('pauta-agend',    fr.reduce((s,r) => s+(r.agendamentos||0), 0)||'');
-    set('pauta-visitas',  fr.reduce((s,r) => s+(r.visitas||0), 0)||'');
-    set('pauta-fecham',   fr.reduce((s,r) => s+(r.fechamentos||0), 0)||'');
-    // Se individual, selecionar o vendedor
-    if(vend && vend !== ''){
-      const sel = document.getElementById('pauta-vend');
-      if(sel) sel.value = vend;
-    }
-  }
-  document.getElementById('pauta-resultado').style.display = 'none';
-  document.getElementById('pauta-texto').textContent = '';
-  document.getElementById('overlay-pauta').classList.add('open');
-}
-
-function fecharPauta(e){
-  if(e && e.target !== document.getElementById('overlay-pauta')) return;
-  document.getElementById('overlay-pauta').classList.remove('open');
-}
-
-function setPautaTipo(tipo){
-  document.getElementById('pauta-tipo').value = tipo;
-  const btns = {grupo: 'pauta-btn-grupo', individual: 'pauta-btn-individual'};
-  Object.entries(btns).forEach(([t, id]) => {
-    const btn = document.getElementById(id);
-    if(!btn) return;
-    const ativo = t === tipo;
-    btn.style.borderColor = ativo ? 'var(--accent)' : 'var(--border)';
-    btn.style.background = ativo ? 'rgba(249,115,22,.1)' : 'var(--bg3)';
-    btn.style.color = ativo ? 'var(--accent)' : 'var(--text2)';
-  });
-  const vendRow = document.getElementById('pauta-vend-row');
-  if(vendRow) vendRow.style.display = tipo === 'individual' ? '' : 'none';
-}
-
-function setPautaTom(tom){
-  document.getElementById('pauta-tom').value = tom;
-  const toms = ['motivador', 'direto', 'corretivo', 'estrategico'];
-  toms.forEach(t => {
-    const el = document.getElementById('pauta-tom-' + t);
-    if(!el) return;
-    const ativo = t === tom || (t === 'estrategico' && tom === 'estratégico');
-    el.style.border = ativo ? '2px solid var(--accent)' : '1px solid var(--border)';
-    el.style.background = ativo ? 'rgba(249,115,22,.1)' : 'var(--bg3)';
-  });
-}
-
-async function gerarPauta(){
-  const btn = document.getElementById('pauta-btn-gerar');
-  const resEl = document.getElementById('pauta-resultado');
-  const textoEl = document.getElementById('pauta-texto');
-  if(!btn || !textoEl) return;
-
-  const tipo = document.getElementById('pauta-tipo').value || 'grupo';
-  const vend = document.getElementById('pauta-vend').value || '';
-  const duracao = document.getElementById('pauta-duracao').value || '20 minutos';
-  const objetivo = document.getElementById('pauta-objetivo').value || 'os três';
-  const tom = document.getElementById('pauta-tom').value || 'motivador';
-  const situacao = document.getElementById('pauta-situacao').value.trim() || '';
-  const anuncios = document.getElementById('pauta-anuncios').value || '?';
-  const ligacoes = document.getElementById('pauta-ligacoes').value || '?';
-  const agend = document.getElementById('pauta-agend').value || '?';
-  const visitas = document.getElementById('pauta-visitas').value || '?';
-  const fecham = document.getElementById('pauta-fecham').value || '?';
-
-  const contextoVend = tipo === 'individual' && vend
-    ? 'com ' + vend
-    : 'com a equipe (Beatriz, Rafael, Isaac)';
-
-  const numeros = `Anúncios: ${anuncios} | Ligações: ${ligacoes} | Agendamentos: ${agend} | Visitas: ${visitas} | Fechamentos: ${fecham}`;
-
-  const prompt = `Você é assistente de liderança comercial especialista em consórcio imobiliário. Gere uma pauta de reunião objetiva e pronta para usar.
-
-Tipo: reunião ${tipo} ${contextoVend}
-Duração: ${duracao}
-Objetivo: ${objetivo}
-Tom: ${tom}
-Números do funil da semana: ${numeros}
-Contexto/situação: ${situacao || 'Nenhum contexto adicional.'}
-
-Gere uma pauta estruturada com:
-1. Abertura (1-2 frases para começar — direto, sem enrolação)
-2. Pontos a tratar (máximo 3, com o que falar em cada um)
-3. Encerramento (o que definir ou combinar antes de terminar)
-
-Formato: texto limpo, sem markdown pesado, sem asteriscos excessivos, sem emojis demais. Linguagem direta, firme e humana. A líder se chama Bia.`;
-
-  btn.textContent = 'Gerando...';
-  btn.disabled = true;
-  resEl.style.display = '';
-  textoEl.textContent = 'Gerando sua pauta...';
-
-  try {
-    const texto = await _iaCall(prompt);
-    textoEl.textContent = texto;
-  } catch(err) {
-    const key = getGeminiKey();
-    if(!key) {
-      textoEl.textContent = '⚠️ Configure a chave Groq em Cadastros → Inteligência Artificial para usar esta função.';
-    } else {
-      textoEl.textContent = 'Erro: ' + err.message;
-    }
-  }
-
-  btn.textContent = '✨ Gerar Pauta';
-  btn.disabled = false;
-}
-
-function copiarPauta(){
-  const texto = document.getElementById('pauta-texto')?.textContent || '';
-  navigator.clipboard.writeText(texto).then(() => toast('✓ Pauta copiada!')).catch(() => toast('Erro ao copiar'));
-}
-// ── FIM GERADOR DE PAUTA ─────────────────────────────────────────────────────
 
 // ── Senha ─────────────────────────────────────────────────────────────────────
 function abrirSenha(){
@@ -3622,20 +3441,29 @@ function renderVolDestaque(){
 
 function toggleFunilGrp(id){
   const ico=document.getElementById(id+'-ico');
+  // Modelo 1: linhas com classe .frow-{id} (tabela do histórico)
   const rows=document.querySelectorAll('.frow-'+id);
-  if(!rows.length)return;
-  const isHidden=rows[0].style.display==='none';
-  rows.forEach(r=>{ r.style.display=isHidden?'':'none'; });
-  if(ico)ico.textContent=isHidden?'▾':'▸';
-  // Se está colapsando um mês, colapsar também as semanas filhas
-  if(!isHidden&&id.startsWith('fm-')){
-    rows.forEach(r=>{
-      const childId=r.dataset.id;
-      if(childId){
-        document.querySelectorAll('.frow-'+childId).forEach(cr=>cr.style.display='none');
-        const ci=document.getElementById(childId+'-ico'); if(ci)ci.textContent='▸';
-      }
-    });
+  if(rows.length){
+    const isHidden=rows[0].style.display==='none';
+    rows.forEach(r=>{ r.style.display=isHidden?'':'none'; });
+    if(ico)ico.textContent=isHidden?'▾':'▸';
+    if(!isHidden&&id.startsWith('fm-')){
+      rows.forEach(r=>{
+        const childId=r.dataset.id;
+        if(childId){
+          document.querySelectorAll('.frow-'+childId).forEach(cr=>cr.style.display='none');
+          const ci=document.getElementById(childId+'-ico'); if(ci)ci.textContent='▸';
+        }
+      });
+    }
+    return;
+  }
+  // Modelo 2: container <div id="{id}"> (ranking de conversão e outros)
+  const el=document.getElementById(id);
+  if(el){
+    const isHidden=el.style.display==='none';
+    el.style.display=isHidden?'':'none';
+    if(ico)ico.textContent=isHidden?'▾':'▸';
   }
 }
 function renderFunilSemana(){renderFunil();}
@@ -4521,6 +4349,22 @@ function crmCalcTemp(r){
   return 'frio';
 }
 
+function crmReagendarDaFicha(idx, tipo){
+  const r=crmDB[idx];
+  if(!r) return;
+  document.getElementById('overlay').classList.remove('open');
+  setTimeout(()=>{
+    openModal('crm-reg');
+    setTimeout(()=>{
+      const elC=document.getElementById('f-crm-cliente'); if(elC) elC.value=r.cliente||'';
+      const elV=document.getElementById('f-crm-vend'); if(elV) elV.value=r.vendedor||'';
+      const elT=document.getElementById('f-crm-tel-cliente'); if(elT) elT.value=r.telCliente||'';
+      crmSelecionarVinculo(r.id, r.cliente, r.data||'');
+      crmSetTipo(tipo);
+    },40);
+  },100);
+}
+
 function crmVerFicha(idx){
   const r=crmDB[idx];
   if(!r) return;
@@ -4546,8 +4390,8 @@ function crmVerFicha(idx){
     </div>`).join('')+'</div>':''}
     <div style="display:flex;gap:6px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
       <button class="btn btn-g" style="font-size:11px" onclick="crmOpenEdit(${idx});document.getElementById('overlay').classList.remove('open')">✎ Editar ficha</button>
-      <button class="btn btn-o" style="font-size:11px" onclick="document.getElementById('overlay').classList.remove('open');setTimeout(()=>{openModal('crm-reg');setTimeout(()=>{document.getElementById('f-crm-cliente').value='${r.cliente}';document.getElementById('f-crm-vend').value='${r.vendedor}';document.getElementById('f-crm-tel-cliente').value='${r.telCliente||''}';crmSelecionarVinculo('${r.id}','${r.cliente}','${r.data||''}');crmSetTipo('reagendamento');},40);},100)">🔄 Reagendar</button>
-      <button class="btn btn-g" style="font-size:11px" onclick="document.getElementById('overlay').classList.remove('open');setTimeout(()=>{openModal('crm-reg');setTimeout(()=>{document.getElementById('f-crm-cliente').value='${r.cliente}';document.getElementById('f-crm-vend').value='${r.vendedor}';document.getElementById('f-crm-tel-cliente').value='${r.telCliente||''}';crmSelecionarVinculo('${r.id}','${r.cliente}','${r.data||''}');crmSetTipo('segunda_visita');},40);},100)">🔁 2ª Visita</button>
+      <button class="btn btn-o" style="font-size:11px" onclick="crmReagendarDaFicha(${idx},'reagendamento')">🔄 Reagendar</button>
+      <button class="btn btn-g" style="font-size:11px" onclick="crmReagendarDaFicha(${idx},'segunda_visita')">🔁 2ª Visita</button>
     </div>
   </div>`;
 
@@ -4893,7 +4737,7 @@ function crmBuscarVinculo(){
   if(!matches.length){res.style.display='none';return;}
   res.style.display='';
   res.innerHTML=matches.map(r=>`
-    <div onclick="crmSelecionarVinculo('${r.id}','${r.cliente}','${r.data||''}')"
+    <div onclick="crmSelecionarVinculo(${JSON.stringify(String(r.id))})"
       style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px"
       onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <strong>${r.cliente}</strong>
@@ -4902,6 +4746,11 @@ function crmBuscarVinculo(){
 }
 
 function crmSelecionarVinculo(id, nome, data){
+  // Quando chamado só com id, buscar dados do crmDB
+  if(nome===undefined){
+    const orig=crmDB.find(x=>String(x.id)===String(id));
+    if(orig){ nome=orig.cliente; data=orig.data||''; }
+  }
   document.getElementById('f-crm-vinculo-id').value=id;
   document.getElementById('f-crm-vinculo-busca').value=nome;
   document.getElementById('f-crm-vinculo-res').style.display='none';
@@ -8451,10 +8300,19 @@ function saveModal(){
   if(modalType==='ades'){
     if(!g('f-cli').trim()){alert('Informe o nome do cliente.');return;}
     const liq=gn('f-liq'),pct=gn('f-pct');
-    const rec={vendedor:g('f-vend'),cliente:g('f-cli').trim(),telefone:g('f-tel'),contrato:g('f-cont'),grupo:g('f-grupo'),cota:g('f-cota'),data_contrato:g('f-dcon'),data_pagamento:g('f-dpag'),tabela:g('f-tab'),valor_bruto:gn('f-bruto'),valor_liq:liq,pct_com:pct,com_rs:liq*pct,status:g('f-stat'),obs:g('f-obs'),supervisor:g('f-sup-nome'),pct_sup:gn('f-sup-pct'),com_sup:gn('f-sup-val')||liq*gn('f-sup-pct')};
+    // Validação: % de comissão é decimal (0.006 = 0,6%). Acima de 0.1 (10%) é provável erro de digitação.
+    if(pct>0.1){
+      if(!confirm('⚠️ Atenção: a % de comissão está em '+(pct*100).toFixed(1)+'%.\n\nO campo usa decimal (ex: 0.006 = 0,6%). Você digitou '+pct+'.\n\nConfirma que está correto?')) return;
+    }
+    if(gn('f-sup-pct')>0.1){
+      if(!confirm('⚠️ A % da supervisora está em '+(gn('f-sup-pct')*100).toFixed(1)+'%. Confirma?')) return;
+    }
+    const _supId=editType==='ades'&&editIdx!==null&&DB.adesionada[editIdx]?._supId?DB.adesionada[editIdx]._supId:('sup_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
+    const rec={vendedor:g('f-vend'),cliente:g('f-cli').trim(),telefone:g('f-tel'),contrato:g('f-cont'),grupo:g('f-grupo'),cota:g('f-cota'),data_contrato:g('f-dcon'),data_pagamento:g('f-dpag'),tabela:g('f-tab'),valor_bruto:gn('f-bruto'),valor_liq:liq,pct_com:pct,com_rs:liq*pct,status:g('f-stat'),obs:g('f-obs'),supervisor:g('f-sup-nome'),pct_sup:gn('f-sup-pct'),com_sup:gn('f-sup-val')||liq*gn('f-sup-pct'),_supId:_supId};
     if(editType==='ades'&&editIdx!==null){
       const old=DB.adesionada[editIdx];
-      if(old.supervisor&&old.com_sup>0){const si=DB.comissoesManual.findIndex(c=>c._ori==='ades'&&c._cli===old.cliente&&c._data===old.data_contrato);if(si>=0)DB.comissoesManual.splice(si,1);}
+      // Remover entrada antiga de comissão pelo vínculo único (não por nome+data)
+      if(old.supervisor&&old.com_sup>0){const si=DB.comissoesManual.findIndex(c=>c._supId?c._supId===old._supId:(c._ori==='ades'&&c._cli===old.cliente&&c._data===old.data_contrato));if(si>=0)DB.comissoesManual.splice(si,1);}
       DB.adesionada[editIdx]=rec;
     } else{DB.adesionada.push(rec);}
     if(g('f-sup-nome')&&(gn('f-sup-val')||gn('f-sup-pct'))>0){
@@ -8462,15 +8320,23 @@ function saveModal(){
       const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const d=g('f-dcon')?new Date(g('f-dcon')):new Date();
       const mesRef=g('f-sup-mes')||(MN[d.getMonth()]+'/'+d.getFullYear());
-      DB.comissoesManual.push({data:g('f-dcon'),supervisor:g('f-sup-nome'),vendedor:g('f-vend'),descricao:`Com.Sup — ${g('f-cli').trim()} (Ades.)`,valor:gn('f-sup-val')||liq*gn('f-sup-pct'),mes_ref:mesRef,status:'Pendente',obs:'',_ori:'ades',_cli:g('f-cli').trim(),_data:g('f-dcon')});
+      DB.comissoesManual.push({data:g('f-dcon'),supervisor:g('f-sup-nome'),vendedor:g('f-vend'),descricao:`Com.Sup — ${g('f-cli').trim()} (Ades.)`,valor:gn('f-sup-val')||liq*gn('f-sup-pct'),mes_ref:mesRef,status:'Pendente',obs:'',_ori:'ades',_cli:g('f-cli').trim(),_data:g('f-dcon'),_supId:_supId});
     }
   } else if(modalType==='lin'){
     if(!g('f-cli').trim()){alert('Informe o nome do cliente.');return;}
     const liq=gn('f-liq'),p1=gn('f-p1'),p2=gn('f-p2'),p3=gn('f-p3');
-    const rec={vendedor:g('f-vend'),cliente:g('f-cli').trim(),telefone:g('f-tel'),contrato:g('f-cont'),grupo:g('f-grupo'),cota:g('f-cota'),data_contrato:g('f-dcon'),data_pagamento:g('f-dpag'),tabela:g('f-tab'),valor_bruto:gn('f-bruto'),valor_liq:liq,pct_m1:p1,com_m1:liq*p1,pct_m2:p2,com_m2:liq*p2,pct_m3:p3,com_m3:liq*p3,status:g('f-stat'),obs:g('f-obs'),supervisor:g('f-sup-nome'),pct_sup:gn('f-sup-pct'),com_sup:gn('f-sup-val')||liq*gn('f-sup-pct')};
+    // Validação de teto — campos usam decimal (0.005 = 0,5%)
+    if(p1>0.1||p2>0.1||p3>0.1){
+      if(!confirm('⚠️ Uma das % mensais está acima de 10%.\n\nO campo usa decimal (ex: 0.005 = 0,5%). Confirma os valores: M1='+p1+' M2='+p2+' M3='+p3+'?')) return;
+    }
+    if(gn('f-sup-pct')>0.1){
+      if(!confirm('⚠️ A % da supervisora está em '+(gn('f-sup-pct')*100).toFixed(1)+'%. Confirma?')) return;
+    }
+    const _supIdL=editType==='lin'&&editIdx!==null&&DB.linear[editIdx]?._supId?DB.linear[editIdx]._supId:('sup_'+Date.now()+'_'+Math.random().toString(36).slice(2,7));
+    const rec={vendedor:g('f-vend'),cliente:g('f-cli').trim(),telefone:g('f-tel'),contrato:g('f-cont'),grupo:g('f-grupo'),cota:g('f-cota'),data_contrato:g('f-dcon'),data_pagamento:g('f-dpag'),tabela:g('f-tab'),valor_bruto:gn('f-bruto'),valor_liq:liq,pct_m1:p1,com_m1:liq*p1,pct_m2:p2,com_m2:liq*p2,pct_m3:p3,com_m3:liq*p3,status:g('f-stat'),obs:g('f-obs'),supervisor:g('f-sup-nome'),pct_sup:gn('f-sup-pct'),com_sup:gn('f-sup-val')||liq*gn('f-sup-pct'),_supId:_supIdL};
     if(editType==='lin'&&editIdx!==null){
       const old=DB.linear[editIdx];
-      if(old.supervisor&&old.com_sup>0){const si=DB.comissoesManual.findIndex(c=>c._ori==='lin'&&c._cli===old.cliente&&c._data===old.data_contrato);if(si>=0)DB.comissoesManual.splice(si,1);}
+      if(old.supervisor&&old.com_sup>0){const si=DB.comissoesManual.findIndex(c=>c._supId?c._supId===old._supId:(c._ori==='lin'&&c._cli===old.cliente&&c._data===old.data_contrato));if(si>=0)DB.comissoesManual.splice(si,1);}
       DB.linear[editIdx]=rec;
     } else{DB.linear.push(rec);}
     if(g('f-sup-nome')&&(gn('f-sup-val')||gn('f-sup-pct'))>0){
@@ -8478,7 +8344,7 @@ function saveModal(){
       const MN=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const d=g('f-dcon')?new Date(g('f-dcon')):new Date();
       const mesRef=g('f-sup-mes')||(MN[d.getMonth()]+'/'+d.getFullYear());
-      DB.comissoesManual.push({data:g('f-dcon'),supervisor:g('f-sup-nome'),vendedor:g('f-vend'),descricao:`Com.Sup — ${g('f-cli').trim()} (Linear)`,valor:gn('f-sup-val')||liq*gn('f-sup-pct'),mes_ref:mesRef,status:'Pendente',obs:'',_ori:'lin',_cli:g('f-cli').trim(),_data:g('f-dcon')});
+      DB.comissoesManual.push({data:g('f-dcon'),supervisor:g('f-sup-nome'),vendedor:g('f-vend'),descricao:`Com.Sup — ${g('f-cli').trim()} (Linear)`,valor:gn('f-sup-val')||liq*gn('f-sup-pct'),mes_ref:mesRef,status:'Pendente',obs:'',_ori:'lin',_cli:g('f-cli').trim(),_data:g('f-dcon'),_supId:_supIdL});
     }
   } else if(modalType==='com'){
     if(!g('f-cli').trim()){alert('Informe o nome do cliente.');return;}
@@ -8949,7 +8815,13 @@ async function saveData(){
       localStorage.setItem(SAVE_KEY, JSON.stringify({...snap, presenca: undefined}));
       localStorage.setItem(SAVE_KEY_PRES, JSON.stringify(DB.presenca));
       localStorage.setItem('lm_last_save', Date.now().toString());
-    }catch(e){}
+    }catch(e){
+      // Quota excedida ou storage indisponível
+      if(e&&(e.name==='QuotaExceededError'||/quota/i.test(e.message||''))){
+        if(typeof toast==='function') toast('⚠️ Armazenamento local cheio. Os dados podem não ter sido salvos neste dispositivo — sincronize com a nuvem.');
+        setSyncStatus&&setSyncStatus('⚠️ Storage local cheio','var(--red)',6000);
+      }
+    }
 
     const dot = document.getElementById('save-dot');
     if(dot){ dot.classList.add('on'); setTimeout(()=>dot.classList.remove('on'), 2000); }
