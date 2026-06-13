@@ -1067,6 +1067,11 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <!-- Seletor de ano para os KPIs -->
       <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:12px;gap:8px">
         <span style="font-size:12px;color:var(--text3)">Visualizando:</span>
+        <select class="fi" style="min-width:120px;padding:5px 10px;font-size:12px" id="dash-categoria" onchange="renderDash()">
+          <option value="">Toda a equipe</option>
+          <option value="veterano">⭐ Veteranos</option>
+          <option value="novato">🌱 Novatos</option>
+        </select>
         <select class="fi" style="min-width:90px;padding:5px 10px;font-size:12px" id="dash-ano" onchange="renderDash()">
           <option value="">Todos os anos</option>
         </select>
@@ -1420,7 +1425,12 @@ body.compact .tbl-wrap{max-height:55vh!important;}
       <div class="card" style="margin-bottom:16px" id="funil-ranking-card">
         <div class="card-hd">
           <div class="card-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> Ranking de Conversão por Vendedor</div>
-          <div style="display:flex;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <select class="fi" id="funil-rank-cat" onchange="renderFunil()" style="font-size:11px;padding:3px 8px;min-width:110px">
+              <option value="">Toda a equipe</option>
+              <option value="veterano">⭐ Veteranos</option>
+              <option value="novato">🌱 Novatos</option>
+            </select>
             <select class="fi" id="funil-rank-de" onchange="renderFunil()" style="font-size:11px;padding:3px 8px;min-width:110px">
               <option value="discadas">Discadas</option>
               <option value="atendidas">Atendidas</option>
@@ -1630,10 +1640,16 @@ body.compact .tbl-wrap{max-height:55vh!important;}
         </div>
       </div>
 
-      <!-- Seletor de mês -->
+      <!-- Seletor de mês + categoria -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
         <span style="font-size:12px;color:var(--text3)">Mês:</span>
         <select class="fi" id="metas-mes-sel" onchange="renderMetas()" style="min-width:150px;padding:6px 10px;font-size:12px"></select>
+        <span style="font-size:12px;color:var(--text3);margin-left:8px">Categoria:</span>
+        <select class="fi" id="metas-cat-sel" onchange="renderMetas()" style="min-width:140px;padding:6px 10px;font-size:12px">
+          <option value="">Toda a equipe</option>
+          <option value="veterano">⭐ Veteranos</option>
+          <option value="novato">🌱 Novatos</option>
+        </select>
       </div>
 
       <!-- Barras de progresso por vendedor -->
@@ -2365,9 +2381,8 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 // ═══════════════════════════════ DATA ════════════════════════════════════════
 let DB = {
   vendedores:[
-    {nome:'Beatriz',supervisor:'',pct_ades:0,pct_lin:0,ativo:true},
-    {nome:'Rafael',supervisor:'Beatriz',pct_ades:0,pct_lin:0,ativo:true},
-    {nome:'Isaac',supervisor:'Beatriz',pct_ades:0,pct_lin:0,ativo:true},
+    {nome:'Rafael',supervisor:'Beatriz',pct_ades:0,pct_lin:0,categoria:'veterano',ativo:true},
+    {nome:'Julia',supervisor:'Beatriz',pct_ades:0,pct_lin:0,categoria:'veterano',ativo:true},
   ],
   supervisores:[{nome:'Beatriz Almeida',pct_ades:0.001,pct_lin:0.001}],
   statusList:[
@@ -2696,6 +2711,14 @@ function vendedores(){
   s.forEach(v=>normalised.add(v.charAt(0).toUpperCase()+v.slice(1)));
   return [...normalised].sort();
 }
+
+// Apenas vendedores ATIVOS (para seletores de nova venda) — inativos somem das opções
+function vendedoresAtivos(){
+  return (DB.vendedores||[])
+    .filter(v=>v.nome && v.ativo!==false)
+    .map(v=>v.nome.trim())
+    .sort();
+}
 function stats(){
   const ok=r=>r.status!=='Cancelado';
   const a=DB.adesionada.filter(ok),l=DB.linear.filter(ok);
@@ -2914,10 +2937,16 @@ function renderMetasProgress(mes){
   const label=document.getElementById('metas-mes-label');
   if(label) label.textContent=fmtMonth(mes);
   const ok=r=>r.status!=='Cancelado';
-  const vends=vendedores();
+  let vends=vendedores();
+  // Filtro por categoria
+  const catFil=document.getElementById('metas-cat-sel')?.value||'';
+  if(catFil){
+    const nomesCat=(DB.vendedores||[]).filter(v=>(v.categoria||'veterano')===catFil).map(v=>v.nome);
+    vends=vends.filter(v=>nomesCat.includes(v));
+  }
   const el=document.getElementById('metas-progress');
   if(!el) return;
-  if(!vends.length){el.innerHTML='<div style="padding:12px;color:var(--text3);font-size:13px">Nenhum vendedor cadastrado.</div>';return;}
+  if(!vends.length){el.innerHTML='<div style="padding:12px;color:var(--text3);font-size:13px">Nenhum vendedor nesta categoria.</div>';return;}
 
   const rows=vends.map(v=>{
     // Vendas do mês
@@ -3696,7 +3725,7 @@ function renderFunilMetas(rows,tots,CAMPOS,LABELS,ICONS){
   el.innerHTML=html||'<div style="font-size:12px;color:var(--text3)">Clique em <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Metas para configurar.</div>';
 }
 
-function renderFunilRanking(allRows,CAMPOS){const el=document.getElementById('funil-ranking');const card=document.getElementById('funil-ranking-card');if(!el)return;const vends=vendedores();if(vends.length<2){if(card)card.style.display='none';return;}if(card)card.style.display='';const rankDe=document.getElementById('funil-rank-de')?.value||'discadas';const rankPara=document.getElementById('funil-rank-para')?.value||'fechamentos';const RL={fechamentos:'Fech',agendamentos:'Agend',visitas:'Visitas',atendidas:'Atend',discadas:'Disc'};const sems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();const byM={};sems.forEach(s=>{const m=s.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push(s);});const rSem=semR=>{const d=vends.map(v=>{const vR=semR.filter(r=>r.vend===v);const de=vR.reduce((s,r)=>s+(r[rankDe]||0),0);const para=vR.reduce((s,r)=>s+(r[rankPara]||0),0);const tx=de>0?Math.round(para/de*100):0;return{v,de,para,tx};}).filter(x=>x.de>0||x.para>0).sort((a,b)=>b.tx-a.tx);if(!d.length)return'';return d.map((x,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:16px;width:24px">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600">'+x.v+'</div><div style="font-size:10px;color:var(--text3)">'+RL[rankDe]+': '+x.de+' → '+RL[rankPara]+': '+x.para+'</div></div><div style="font-size:20px;font-weight:800;color:'+(x.tx>=30?'var(--green)':x.tx>=15?'var(--yellow)':'var(--accent)')+'">'+x.tx+'%</div></div>').join('');};const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));let html=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,ss])=>{const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mId='rm-'+mes.replace('-','');const sHtml=ss.map(s=>{const d2=new Date(s+'T12:00:00');const fin=new Date(d2);fin.setDate(d2.getDate()+5);const sLbl=d2.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fin.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const isN=d2>=seg&&d2<=new Date(seg.getTime()+6*864e5);const sId='rs-'+s;const rh=rSem(allRows.filter(r=>r.sem===s));if(!rh)return'';return'<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:600;color:var(--accent);padding:5px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+sId+'"><span id="'+sId+'-ico">'+(isN?'▾':'▸')+'</span> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> '+sLbl+(isN?' <span class="badge-novo">Atual</span>':'')+'</div><div id="'+sId+'"'+(isN?'':' style="display:none"')+'>'+rh+'</div></div>';}).join('');if(!sHtml.trim())return'';return'<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mId+'"><span id="'+mId+'-ico">▾</span> 📆 '+mLbl+'</div><div id="'+mId+'">'+sHtml+'</div></div>';}).join('');el.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados.</div>';}
+function renderFunilRanking(allRows,CAMPOS){const el=document.getElementById('funil-ranking');const card=document.getElementById('funil-ranking-card');if(!el)return;const catFil=document.getElementById('funil-rank-cat')?.value||'';let vends=vendedores();if(catFil){const nomesCat=(DB.vendedores||[]).filter(v=>(v.categoria||'veterano')===catFil).map(v=>v.nome);vends=vends.filter(v=>nomesCat.includes(v));}if(vends.length<2){if(card)card.style.display=vends.length?'':'none';if(vends.length<2&&!catFil){if(card)card.style.display='none';return;}}if(card)card.style.display='';if(!vends.length){el.innerHTML='<div style="color:var(--text3);font-size:13px">Nenhum vendedor nesta categoria.</div>';return;}const rankDe=document.getElementById('funil-rank-de')?.value||'discadas';const rankPara=document.getElementById('funil-rank-para')?.value||'fechamentos';const RL={fechamentos:'Fech',agendamentos:'Agend',visitas:'Visitas',atendidas:'Atend',discadas:'Disc'};const sems=[...new Set(allRows.map(r=>r.sem).filter(Boolean))].sort().reverse();const byM={};sems.forEach(s=>{const m=s.slice(0,7);if(!byM[m])byM[m]=[];byM[m].push(s);});const rSem=semR=>{const d=vends.map(v=>{const vR=semR.filter(r=>r.vend===v);const de=vR.reduce((s,r)=>s+(r[rankDe]||0),0);const para=vR.reduce((s,r)=>s+(r[rankPara]||0),0);const tx=de>0?Math.round(para/de*100):0;return{v,de,para,tx};}).filter(x=>x.de>0||x.para>0).sort((a,b)=>b.tx-a.tx);if(!d.length)return'';return d.map((x,i)=>'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:16px;width:24px">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'°')+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600">'+x.v+'</div><div style="font-size:10px;color:var(--text3)">'+RL[rankDe]+': '+x.de+' → '+RL[rankPara]+': '+x.para+'</div></div><div style="font-size:20px;font-weight:800;color:'+(x.tx>=30?'var(--green)':x.tx>=15?'var(--yellow)':'var(--accent)')+'">'+x.tx+'%</div></div>').join('');};const now2=new Date();now2.setHours(0,0,0,0);const dow=now2.getDay();const seg=new Date(now2);seg.setDate(now2.getDate()-(dow===0?6:dow-1));let html=Object.entries(byM).sort((a,b)=>b[0].localeCompare(a[0])).map(([mes,ss])=>{const mLbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});const mId='rm-'+mes.replace('-','');const sHtml=ss.map(s=>{const d2=new Date(s+'T12:00:00');const fin=new Date(d2);fin.setDate(d2.getDate()+5);const sLbl=d2.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' a '+fin.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});const isN=d2>=seg&&d2<=new Date(seg.getTime()+6*864e5);const sId='rs-'+s;const rh=rSem(allRows.filter(r=>r.sem===s));if(!rh)return'';return'<div style="margin-bottom:6px"><div style="font-size:11px;font-weight:600;color:var(--accent);padding:5px 0;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+sId+'"><span id="'+sId+'-ico">'+(isN?'▾':'▸')+'</span> <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> '+sLbl+(isN?' <span class="badge-novo">Atual</span>':'')+'</div><div id="'+sId+'"'+(isN?'':' style="display:none"')+'>'+rh+'</div></div>';}).join('');if(!sHtml.trim())return'';return'<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:800;color:var(--text);text-transform:capitalize;padding:8px 0;border-bottom:2px solid var(--border);cursor:pointer" onclick="toggleFunilGrp(this.dataset.id)" data-id="'+mId+'"><span id="'+mId+'-ico">▾</span> 📆 '+mLbl+'</div><div id="'+mId+'">'+sHtml+'</div></div>';}).join('');el.innerHTML=html||'<div style="color:var(--text3);font-size:13px">Sem dados.</div>';}
 
 function renderFunilHeatmap(allRows,CAMPOS,LABELS){
   const el=document.getElementById('funil-heatmap');
@@ -4128,7 +4157,13 @@ function renderDashMeta(){
   const mesKey=anoRef+'-'+mesRef; // ex: "2026-05"
 
   const metas=DB.metas||[];
-  const ok=r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(mesKey);
+  // Filtro por categoria (veterano/novato)
+  const catSel=document.getElementById('dash-categoria')?.value||'';
+  const vendsCategoria=catSel
+    ? DB.vendedores.filter(v=>(v.categoria||'veterano')===catSel).map(v=>v.nome)
+    : null; // null = todos
+  const passaCategoria=r=>!vendsCategoria||vendsCategoria.includes(r.vendedor);
+  const ok=r=>r.status!=='Cancelado'&&r.data_contrato?.startsWith(mesKey)&&passaCategoria(r);
   const vendasMes=[...DB.adesionada,...DB.linear].filter(ok);
 
   // Identificar supervisoras (vendedores com campo supervisor vazio ou quem supervisionam outros)
@@ -7164,6 +7199,8 @@ function editCad(tipo, i){
       set('f-pa',v.pct_ades);
       set('f-pl',v.pct_lin);
       set('f-tel-vend',v.telefone||'');
+      const catSel=document.getElementById('f-categoria');
+      if(catSel) catSel.value=v.categoria||'veterano';
       // Change save to update
       modalEditIdx={tipo:'vend',i};
       document.getElementById('m-title').textContent='✏ Editar Vendedor';
@@ -7220,14 +7257,23 @@ function renderCad(){
   loadSupabaseConfigUI();
   updateAutoSaveUI();
   updateUltimaSync();
-  document.querySelector('#tbl-vend tbody').innerHTML=DB.vendedores.map((v,i)=>`<tr>
-    <td>${v.nome}</td><td>${v.supervisor||'—'}</td>
+  document.querySelector('#tbl-vend tbody').innerHTML=DB.vendedores.map((v,i)=>{
+    const cat=v.categoria||'veterano';
+    const inativo=v.ativo===false;
+    const catBadge=cat==='novato'
+      ? '<span style="font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:20px;background:#dcfce7;color:#16a34a;border:1px solid #86efac">🌱 Novato</span>'
+      : '<span style="font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:20px;background:#fef3c7;color:#d97706;border:1px solid #fcd34d">⭐ Veterano</span>';
+    const inativoBadge=inativo?'<span style="font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:20px;background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb;margin-left:4px">⊘ Inativo</span>':'';
+    return `<tr style="${inativo?'opacity:.55':''}">
+    <td>${v.nome} ${catBadge}${inativoBadge}</td><td>${v.supervisor||'—'}</td>
     <td class="mono">${fmtP(v.pct_ades)}</td><td class="mono">${fmtP(v.pct_lin)}</td>
     <td style="white-space:nowrap">
       <button class="btn btn-g" style="padding:3px 8px;font-size:11px" onclick="editCad('vend',${i})">✏</button>
-      ${delBtn('delCad_vend',i,'vendedor')}
+      ${inativo
+        ? `<button class="btn btn-g" style="padding:3px 8px;font-size:11px;color:var(--green)" onclick="toggleVendAtivo(${i})" title="Reativar">↺ Reativar</button>`
+        : `<button class="btn btn-g" style="padding:3px 8px;font-size:11px;color:var(--text3)" onclick="toggleVendAtivo(${i})" title="Inativar">⊘ Inativar</button>`}
     </td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   document.querySelector('#tbl-tab tbody').innerHTML=DB.tabelas.map((t,i)=>`<tr>
     <td>${t.nome}</td><td class="mono val-o">${fmtP(t.pct)}</td>
     <td style="white-space:nowrap">
@@ -7252,7 +7298,18 @@ function renderCad(){
     </td>
   </tr>`).join('');
 }
-function delCad_vend(i){if(confirm(`Excluir vendedor "${DB.vendedores[i].nome}"?`)){DB.vendedores.splice(i,1);saveData();renderCad();toast('✓ Vendedor excluído');}}
+function toggleVendAtivo(i){
+  const v=DB.vendedores[i];
+  if(!v) return;
+  const novoEstado=v.ativo===false; // se estava inativo, reativa
+  if(!novoEstado){
+    if(!confirm(`Inativar "${v.nome}"?\n\nEle sai dos filtros e seletores, mas todo o histórico de vendas é preservado. Você pode reativar a qualquer momento.`)) return;
+  }
+  v.ativo=novoEstado;
+  saveData();
+  renderCad();
+  toast(novoEstado?`✓ ${v.nome} reativado`:`⊘ ${v.nome} inativado`);
+}
 function delCad_tab(i){if(confirm(`Excluir tabela "${DB.tabelas[i].nome}"?`)){DB.tabelas.splice(i,1);saveData();renderCad();toast('✓ Tabela excluída');}}
 function delCad_sup(i){if(confirm(`Excluir supervisor "${DB.supervisores[i].nome}"?`)){DB.supervisores.splice(i,1);saveData();renderCad();toast('✓ Supervisor excluído');}}
 function delCad_stat(i){if(confirm(`Excluir status "${DB.statusList[i].nome}"?`)){DB.statusList.splice(i,1);saveData();renderCad();toast('✓ Status excluído');}}
@@ -7266,7 +7323,7 @@ function openModal(type='ades'){
   // Restaurar botão salvar (pode ter sido oculto por crmVerFicha)
   const _ms=document.getElementById('m-save');if(_ms)_ms.style.display='';
   const mFormEl=document.getElementById('m-form');if(mFormEl){mFormEl.style.display='';mFormEl.style.gridTemplateColumns='';}
-  const vOpts=vendedores().map(v=>`<option>${v}</option>`).join('');
+  const vOpts=vendedoresAtivos().map(v=>`<option>${v}</option>`).join('');
   const tOpts=DB.tabelas.map(t=>`<option>${t.nome}</option>`).join('');
   const statusOpts=getStatusOpts();
   let title,sub,form;
@@ -7533,6 +7590,7 @@ function openModal(type='ades'){
     const supOpts3=`<option value="">Nenhum</option>`+DB.supervisores.map(s=>`<option>${s.nome}</option>`).join('');
     form=`<div class="fg"><label class="flabel">Nome</label><input class="finput" id="f-nome" placeholder="Nome completo"></div>
     <div class="fg"><label class="flabel">WhatsApp (com DDD, só números)</label><input class="finput" id="f-tel-vend" type="tel" placeholder="ex: 87999990000"></div>
+    <div class="fg"><label class="flabel">Categoria</label><select class="finput" id="f-categoria"><option value="veterano">⭐ Veterano</option><option value="novato">🌱 Novato</option></select></div>
     <div class="fg"><label class="flabel">Supervisora</label><select class="finput" id="f-sup">${supOpts3}</select></div>
     <div class="fg"><label class="flabel">% Com. Adesionada</label><input class="finput" id="f-pa" type="number" step="0.001"></div>
     <div class="fg"><label class="flabel">% Com. Linear</label><input class="finput" id="f-pl" type="number" step="0.001"></div>`;
@@ -8004,7 +8062,7 @@ function openModal(type='ades'){
     form=`<div id="ia-diario-content" style="min-height:120px"><div style="display:flex;align-items:center;gap:10px;color:var(--text3)"><span>✨</span> Analisando...</div></div>`;
   } else if(type==='diario-reg'){
     title='📓 Registrar Semana';sub='Acompanhamento individual do vendedor';
-    const vOpts11=vendedores().map(v=>`<option value="${v}">${v}</option>`).join('');
+    const vOpts11=vendedoresAtivos().map(v=>`<option value="${v}">${v}</option>`).join('');
     const now=new Date();
     const dow=now.getDay();const seg=new Date(now);seg.setDate(now.getDate()-(dow===0?6:dow-1));
     const semKey=seg.toISOString().slice(0,10);
@@ -8060,7 +8118,7 @@ function openModal(type='ades'){
   } else if(type==='crm-reg'){
     if(crmEditIdx===null) { /* novo registro — crmEditIdx já é null */ }
     // Não resetar crmEditIdx aqui — crmOpenEdit já o setou antes de chamar openModal
-    const vOpts=vendedores().map(v=>`<option value="${v}">${v}</option>`).join('');
+    const vOpts=vendedoresAtivos().map(v=>`<option value="${v}">${v}</option>`).join('');
     const motivosNC=crmGetMotivos('nc').map(m=>`<option value="${m}">${m}</option>`).join('');
     const motivosPerda=crmGetMotivos('perda').map(m=>`<option value="${m}">${m}</option>`).join('');
     title='Adicionar Cliente'; sub='Registre o atendimento e acompanhe o funil';
@@ -8541,7 +8599,7 @@ function saveModal(){
     DB.indicacoes.push({data:g('f-ind-data'),indicado_por:g('f-ind-por'),cliente:g('f-ind-cli').trim(),vendedor:g('f-ind-vend'),obs:g('f-ind-obs'),convertido:false});
   } else if(modalType==='vend'){
     if(!g('f-nome').trim()){alert('Informe o nome do vendedor.');return;}
-    const recV={nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl'),telefone:g('f-tel-vend').trim(),ativo:true};
+    const recV={nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl'),telefone:g('f-tel-vend').trim(),categoria:g('f-categoria')||'veterano',ativo:true};
     if(modalEditIdx&&modalEditIdx.tipo==='vend'){DB.vendedores[modalEditIdx.i]=recV;modalEditIdx=null;}
     else DB.vendedores.push(recV);
   } else if(modalType==='stat'){
