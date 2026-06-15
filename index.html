@@ -7418,15 +7418,68 @@ function togglePresenca(mes,sIdx,membro,dIdx){
   renderResumoMes();
 }
 
+function getMembrosSugeridos(){
+  // Pega os membros da última semana cadastrada (cronologicamente)
+  const MN=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const mesKey=k=>{const[nm,ano]=k.toLowerCase().split('/');return (+ano||0)*100+(MN.indexOf(nm)+1);};
+  const meses=Object.keys(DB.presenca||{}).sort((a,b)=>mesKey(b)-mesKey(a));
+  for(const m of meses){
+    const sems=DB.presenca[m].semanas;
+    if(sems&&sems.length){
+      const ultima=sems[sems.length-1];
+      const membros=Object.keys(ultima.membros||{});
+      if(membros.length) return membros.join(', ');
+    }
+  }
+  // Fallback: vendedores ativos
+  if(typeof vendedoresAtivos==='function'){
+    const va=vendedoresAtivos();
+    if(va.length) return va.join(', ');
+  }
+  return 'Beatriz, Rafael';
+}
+
 function addMemberToWeek(mes,sIdx){
   const name=prompt('Nome do colaborador:');
   if(!name||!name.trim())return;
-  const sem=DB.presenca[mes].semanas[sIdx];
-  if(!sem.membros[name.trim()])sem.membros[name.trim()]=sem.dias.map(()=>'');
+  const nome=name.trim();
+
+  // Perguntar se replica para as próximas semanas/meses
+  const replicar=confirm('Adicionar "'+nome+'" automaticamente nas PRÓXIMAS semanas e meses também?\n\n• OK = adiciona aqui e em todas as semanas seguintes\n• Cancelar = adiciona só nesta semana');
+
+  // Ordenar todos os meses cronologicamente para saber o que vem "depois"
+  const MN=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const mesKey=k=>{const[nm,ano]=k.toLowerCase().split('/');return (+ano||0)*100+(MN.indexOf(nm)+1);};
+  const mesesOrd=Object.keys(DB.presenca).sort((a,b)=>mesKey(a)-mesKey(b));
+  const mesAtualKey=mesKey(mes);
+
+  let count=0;
+  const addNaSemana=(m,si)=>{
+    const sem=DB.presenca[m].semanas[si];
+    if(sem && !sem.membros[nome]){ sem.membros[nome]=sem.dias.map(()=>''); count++; }
+  };
+
+  if(!replicar){
+    // Só nesta semana
+    addNaSemana(mes,sIdx);
+  } else {
+    // Desta semana em diante, em todos os meses seguintes
+    mesesOrd.forEach(m=>{
+      const mk=mesKey(m);
+      if(mk<mesAtualKey) return; // pular meses passados
+      const semanas=DB.presenca[m].semanas;
+      semanas.forEach((s,si)=>{
+        // No mês atual, só a partir da semana clicada; nos próximos, todas
+        if(m===mes && si<sIdx) return;
+        addNaSemana(m,si);
+      });
+    });
+  }
+
   saveData();
   renderPresMonth();
   renderResumoMes();
-  toast('✓ Colaborador adicionado!');
+  toast(replicar?`✓ "${nome}" adicionado em ${count} semana(s)!`:'✓ Colaborador adicionado!');
 }
 
 // ═══════════════════════════════ CADASTRO ════════════════════════════════════
@@ -7923,7 +7976,7 @@ function openModal(type='ades'){
     <div class="fg"><label class="flabel">Data Início da Semana</label><input class="finput" id="f-wstart" type="date" value="${hojeFmt}" oninput="autoFillWeekDays()"></div>
     <div class="fg full"><label class="flabel">Título da Semana</label><input class="finput" id="f-wtit" placeholder="Gerado automaticamente…"></div>
     <div class="fg full"><label class="flabel">Dias (gerados automaticamente ou edite)</label><input class="finput" id="f-wdias" placeholder="seg 05/05, ter 06/05…"></div>
-    <div class="fg full"><label class="flabel">Colaboradores (separados por vírgula)</label><input class="finput" id="f-wmem" value="Beatriz, Rafael, Isaac" placeholder="Beatriz, Rafael, Isaac"></div>
+    <div class="fg full"><label class="flabel">Colaboradores (separados por vírgula)</label><input class="finput" id="f-wmem" value="${getMembrosSugeridos()}" placeholder="Beatriz, Rafael, Julia"></div>
     <div class="fg full"><div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--accent)">💡 Escolha a data de início que os dias (seg a sáb) serão preenchidos automaticamente.</div></div>`;
     setTimeout(()=>autoFillWeekDays(),80);
   } else if(type==='meta-grupo'){
