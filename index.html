@@ -2906,7 +2906,7 @@ function render(p){
     ia:()=>renderIA(),
     diario:()=>renderDiario(),
     crm:()=>renderCRM(),
-    portal:()=>renderPortal(),
+    portal:()=>{ renderPortal(DB.acessosPortal); portalRestaurarCampos(); if(_portalFiltroEstado.txt||_portalFiltroEstado.adm||_portalFiltroEstado.status) filterPortal(); },
     cadastro:()=>{ renderCad(); authCarregarUsuarios(); renderFuncoes(); },
   };
   if(fns[p]){
@@ -7187,20 +7187,31 @@ function delPortal(i){
   }
 }
 
+let _portalFiltroEstado={txt:'',adm:'',status:''};
 let _portalStatusFiltro='';
 function portalSetStatus(st){ _portalStatusFiltro=st; filterPortal(); }
 
 function portalAplicarFiltro(){
   if(!DB.acessosPortal) return [];
-  const t=(document.getElementById('fp-txt')?.value||'').toLowerCase();
-  const adm=document.getElementById('fp-adm')?.value||'';
-  const st=document.getElementById('fp-status')?.value||_portalStatusFiltro||'';
+  // Ler dos campos OU do estado salvo (caso campos ainda não restaurados)
+  const t=((document.getElementById('fp-txt')?.value)??_portalFiltroEstado.txt??'').toLowerCase();
+  const adm=(document.getElementById('fp-adm')?.value)||_portalFiltroEstado.adm||'';
+  const st=(document.getElementById('fp-status')?.value)||_portalFiltroEstado.status||'';
+  // Salvar estado atual
+  _portalFiltroEstado={txt:t,adm,status:st};
   return DB.acessosPortal.filter(r=>{
     if(t&&!r.cliente?.toLowerCase().includes(t)&&!r.login?.toLowerCase().includes(t)) return false;
     if(adm&&r.administradora!==adm) return false;
     if(st&&(r.status_contemplacao||'Aguardando')!==st) return false;
     return true;
   });
+}
+
+// Restaura os valores dos campos a partir do estado salvo (ao reabrir a aba)
+function portalRestaurarCampos(){
+  const txt=document.getElementById('fp-txt'); if(txt&&_portalFiltroEstado.txt) txt.value=_portalFiltroEstado.txt;
+  const adm=document.getElementById('fp-adm'); if(adm&&_portalFiltroEstado.adm) adm.value=_portalFiltroEstado.adm;
+  const st=document.getElementById('fp-status'); if(st&&_portalFiltroEstado.status) st.value=_portalFiltroEstado.status;
 }
 
 function filterPortal(){
@@ -7213,6 +7224,7 @@ function limparFiltrosPortal(){
   const adm=document.getElementById('fp-adm');if(adm)adm.value='';
   const st=document.getElementById('fp-status');if(st)st.value='';
   _portalStatusFiltro='';
+  _portalFiltroEstado={txt:'',adm:'',status:''};
   renderPortal(DB.acessosPortal);
 }
 
