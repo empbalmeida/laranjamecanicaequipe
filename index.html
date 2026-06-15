@@ -7544,37 +7544,65 @@ function renderCad(){
   </tr>`).join('');
 }
 function corrigirEquipe(){
-  if(!confirm('Corrigir a equipe?\n\n• Isaac será INATIVADO (histórico preservado)\n• Julia será garantida como ATIVA\n• Rafael e Beatriz mantidos\n\nNenhuma venda será apagada.')) return;
   if(!DB.vendedores) DB.vendedores=[];
-  let mudancas=[];
 
-  // 1. Inativar Isaac (se existir)
-  const isaac=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='isaac');
-  if(isaac){
-    if(isaac.ativo!==false){ isaac.ativo=false; mudancas.push('Isaac inativado'); }
-    else mudancas.push('Isaac já estava inativo');
+  // Detectar duplicatas de Julia (Julia, Júlia, Júlia Ribeiro, etc)
+  const julias=DB.vendedores.filter(v=>{
+    const n=(v.nome||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return n.startsWith('julia');
+  });
+
+  let msg='🔧 CORREÇÃO DA EQUIPE\n\n';
+  let acoes=[];
+
+  // 1. Resolver duplicatas de Julia
+  if(julias.length>1){
+    msg+='⚠️ Encontrei '+julias.length+' cadastros de Julia:\n';
+    julias.forEach(j=>msg+='   • '+j.nome+(j.ativo===false?' (inativo)':'')+'\n');
+    msg+='\nVou MANTER apenas o primeiro ("'+julias[0].nome+'") como ativo e remover os outros duplicados.\n\n';
   }
 
-  // 2. Garantir Julia ativa (criar se não existir)
-  let julia=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='julia');
-  if(!julia){
-    DB.vendedores.push({nome:'Julia',supervisor:'Beatriz',pct_ades:0,pct_lin:0,categoria:'veterano',ativo:true});
-    mudancas.push('Julia adicionada (veterana, ativa)');
+  msg+='Também vou:\n• Inativar Isaac (histórico preservado)\n• Garantir Rafael e Beatriz ativos\n\nConfirma?';
+
+  if(!confirm(msg)) return;
+
+  // Executar: manter primeira Julia, remover duplicatas
+  if(julias.length>1){
+    const manter=julias[0];
+    manter.ativo=true;
+    manter.categoria=manter.categoria||'veterano';
+    if(!manter.supervisor) manter.supervisor='Beatriz';
+    // Remover as outras Julias do array
+    for(let i=DB.vendedores.length-1;i>=0;i--){
+      const v=DB.vendedores[i];
+      if(julias.includes(v) && v!==manter){ DB.vendedores.splice(i,1); }
+    }
+    acoes.push('Julia unificada (mantido: '+manter.nome+')');
+  } else if(julias.length===1){
+    julias[0].ativo=true;
+    julias[0].categoria=julias[0].categoria||'veterano';
+    acoes.push('Julia ativa');
   } else {
-    if(julia.ativo===false){ julia.ativo=true; mudancas.push('Julia reativada'); }
-    if(!julia.categoria){ julia.categoria='veterano'; }
-    if(julia.ativo!==false&&!mudancas.some(m=>m.includes('Julia'))) mudancas.push('Julia já estava ativa');
+    DB.vendedores.push({nome:'Julia',supervisor:'Beatriz',pct_ades:0,pct_lin:0,categoria:'veterano',ativo:true});
+    acoes.push('Julia criada');
   }
 
-  // 3. Garantir Rafael ativo veterano
-  let rafael=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='rafael');
-  if(rafael){ if(!rafael.categoria) rafael.categoria='veterano'; if(rafael.ativo===false){rafael.ativo=true;mudancas.push('Rafael reativado');} }
+  // Inativar Isaac
+  const isaac=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='isaac');
+  if(isaac){ isaac.ativo=false; acoes.push('Isaac inativado'); }
+
+  // Garantir Rafael ativo
+  const rafael=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='rafael');
+  if(rafael){ rafael.ativo=true; rafael.categoria=rafael.categoria||'veterano'; acoes.push('Rafael ativo'); }
+
+  // Garantir Beatriz ativa
+  const bia=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='beatriz');
+  if(bia){ bia.ativo=true; }
 
   saveData();
   renderCad();
-  // Atualizar todos os seletores/filtros abertos
-  if(typeof renderDash==='function') try{renderDash();}catch(e){}
-  toast('✓ Equipe corrigida: '+mudancas.join(' · '));
+  try{renderDash();}catch(e){}
+  alert('✓ Equipe corrigida!\n\n'+acoes.map(a=>'• '+a).join('\n')+'\n\nRecarregue a página para atualizar todas as abas.');
 }
 
 function toggleVendAtivo(i){
