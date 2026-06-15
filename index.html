@@ -6256,6 +6256,7 @@ async function iaAnalisarFunil(){
 
 // ═══════════════════════════════ MENSAL ══════════════════════════════════════
 function getMonths(){const m=new Set();[...DB.adesionada,...DB.linear].forEach(r=>{if(r.data_contrato)m.add(r.data_contrato.slice(0,7));});return[...m].sort().reverse();}
+function getMonthKey(date){const d=date||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 const MN=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function fmtMonth(m){const[y,mo]=m.split('-');return MN[+mo-1]+'/'+y;}
 function renderMensal(){
