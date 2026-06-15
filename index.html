@@ -788,6 +788,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <button class="nav-dd-item" id="nl-vendas-mensais" onclick="nav('vendas-mensais')"><span class="dd-icon">📈</span>Vendas Mensais</button>
           <button class="nav-dd-item" id="nl-comissoes" onclick="nav('comissoes')"><span class="dd-icon">💰</span>Comissões</button>
           <button class="nav-dd-item" id="nl-metas" onclick="nav('metas')"><span class="dd-icon">🎯</span>Metas & Indicações</button>
+          <button class="nav-dd-item" id="nl-umaum" onclick="nav('umaum')"><span class="dd-icon">🤝</span>Reunião 1:1</button>
         </div>
       </div>
 
@@ -956,6 +957,9 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     </button>
     <button class="sidebar-link" id="sl-metas" onclick="nav('metas')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Metas
+    </button>
+    <button class="sidebar-link" id="sl-umaum" onclick="nav('umaum')">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Reunião 1:1
     </button>
 
     <div class="sidebar-sep"></div>
@@ -1717,6 +1721,25 @@ body.compact .tbl-wrap{max-height:55vh!important;}
     </div>
   </div>
 
+  <!-- REUNIÃO 1:1 -->
+  <div class="page" id="page-umaum">
+    <div class="section-sm">
+      <div class="sh" style="margin-bottom:16px">
+        <div class="sh-title"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Reunião 1:1</div>
+        <div class="sh-sub">Prepare e registre suas conversas individuais de feedback</div>
+      </div>
+
+      <!-- Seletor de vendedor -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text3)">Vendedor:</span>
+        <select class="fi" id="umaum-vend-sel" onchange="renderUmaUm()" style="min-width:180px;padding:7px 12px;font-size:13px"></select>
+        <select class="fi" id="umaum-mes-sel" onchange="renderUmaUm()" style="min-width:150px;padding:7px 12px;font-size:13px"></select>
+      </div>
+
+      <div id="umaum-content"></div>
+    </div>
+  </div>
+
   <!-- ASSISTENTE IA -->
   <div class="page" id="page-ia">
     <div class="section-sm">
@@ -2166,7 +2189,7 @@ body.compact .tbl-wrap{max-height:55vh!important;}
 
 
       <div class="grid2" style="margin-bottom:14px">
-        <div class="card"><div class="card-hd"><div class="card-title">Vendedores</div><button class="btn btn-g" style="font-size:12px;padding:5px 12px" onclick="openModal('vend')">+ Novo</button></div>
+        <div class="card"><div class="card-hd"><div class="card-title">Vendedores</div><div style="display:flex;gap:6px"><button class="btn btn-g" style="font-size:11px;padding:5px 10px" onclick="corrigirEquipe()" title="Inativa Isaac e garante Julia ativa">🔧 Corrigir equipe</button><button class="btn btn-g" style="font-size:12px;padding:5px 12px" onclick="openModal('vend')">+ Novo</button></div></div>
         <div class="tbl-outer"><div class="tbl-scroll-top"><div class="tbl-scroll-top-inner"></div></div>
         <div class="tbl-wrap"><table id="tbl-vend"><thead><tr><th>Nome</th><th>Supervisor</th><th>%Ades</th><th>%Lin</th><th></th></tr></thead><tbody></tbody></table></div></div></div>
         <div class="card"><div class="card-hd"><div class="card-title">Status de Venda</div><button class="btn btn-g" style="font-size:12px;padding:5px 12px" onclick="openModal('stat')">+ Novo</button></div>
@@ -2729,7 +2752,7 @@ function stats(){
 }
 
 // ═══════════════════════════════ NAVIGATE ════════════════════════════════════
-const TITLES={dashboard:'Dashboard',crm:'CRM Inteligente',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',contempl:'Contemplações',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
+const TITLES={dashboard:'Dashboard',crm:'CRM Inteligente',ia:'Assistente IA',diario:'Diário da Equipe',funil:'Funil de Vendas',mensal:'Resumo Mensal','vendas-mensais':'Vendas Mensais',adesionada:'Venda Adesionada',linear:'Venda Linear',comissoes:'Minhas Comissões',metas:'Metas & Indicações',umaum:'Reunião 1:1',contempl:'Contemplações',comunicacao:'Comunicação',canceladas:'Canceladas',presenca:'Lista de Presença',portal:'Portal de Clientes',cadastro:'Cadastros'};
 let activePage='dashboard';
 const SENHA_HASH='8e5e7c5f2b6e1d4a'; // hash simples de "laranja123" — troque aqui
 let comissaoDesbloqueada=false;
@@ -2875,6 +2898,7 @@ function render(p){
     comissoes:()=>{renderCom();renderComTimeline();},
     canceladas:()=>renderCanceladas(),
     metas:()=>renderMetas(),
+    umaum:()=>renderUmaUm(),
     contempl:()=>renderContempl(),
     comunicacao:()=>renderComunicacao(),
     presenca:()=>renderPresenca(),
@@ -2898,10 +2922,228 @@ function render(p){
 // ═══════════════════════════════ DASHBOARD ═══════════════════════════════════
 // ═══════════════════════════ METAS & INDICAÇÕES ══════════════════════════════
 
-function getMonthKey(date){
-  const d=date||new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+// ══════════════════════════════ REUNIÃO 1:1 ═════════════════════════════════
+
+let _umaumDB = null;
+function getUmaUmDB(){
+  if(_umaumDB) return _umaumDB;
+  try{ _umaumDB=JSON.parse(localStorage.getItem('lm_umaum')||'[]'); }catch(e){ _umaumDB=[]; }
+  return _umaumDB;
 }
+function saveUmaUmDB(){
+  localStorage.setItem('lm_umaum', JSON.stringify(getUmaUmDB()));
+  const sb=getSupabase();
+  if(sb) sb.from('lm_config').upsert({id:'umaum',payload:JSON.stringify(getUmaUmDB())}).then(()=>{});
+}
+async function carregarUmaUmSupabase(){
+  const sb=getSupabase(); if(!sb) return;
+  try{
+    const {data}=await sb.from('lm_config').select('payload').eq('id','umaum').single();
+    if(data?.payload){ _umaumDB=JSON.parse(data.payload); localStorage.setItem('lm_umaum',data.payload); }
+  }catch(e){}
+}
+
+// Roteiro fixo de perguntas para todo 1:1
+const UMAUM_ROTEIRO = [
+  'Como você está se sentindo no trabalho esta semana?',
+  'Qual foi sua maior conquista no período?',
+  'Qual foi a maior dificuldade que enfrentou?',
+  'O que está travando suas conversões?',
+  'Que apoio você precisa de mim para bater a meta?',
+  'O que você vai fazer diferente até nosso próximo 1:1?',
+];
+
+function renderUmaUm(){
+  const sel=document.getElementById('umaum-vend-sel');
+  const mesSel=document.getElementById('umaum-mes-sel');
+  if(!sel) return;
+
+  // Carregar do Supabase na 1ª vez
+  if(!window._umaumLoaded){
+    window._umaumLoaded=true;
+    carregarUmaUmSupabase().then(()=>renderUmaUm());
+  }
+
+  // Popular vendedores ativos
+  const vends=vendedoresAtivos();
+  const curV=sel.value||vends[0]||'';
+  sel.innerHTML=vends.map(v=>`<option value="${v}"${v===curV?' selected':''}>${v}</option>`).join('');
+  if(!vends.length){ document.getElementById('umaum-content').innerHTML='<div class="card"><div style="padding:20px;color:var(--text3);font-size:13px">Nenhum vendedor ativo cadastrado.</div></div>'; return; }
+
+  // Popular meses
+  const now=new Date();
+  const meses=[];
+  for(let i=0;i<12;i++){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); meses.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')); }
+  const curM=mesSel.value||meses[0];
+  mesSel.innerHTML=meses.map(m=>`<option value="${m}"${m===curM?' selected':''}>${fmtMonth(m)}</option>`).join('');
+
+  const vend=sel.value, mes=mesSel.value;
+  renderUmaUmContent(vend, mes);
+}
+
+function renderUmaUmContent(vend, mes){
+  const el=document.getElementById('umaum-content');
+  if(!el) return;
+  const ok=r=>r.status!=='Cancelado';
+
+  // ── NÚMEROS DO VENDEDOR ──
+  const ades=DB.adesionada.filter(r=>ok(r)&&r.vendedor===vend&&r.data_contrato?.startsWith(mes));
+  const lin=DB.linear.filter(r=>ok(r)&&r.vendedor===vend&&r.data_contrato?.startsWith(mes));
+  const volMes=ades.reduce((s,r)=>s+r.valor_liq,0)+lin.reduce((s,r)=>s+r.valor_liq,0);
+  const qtdMes=ades.length+lin.length;
+
+  // Mês anterior para comparação
+  const [y,m]=mes.split('-').map(Number);
+  const mesAnt=new Date(y,m-2,1);
+  const mesAntKey=mesAnt.getFullYear()+'-'+String(mesAnt.getMonth()+1).padStart(2,'0');
+  const adesAnt=DB.adesionada.filter(r=>ok(r)&&r.vendedor===vend&&r.data_contrato?.startsWith(mesAntKey));
+  const linAnt=DB.linear.filter(r=>ok(r)&&r.vendedor===vend&&r.data_contrato?.startsWith(mesAntKey));
+  const volAnt=adesAnt.reduce((s,r)=>s+r.valor_liq,0)+linAnt.reduce((s,r)=>s+r.valor_liq,0);
+  const qtdAnt=adesAnt.length+linAnt.length;
+  const deltaVol=volAnt>0?Math.round((volMes-volAnt)/volAnt*100):(volMes>0?100:0);
+  const deltaQtd=qtdMes-qtdAnt;
+
+  // ── FUNIL DO VENDEDOR (mês) ──
+  const funilV=(DB.funil||[]).filter(r=>r.vend===vend&&r.sem?.startsWith(mes));
+  const fSum=c=>funilV.reduce((s,r)=>s+(r[c]||0),0);
+  const anuncios=fSum('anuncios'),atend=fSum('atendidas'),agend=fSum('agendamentos'),visitas=fSum('visitas'),fech=fSum('fechamentos');
+  const txAgendVisita=agend>0?Math.round(visitas/agend*100):0;
+  const txVisitaFech=visitas>0?Math.round(fech/visitas*100):0;
+
+  // ── META ──
+  const meta=(DB.metas||[]).find(mt=>mt.vendedor===vend&&mt.mes===mes);
+  const metaVol=meta?.volume||0;
+  const pctMeta=metaVol>0?Math.round(volMes/metaVol*100):0;
+
+  // ── RANKING (posição entre os vendedores no mês) ──
+  const vendsAtivos=vendedoresAtivos();
+  const rankVol=vendsAtivos.map(v=>{
+    const va=DB.adesionada.filter(r=>ok(r)&&r.vendedor===v&&r.data_contrato?.startsWith(mes)).reduce((s,r)=>s+r.valor_liq,0);
+    const vl=DB.linear.filter(r=>ok(r)&&r.vendedor===v&&r.data_contrato?.startsWith(mes)).reduce((s,r)=>s+r.valor_liq,0);
+    return {v,vol:va+vl};
+  }).sort((a,b)=>b.vol-a.vol);
+  const posicao=rankVol.findIndex(x=>x.v===vend)+1;
+
+  // ── CRM: clientes sumindo deste vendedor ──
+  const crmSumindo=(typeof crmDB!=='undefined'?crmDB:[]).filter(r=>{
+    if(r.vendedor!==vend) return false;
+    const st=r.status||'';
+    return st==='nao_compareceu';
+  }).length;
+
+  // ── SUGESTÕES AUTOMÁTICAS ──
+  const sugestoes=[];
+  if(pctMeta>=100) sugestoes.push({t:'ok',txt:`🎉 Bateu a meta do mês (${pctMeta}%)! Reconheça o esforço e pergunte o que funcionou.`});
+  else if(metaVol>0&&pctMeta<50) sugestoes.push({t:'err',txt:`⚠️ Está em ${pctMeta}% da meta. Pergunte o que está travando e ofereça apoio concreto.`});
+  else if(metaVol>0) sugestoes.push({t:'warn',txt:`📊 Está em ${pctMeta}% da meta. Faltam ${fmt(metaVol-volMes)} — alinhe o plano para fechar o mês.`});
+  if(deltaVol<-20) sugestoes.push({t:'err',txt:`📉 Volume caiu ${Math.abs(deltaVol)}% vs mês anterior. Investigue o que mudou.`});
+  if(deltaVol>20) sugestoes.push({t:'ok',txt:`📈 Volume subiu ${deltaVol}% vs mês anterior. Ótimo momento — entenda o que melhorou.`});
+  if(txVisitaFech>0&&txVisitaFech<30&&visitas>=3) sugestoes.push({t:'warn',txt:`🎯 Conversão visita→fechamento em ${txVisitaFech}%. Trabalhe técnica de fechamento.`});
+  if(txAgendVisita>0&&txAgendVisita<50&&agend>=3) sugestoes.push({t:'warn',txt:`📅 Só ${txAgendVisita}% dos agendamentos viram visita. Foco em confirmação e lembrete.`});
+  if(crmSumindo>=3) sugestoes.push({t:'warn',txt:`👻 ${crmSumindo} clientes não compareceram no CRM. Reveja o processo de follow-up.`});
+  if(qtdMes===0) sugestoes.push({t:'err',txt:`🔴 Nenhuma venda registrada neste mês. Conversa de atenção e plano de ação imediato.`});
+  if(!sugestoes.length) sugestoes.push({t:'info',txt:'Sem alertas automáticos. Use o roteiro abaixo para conduzir a conversa.'});
+
+  // ── HISTÓRICO DOS 1:1 ──
+  const hist=getUmaUmDB().filter(x=>x.vendedor===vend).sort((a,b)=>b.data.localeCompare(a.data));
+
+  const alertColor={ok:'#16a34a',warn:'#d97706',err:'#dc2626',info:'#2563eb'};
+  const alertBg={ok:'#f0fdf4',warn:'#fffbeb',err:'#fef2f2',info:'#eff6ff'};
+  const alertBd={ok:'#bbf7d0',warn:'#fde68a',err:'#fecaca',info:'#bfdbfe'};
+
+  el.innerHTML=`
+    <!-- NÚMEROS -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd"><div class="card-title">📊 Números de ${vend} · ${fmtMonth(mes)}</div>
+        <span style="font-size:11px;font-family:var(--mono);color:var(--text3)">${posicao>0?posicao+'º no ranking':''}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 4px">
+        <div class="rc"><div class="rc-lbl">Volume</div><div class="rc-val" style="font-size:18px">${fmtK(volMes)}</div><div class="rc-sub" style="color:${deltaVol>=0?'var(--green)':'var(--red)'}">${deltaVol>=0?'▲':'▼'} ${Math.abs(deltaVol)}% vs mês ant.</div></div>
+        <div class="rc"><div class="rc-lbl">Vendas</div><div class="rc-val" style="font-size:18px">${qtdMes}</div><div class="rc-sub" style="color:${deltaQtd>=0?'var(--green)':'var(--red)'}">${deltaQtd>=0?'+':''}${deltaQtd} vs mês ant.</div></div>
+        <div class="rc"><div class="rc-lbl">Meta</div><div class="rc-val" style="font-size:18px;color:${pctMeta>=100?'var(--green)':pctMeta>=50?'var(--yellow)':'var(--red)'}">${metaVol>0?pctMeta+'%':'—'}</div><div class="rc-sub">${metaVol>0?'de '+fmtK(metaVol):'sem meta'}</div></div>
+        <div class="rc"><div class="rc-lbl">Conv. Visita→Fech</div><div class="rc-val" style="font-size:18px">${txVisitaFech}%</div><div class="rc-sub">${fech} fech / ${visitas} vis</div></div>
+      </div>
+      ${funilV.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;padding:12px 4px 0;font-size:11px;font-family:var(--mono);color:var(--text3)">
+        <span>Anúncios: <b style="color:var(--text)">${anuncios}</b></span>·
+        <span>Atendidas: <b style="color:var(--text)">${atend}</b></span>·
+        <span>Agend.: <b style="color:var(--text)">${agend}</b></span>·
+        <span>Visitas: <b style="color:var(--text)">${visitas}</b></span>·
+        <span>Fech.: <b style="color:var(--text)">${fech}</b></span>
+      </div>`:''}
+    </div>
+
+    <!-- SUGESTÕES AUTOMÁTICAS -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd"><div class="card-title">💡 O que conversar (sugestões automáticas)</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:0 4px">
+        ${sugestoes.map(s=>`<div style="padding:9px 12px;border-radius:8px;background:${alertBg[s.t]};border:1px solid ${alertBd[s.t]};color:${alertColor[s.t]};font-size:12px">${s.txt}</div>`).join('')}
+      </div>
+    </div>
+
+    <!-- ROTEIRO + ANOTAÇÕES -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hd"><div class="card-title">📝 Roteiro & Anotações do 1:1</div>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${new Date().toLocaleDateString('pt-BR')}</span>
+      </div>
+      <div style="padding:0 4px">
+        ${UMAUM_ROTEIRO.map((q,i)=>`
+          <div style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">${i+1}. ${q}</label>
+            <textarea class="finput" id="umaum-q${i}" rows="2" style="resize:vertical;font-size:12px" placeholder="Anote a resposta…"></textarea>
+          </div>`).join('')}
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px">📌 Combinados / Plano de ação</label>
+          <textarea class="finput" id="umaum-acao" rows="3" style="resize:vertical;font-size:12px" placeholder="O que ficou combinado para o próximo 1:1…"></textarea>
+        </div>
+        <button class="btn btn-o" onclick="salvarUmaUm('${vend}','${mes}')">💾 Salvar Reunião 1:1</button>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🕐 Histórico de 1:1 — ${vend}</div>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${hist.length} reuniõe(s)</span>
+      </div>
+      <div style="padding:0 4px">
+        ${hist.length?hist.map((h,idx)=>`
+          <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
+            <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--bg3)">
+              <span style="font-size:12px;font-weight:700">📅 ${new Date(h.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</span>
+              <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">${h.mes?fmtMonth(h.mes):''}</span>
+            </div>
+            <div style="display:none;padding:12px 14px;font-size:12px">
+              ${(h.respostas||[]).map((r,i)=>r?`<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--text3);margin-bottom:2px">${UMAUM_ROTEIRO[i]||'Pergunta '+(i+1)}</div><div style="color:var(--text2)">${r}</div></div>`:'').join('')}
+              ${h.acao?`<div style="margin-top:8px;padding:8px 10px;background:#fff7ed;border-radius:6px;border:1px solid #fed7aa"><div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:2px">📌 Plano de ação</div><div style="color:var(--text2)">${h.acao}</div></div>`:''}
+              <button class="btn btn-g" style="margin-top:10px;font-size:11px;color:var(--red)" onclick="deletarUmaUm(${getUmaUmDB().indexOf(h)})">✕ Remover</button>
+            </div>
+          </div>`).join(''):'<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum 1:1 registrado ainda com '+vend+'.</div>'}
+      </div>
+    </div>`;
+}
+
+function salvarUmaUm(vend, mes){
+  const respostas=UMAUM_ROTEIRO.map((q,i)=>document.getElementById('umaum-q'+i)?.value?.trim()||'');
+  const acao=document.getElementById('umaum-acao')?.value?.trim()||'';
+  if(!respostas.some(r=>r)&&!acao){ toast('⚠ Anote ao menos uma resposta antes de salvar.'); return; }
+  const db=getUmaUmDB();
+  db.push({vendedor:vend,mes,data:new Date().toISOString(),respostas,acao});
+  _umaumDB=db;
+  saveUmaUmDB();
+  toast('✓ Reunião 1:1 salva!');
+  renderUmaUm();
+}
+
+function deletarUmaUm(idx){
+  if(!confirm('Remover este registro de 1:1?')) return;
+  const db=getUmaUmDB();
+  db.splice(idx,1);
+  _umaumDB=db;
+  saveUmaUmDB();
+  renderUmaUm();
+  toast('Registro removido.');
+}
+
+
 
 function renderMetas(){
   // Populate month selector
@@ -2923,7 +3165,8 @@ function renderMetas(){
     if(!sel.value) sel.value=curKey;
   }
   if(evolSel){
-    const vends=vendedores();
+    const nomesAt=vendedoresAtivos();
+    const vends=vendedores().filter(v=>nomesAt.includes(v));
     const curV=evolSel.value||vends[0]||'';
     evolSel.innerHTML=vends.map(v=>`<option value="${v}"${v===curV?' selected':''}>${v}</option>`).join('');
   }
@@ -2937,7 +3180,9 @@ function renderMetasProgress(mes){
   const label=document.getElementById('metas-mes-label');
   if(label) label.textContent=fmtMonth(mes);
   const ok=r=>r.status!=='Cancelado';
-  let vends=vendedores();
+  // Apenas vendedores ativos nas metas (quem saiu não recebe meta nova)
+  const nomesAtivos=vendedoresAtivos();
+  let vends=vendedores().filter(v=>nomesAtivos.includes(v));
   // Filtro por categoria
   const catFil=document.getElementById('metas-cat-sel')?.value||'';
   if(catFil){
@@ -7298,6 +7543,40 @@ function renderCad(){
     </td>
   </tr>`).join('');
 }
+function corrigirEquipe(){
+  if(!confirm('Corrigir a equipe?\n\n• Isaac será INATIVADO (histórico preservado)\n• Julia será garantida como ATIVA\n• Rafael e Beatriz mantidos\n\nNenhuma venda será apagada.')) return;
+  if(!DB.vendedores) DB.vendedores=[];
+  let mudancas=[];
+
+  // 1. Inativar Isaac (se existir)
+  const isaac=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='isaac');
+  if(isaac){
+    if(isaac.ativo!==false){ isaac.ativo=false; mudancas.push('Isaac inativado'); }
+    else mudancas.push('Isaac já estava inativo');
+  }
+
+  // 2. Garantir Julia ativa (criar se não existir)
+  let julia=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='julia');
+  if(!julia){
+    DB.vendedores.push({nome:'Julia',supervisor:'Beatriz',pct_ades:0,pct_lin:0,categoria:'veterano',ativo:true});
+    mudancas.push('Julia adicionada (veterana, ativa)');
+  } else {
+    if(julia.ativo===false){ julia.ativo=true; mudancas.push('Julia reativada'); }
+    if(!julia.categoria){ julia.categoria='veterano'; }
+    if(julia.ativo!==false&&!mudancas.some(m=>m.includes('Julia'))) mudancas.push('Julia já estava ativa');
+  }
+
+  // 3. Garantir Rafael ativo veterano
+  let rafael=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='rafael');
+  if(rafael){ if(!rafael.categoria) rafael.categoria='veterano'; if(rafael.ativo===false){rafael.ativo=true;mudancas.push('Rafael reativado');} }
+
+  saveData();
+  renderCad();
+  // Atualizar todos os seletores/filtros abertos
+  if(typeof renderDash==='function') try{renderDash();}catch(e){}
+  toast('✓ Equipe corrigida: '+mudancas.join(' · '));
+}
+
 function toggleVendAtivo(i){
   const v=DB.vendedores[i];
   if(!v) return;
