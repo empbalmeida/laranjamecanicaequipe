@@ -7169,6 +7169,10 @@ function editPortal(i){
     g('f-pcli',r.cliente); g('f-plogin',r.login);
     g('f-psenha',r.senha); g('f-plance',r.lance);
     g('f-padm',r.administradora); g('f-pcont',r.contrato);
+    g('f-pgrupo',r.grupo); g('f-pcota',r.cota);
+    g('f-ptel',r.telefone); g('f-paniv',r.aniversario);
+    g('f-pvenc',r.vencimento);
+    const stEl=document.getElementById('f-pstatus'); if(stEl&&r.status_contemplacao) stEl.value=r.status_contemplacao;
     g('f-pobs',r.obs||'');
     setLanceTipo(r.lance_tipo||'rs');
     document.getElementById('m-title').textContent='✏ Editar Acesso ao Portal';
@@ -7878,6 +7882,8 @@ function openModal(type='ades'){
     <input type="hidden" id="f-plance-tipo" value="rs">
     <div class="fg"><label class="flabel">Administradora</label><input class="finput" id="f-padm" placeholder="Ex: Embracon, Porto Seguro…"></div>
     <div class="fg"><label class="flabel">Nº Contrato</label><input class="finput" id="f-pcont" placeholder="Número do contrato"></div>
+    <div class="fg"><label class="flabel">Grupo</label><input class="finput" id="f-pgrupo" placeholder="Nº do grupo"></div>
+    <div class="fg"><label class="flabel">Cota / Dígito</label><input class="finput" id="f-pcota" placeholder="Ex: 1234-5"></div>
     <div class="fg"><label class="flabel">Data de Vencimento</label><input class="finput" id="f-pvenc" type="date"></div>
     <div class="fg"><label class="flabel">Status Contemplação</label><select class="finput" id="f-pstatus">
       <option value="Aguardando"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Aguardando</option>
@@ -8816,6 +8822,7 @@ function saveModal(){
       cliente:g('f-pcli').trim(), telefone:g('f-ptel'), aniversario:g('f-paniv'), login:g('f-plogin'),
       senha:g('f-psenha'), lance:lanceVal, lance_tipo:lanceTipo,
       administradora:g('f-padm'), contrato:g('f-pcont'),
+      grupo:g('f-pgrupo'), cota:g('f-pcota'),
       vencimento:g('f-pvenc'), status_contemplacao:g('f-pstatus')||'Aguardando',
       obs:g('f-pobs')
     };
