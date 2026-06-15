@@ -7046,7 +7046,8 @@ function exportCSVCanceladas(){
 // ═══════════════════════════════ PORTAL DE CLIENTES ══════════════════════════
 function renderPortal(data){
   if(!DB.acessosPortal) DB.acessosPortal=[];
-  const rows=(data||DB.acessosPortal).slice();
+  // Se chamado sem dados explícitos, reaplica o filtro atual (mantém pesquisa após salvar/excluir)
+  const rows=(data!==undefined?data:portalAplicarFiltro()).slice();
   const ct=document.getElementById('portal-ct');
   if(ct) ct.textContent=`${rows.length} registro(s)`;
 
@@ -7082,7 +7083,7 @@ function renderPortal(data){
       <td style="width:36px;padding:6px 8px">
         <div style="width:32px;height:32px;border-radius:50%;background:hsl(${hue},55%,40%);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
       </td>
-      <td style="font-weight:500">${r.cliente||'—'}</td>
+      <td style="font-weight:500"><span onclick="editPortal(${idx})" style="cursor:pointer;border-bottom:1px dashed var(--border2)" title="Clique para editar">${r.cliente||'—'}</span></td>
       <td class="mono" style="font-size:11px">${r.telefone?'<a href="https://wa.me/55'+r.telefone.replace(/\D/g,'')+'" target="_blank" style="color:var(--green);text-decoration:none">📱 '+r.telefone+'</a>':'—'}</td>
       <td class="mono" style="color:var(--blue)">${r.login||'—'}</td>
       <td>
@@ -7186,21 +7187,33 @@ function delPortal(i){
   }
 }
 
-function filterPortal(){
-  if(!DB.acessosPortal) return;
+let _portalStatusFiltro='';
+function portalSetStatus(st){ _portalStatusFiltro=st; filterPortal(); }
+
+function portalAplicarFiltro(){
+  if(!DB.acessosPortal) return [];
   const t=(document.getElementById('fp-txt')?.value||'').toLowerCase();
   const adm=document.getElementById('fp-adm')?.value||'';
-  renderPortal(DB.acessosPortal.filter(r=>{
+  const st=document.getElementById('fp-status')?.value||_portalStatusFiltro||'';
+  return DB.acessosPortal.filter(r=>{
     if(t&&!r.cliente?.toLowerCase().includes(t)&&!r.login?.toLowerCase().includes(t)) return false;
     if(adm&&r.administradora!==adm) return false;
+    if(st&&(r.status_contemplacao||'Aguardando')!==st) return false;
     return true;
-  }));
+  });
+}
+
+function filterPortal(){
+  if(!DB.acessosPortal) return;
+  renderPortal(portalAplicarFiltro());
 }
 
 function limparFiltrosPortal(){
   const txt=document.getElementById('fp-txt');if(txt)txt.value='';
   const adm=document.getElementById('fp-adm');if(adm)adm.value='';
-  renderPortal();
+  const st=document.getElementById('fp-status');if(st)st.value='';
+  _portalStatusFiltro='';
+  renderPortal(DB.acessosPortal);
 }
 
 function exportCSVPortal(){
