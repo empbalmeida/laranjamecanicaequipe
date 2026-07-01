@@ -7469,6 +7469,29 @@ function getMembrosSugeridos(){
   return 'Beatriz, Rafael';
 }
 
+function presencaAdicionarPessoa(nome){
+  // Adiciona a pessoa na semana atual e em todas as semanas futuras da presença.
+  // Não mexe em semanas passadas (preserva histórico).
+  if(!nome||!DB.presenca) return 0;
+  nome=nome.trim();
+  const MN=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const mesKey=k=>{const[nm,ano]=String(k).toLowerCase().split('/');return (+ano||0)*100+(MN.indexOf(nm)+1);};
+  // Determinar o mês atual no formato usado pela presença ("junho/2026")
+  const hoje=new Date();
+  const mesAtualStr=MN[hoje.getMonth()]+'/'+hoje.getFullYear();
+  const mesAtualK=mesKey(mesAtualStr);
+  let count=0;
+  Object.keys(DB.presenca).forEach(m=>{
+    if(mesKey(m)<mesAtualK) return; // pular meses passados
+    const semanas=DB.presenca[m].semanas||[];
+    semanas.forEach(sem=>{
+      if(sem && !sem.membros[nome]){ sem.membros[nome]=sem.dias.map(()=>''); count++; }
+    });
+  });
+  if(count>0){ saveData(); }
+  return count;
+}
+
 function addMemberToWeek(mes,sIdx){
   const name=prompt('Nome do colaborador:');
   if(!name||!name.trim())return;
@@ -7682,6 +7705,11 @@ function corrigirEquipe(){
   const bia=DB.vendedores.find(v=>(v.nome||'').toLowerCase().trim()==='beatriz');
   if(bia){ bia.ativo=true; }
 
+  // Sincronizar Lista de Presença: adicionar todos os ativos que faltam
+  let addPres=0;
+  DB.vendedores.filter(v=>v.ativo!==false).forEach(v=>{ addPres+=presencaAdicionarPessoa(v.nome); });
+  if(addPres>0) acoes.push('Presença atualizada ('+addPres+' entradas)');
+
   saveData();
   renderCad();
   try{renderDash();}catch(e){}
@@ -7696,6 +7724,7 @@ function toggleVendAtivo(i){
     if(!confirm(`Inativar "${v.nome}"?\n\nEle sai dos filtros e seletores, mas todo o histórico de vendas é preservado. Você pode reativar a qualquer momento.`)) return;
   }
   v.ativo=novoEstado;
+  if(novoEstado){ presencaAdicionarPessoa(v.nome); } // reativado: volta pra presença
   saveData();
   renderCad();
   toast(novoEstado?`✓ ${v.nome} reativado`:`⊘ ${v.nome} inativado`);
@@ -8993,8 +9022,11 @@ function saveModal(){
   } else if(modalType==='vend'){
     if(!g('f-nome').trim()){alert('Informe o nome do vendedor.');return;}
     const recV={nome:g('f-nome').trim(),supervisor:g('f-sup'),pct_ades:gn('f-pa'),pct_lin:gn('f-pl'),telefone:g('f-tel-vend').trim(),categoria:g('f-categoria')||'veterano',ativo:true};
-    if(modalEditIdx&&modalEditIdx.tipo==='vend'){DB.vendedores[modalEditIdx.i]=recV;modalEditIdx=null;}
+    const eraEdicao=modalEditIdx&&modalEditIdx.tipo==='vend';
+    if(eraEdicao){DB.vendedores[modalEditIdx.i]=recV;modalEditIdx=null;}
     else DB.vendedores.push(recV);
+    // Novo vendedor: adicionar automaticamente na Lista de Presença (semana atual + futuras)
+    if(!eraEdicao){ presencaAdicionarPessoa(recV.nome); }
   } else if(modalType==='stat'){
     if(!g('f-snome').trim()){alert('Informe o nome do status.');return;}
     const recSt={nome:g('f-snome').trim(),cor:g('f-scor')||'#60a5fa',desc:g('f-sdesc')};
