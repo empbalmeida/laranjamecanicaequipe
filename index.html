@@ -1565,7 +1565,10 @@ body.compact .tbl-wrap{max-height:55vh!important;}
           <button class="com-subtab active" id="subtab-btn-vend" onclick="switchComSubtab('vend')">💼 Vendedora</button>
           <button class="com-subtab" id="subtab-btn-sup" onclick="switchComSubtab('sup')">👑 Supervisora</button>
         </div>
-        <button class="btn btn-g" style="font-size:12px" onclick="abrirMudarSenha()">🔑 Mudar Senha</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-g" style="font-size:12px" onclick="importarMinhasVendas()" title="Traz vendas da equipe onde você é a vendedora">⬇ Importar minhas vendas</button>
+          <button class="btn btn-g" style="font-size:12px" onclick="abrirMudarSenha()">🔑 Mudar Senha</button>
+        </div>
       </div>
 
       <!-- ── ABA VENDEDORA ── -->
@@ -6823,9 +6826,11 @@ function renderComSup(){
           <button class="btn" style="padding:2px 7px;font-size:11px;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)" onclick="delComSup(${r._idx})">✕</button>
         </td>
       </tr>`).join('');
+      const _gid='cs-'+mes.replace(/[^a-zA-Z0-9]/g,'');
       return`<div class="card" style="margin-bottom:16px">
-        <div class="card-hd" style="background:linear-gradient(135deg,rgba(191,90,242,.08),transparent)">
+        <div class="card-hd" style="background:linear-gradient(135deg,rgba(191,90,242,.08),transparent);cursor:pointer" onclick="toggleComSupGrp('${_gid}')">
           <div style="display:flex;align-items:center;gap:10px">
+            <span id="${_gid}-ico" style="font-size:11px;color:var(--purple);width:12px;display:inline-block">▾</span>
             <span style="font-size:13px;font-weight:700;color:var(--purple);font-family:var(--mono)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${mes}</span>
             <span style="font-size:11px;color:var(--text3)">${rows.length} registro(s)</span>
           </div>
@@ -6835,7 +6840,7 @@ function renderComSup(){
             <span style="font-size:13px;font-weight:700;color:var(--purple);font-family:var(--mono)">${fmt(totMes)}</span>
           </div>
         </div>
-        <div class="tbl-outer"><div class="tbl-scroll-top"><div class="tbl-scroll-top-inner"></div></div>
+        <div id="${_gid}" class="tbl-outer"><div class="tbl-scroll-top"><div class="tbl-scroll-top-inner"></div></div>
         <div class="tbl-wrap"><table><thead><tr>
           <th>Data</th><th>Supervisor</th><th>Vendedor Ref.</th><th>Descrição</th><th>Valor (R$)</th><th>Status</th><th>Obs.</th><th></th>
         </tr></thead><tbody>${linhas}</tbody></table></div></div>
@@ -8692,6 +8697,82 @@ function openModal(type='ades'){
   }
 }
 
+function toggleComSupGrp(id){
+  const el=document.getElementById(id);
+  const ico=document.getElementById(id+'-ico');
+  if(!el) return;
+  const escondido=el.style.display==='none';
+  el.style.display=escondido?'':'none';
+  if(ico) ico.textContent=escondido?'▾':'▸';
+}
+
+function importarMinhasVendas(){
+  if(!DB.minhasVendas) DB.minhasVendas=[];
+
+  // Descobrir o nome da vendedora (usuária logada ou Beatriz)
+  const meuNome=(typeof authUser!=='undefined'&&authUser?._nome)?authUser._nome:'Beatriz';
+
+  // Buscar vendas da equipe onde EU sou a vendedora (não canceladas)
+  const norm=s=>(s||'').trim().toLowerCase();
+  const primeiro=s=>norm(s).split(/\s+/)[0]||'';
+  const ehMinha=v=>primeiro(v)===primeiro(meuNome);
+  const minhas=[
+    ...DB.adesionada.filter(r=>ehMinha(r.vendedor)&&r.status!=='Cancelado').map(r=>({...r,_tipo:'ades'})),
+    ...DB.linear.filter(r=>ehMinha(r.vendedor)&&r.status!=='Cancelado').map(r=>({...r,_tipo:'lin'})),
+  ];
+
+  if(!minhas.length){
+    alert('Nenhuma venda encontrada com "'+meuNome+'" como vendedora.\n\nVerifique se o nome da vendedora nas vendas está escrito igual.');
+    return;
+  }
+
+  // Identificar quais já existem (dedup por cliente + data do contrato)
+  const jaTem=v=>DB.minhasVendas.some(mv=>norm(mv.cliente)===norm(v.cliente)&&mv.data===v.data_contrato);
+  const novas=minhas.filter(v=>!jaTem(v));
+  const duplicadas=minhas.length-novas.length;
+
+  if(!novas.length){
+    alert('Todas as suas '+minhas.length+' venda(s) já estão em Minhas Comissões.\n\nNada a importar.');
+    return;
+  }
+
+  // Prévia antes de importar
+  const previa=novas.slice(0,8).map(v=>'• '+v.cliente+' ('+(v._tipo==='ades'?'Ades':'Linear')+') — '+fmt(v.valor_liq)).join('\n');
+  const msg='⬇ IMPORTAR MINHAS VENDAS\n\n'+
+    'Encontradas: '+minhas.length+' venda(s) com você como vendedora\n'+
+    'Já importadas: '+duplicadas+'\n'+
+    'Novas a importar: '+novas.length+'\n\n'+
+    previa+(novas.length>8?'\n… e mais '+(novas.length-8):'')+'\n\nImportar agora?';
+
+  if(!confirm(msg)) return;
+
+  let count=0;
+  novas.forEach(v=>{
+    const liq=v.valor_liq||0;
+    // Adesionada: comissão única (pct_com). Linear: dividida em p1/p2/p3
+    let p1=0,p2=0,p3=0,com=0;
+    if(v._tipo==='ades'){ p1=v.pct_com||0; com=v.com_rs||(liq*p1); }
+    else { p1=v.pct_m1||0; p2=v.pct_m2||0; p3=v.pct_m3||0; com=(v.com_m1||0)+(v.com_m2||0)+(v.com_m3||0)||liq*(p1+p2+p3); }
+
+    const novaVenda={
+      n:DB.minhasVendas.length+1,
+      cliente:v.cliente, data:v.data_contrato,
+      tabela:v.tabela||'', contrato:v.contrato||'',
+      bruto:v.valor_bruto||0, liq, com,
+      p1, p2, p3,
+      status:v.status==='Pago'?'PAGO':'PENDENTE',
+      obs:'Importado da aba '+(v._tipo==='ades'?'Adesionada':'Linear')
+    };
+    DB.minhasVendas.push(novaVenda);
+    if(typeof gerarParcelasVenda==='function') gerarParcelasVenda(novaVenda);
+    count++;
+  });
+
+  saveData();
+  renderCom();
+  alert('✓ '+count+' venda(s) importada(s) para Minhas Comissões!'+(duplicadas?'\n\n('+duplicadas+' já existiam e foram ignoradas)':''));
+}
+
 function saveModalECom(){
   const g=id=>document.getElementById(id)?.value||'';
   const gn=id=>parseFloat(document.getElementById(id)?.value)||0;
@@ -8708,7 +8789,10 @@ function saveModalECom(){
   const comCalc=liq*(p1+p2+p3);
 
   // Salva a venda normalmente nas tabelas ades/lin
+  // (flag evita que saveModal também sincronize — este função já faz isso abaixo)
+  window._pulaAutoCom=true;
   saveModal();
+  window._pulaAutoCom=false;
 
   // Cria/atualiza em minhasVendas
   if(!DB.minhasVendas) DB.minhasVendas=[];
@@ -8718,7 +8802,7 @@ function saveModalECom(){
     cliente:cli, data:dataContrato,
     tabela:g('f-tab'), contrato:g('f-cont'),
     bruto:gn('f-bruto'), liq, com:comCalc,
-    p1, p2, p3, status:'PENDENTE', obs:''
+    p1, p2, p3, status:(g('f-stat')==='Pago')?'PAGO':'PENDENTE', obs:''
   };
   if(jaExiste>=0){
     removerParcelasVenda(DB.minhasVendas[jaExiste]);
@@ -8741,11 +8825,19 @@ function autoSupPct(tipo){
   const tabSel=document.getElementById('f-sup-tab');
   const pctEl=document.getElementById('f-sup-pct');
   if(!tabSel||!pctEl) return;
-  const val=parseFloat(tabSel.value)||0;
-  if(val>0){
-    pctEl.value=val;
+  const nomeTab=(tabSel.value||'').trim();
+  if(!nomeTab){ return; }
+  // Buscar a tabela pelo NOME no cadastro (DB.tabelas) e usar o pct dela
+  const tab=(DB.tabelas||[]).find(t=>(t.nome||'').trim()===nomeTab);
+  if(tab && tab.pct>0){
+    pctEl.value=tab.pct;
     if(tipo==='ades') calcSupAdes();
     else calcSupLin();
+  } else if(tab){
+    // Tabela existe mas está com % zerado — avisa em vez de falhar em silêncio
+    pctEl.value='';
+    const comEl=document.getElementById('f-sup-val'); if(comEl) comEl.value='';
+    toast('⚠ A tabela "'+nomeTab+'" está com % zerado em Cadastros.');
   }
 }
 
@@ -9087,9 +9179,60 @@ function saveModal(){
     'diario-gestao':'✓ Diário de gestão salvo!',
   };
   toast(toastMsgs[modalType]||'✓ Salvo com sucesso!');
+  // Se a venda é MINHA (sou a vendedora), sincronizar automaticamente com Minhas Comissões.
+  // _pulaAutoCom evita duplicar quando chamado por saveModalECom (que já faz isso).
+  if((modalType==='ades'||modalType==='lin')&&!window._pulaAutoCom){
+    try{ sincronizarMinhaVendaSeMinha(modalType); }catch(e){}
+  }
   render(activePage);
   if(activePage==='presenca'){renderResumoMes();}
   if(activePage==='dashboard'){renderDash();}
+}
+
+// Sincroniza a venda recém-salva com Minhas Comissões, se o vendedor for a usuária logada
+function sincronizarMinhaVendaSeMinha(tipo){
+  const g=id=>document.getElementById(id)?.value||'';
+  const gn=id=>parseFloat(document.getElementById(id)?.value)||0;
+  const norm=s=>(s||'').trim().toLowerCase();
+
+  const meuNome=(typeof authUser!=='undefined'&&authUser?._nome)?authUser._nome:'Beatriz';
+  const vendedorDaVenda=g('f-vend');
+  // Comparação tolerante: compara o PRIMEIRO nome (ex: "Beatriz Almeida" casa com "Beatriz")
+  const primeiro=s=>norm(s).split(/\s+/)[0]||'';
+  if(primeiro(vendedorDaVenda)!==primeiro(meuNome)) return;
+
+  const cli=g('f-cli').trim();
+  const dataContrato=g('f-dcon');
+  if(!cli) return;
+
+  const liq=gn('f-liq');
+  const p1=tipo==='lin'?gn('f-p1'):gn('f-pct');
+  const p2=tipo==='lin'?gn('f-p2'):0;
+  const p3=tipo==='lin'?gn('f-p3'):0;
+  const comCalc=liq*(p1+p2+p3);
+
+  if(!DB.minhasVendas) DB.minhasVendas=[];
+  const jaExiste=DB.minhasVendas.findIndex(v=>norm(v.cliente)===norm(cli)&&v.data===dataContrato);
+
+  const novaVenda={
+    n:jaExiste>=0?DB.minhasVendas[jaExiste].n:DB.minhasVendas.length+1,
+    cliente:cli, data:dataContrato,
+    tabela:g('f-tab'), contrato:g('f-cont'),
+    bruto:gn('f-bruto'), liq, com:comCalc,
+    p1, p2, p3,
+    status:(g('f-stat')==='Pago')?'PAGO':'PENDENTE',
+    obs:''
+  };
+
+  if(jaExiste>=0){
+    if(typeof removerParcelasVenda==='function') removerParcelasVenda(DB.minhasVendas[jaExiste]);
+    DB.minhasVendas[jaExiste]=novaVenda;
+  } else {
+    DB.minhasVendas.push(novaVenda);
+  }
+  if(typeof gerarParcelasVenda==='function') gerarParcelasVenda(novaVenda);
+  saveData();
+  toast('💼 Venda também adicionada às Minhas Comissões!');
 }
 
 function delSemana(mes,sIdx){
